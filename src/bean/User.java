@@ -3,7 +3,7 @@ package bean;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class UserBean {
+public class User {
 
     // --- 共通フィールド ---
     private String userId;           // ユーザー ID (PK)
