@@ -3,7 +3,7 @@ package bean;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-public class AttManagamentBean implements Serializable {
+public class AttManagaeamentBean implements Serializable {
     private static final long serialVersionUID = 11L;
 
     private int attendanceId;         // 出欠 ID (PK)
@@ -14,7 +14,7 @@ public class AttManagamentBean implements Serializable {
     private String reason;            // 欠席理由
     private String attendanceRecord;  // 出欠情報を取得() (UML図のメソッドをフィールド化)
 
-    public AttManagamentBean() {}
+    public AttManagaeamentBean() {}
 
     public int getAttendanceId() { return attendanceId; }
     public void setAttendanceId(int attendanceId) { this.attendanceId = attendanceId; }
