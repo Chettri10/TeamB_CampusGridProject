@@ -131,6 +131,7 @@ body {
         </a>
     </div>
 
+
     <!-- お知らせ -->
     <div class="notification-box">
         <div class="notification-header">【重要】就職活動について（2024/07/15）</div>
