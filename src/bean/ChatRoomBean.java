@@ -3,7 +3,7 @@ package bean;
 import java.io.Serializable;
 
 public class ChatRoomBean implements Serializable {
-    private static final long serialVersionUID = 12L; 
+    private static final long serialVersionUID = 12L;
 
     private String chatRoomId; // チャットルーム ID (PK/FK)
     private String userId;     // ユーザー ID (FK)

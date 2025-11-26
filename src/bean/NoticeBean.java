@@ -22,3 +22,4 @@ public class NoticeBean implements Serializable {
     public LocalDateTime getPostedOn() { return postedOn; }
     public void setPostedOn(LocalDateTime postedOn) { this.postedOn = postedOn; }
 }
+
