@@ -3,39 +3,39 @@ package bean;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class User {
+public class UserBean {
 
-    // --- å…±é€šãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ ---
-    private String userId;           // ãƒ¦ãƒ¼ã‚¶ãƒ¼ ID (PK)
-    private String userName;         // ãƒ¦ãƒ¼ã‚¶ãƒ¼å
-    private String password;         // ãƒ‘ã‚¹ãƒ¯ãƒ¼ãƒ‰
-    private int role;                // ãƒ­ãƒ¼ãƒ« (1:æ•™å“¡, 2:å­¦ç”Ÿ, 3:ä¿è­·è€…)
-    private LocalDateTime lastLogin; // æœ€çµ‚ãƒ­ã‚°ã‚¤ãƒ³æ—¥æ™‚
-    private String email;            // ãƒ¡ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
-    private String phoneNumber;      // é›»è©±ç•ªå·
+    // --- ‹¤’ÊƒtƒB[ƒ‹ƒh ---
+    private String userId;           // ƒ†[ƒU[ ID (PK)
+    private String userName;         // ƒ†[ƒU[–¼
+    private String password;         // ƒpƒXƒ[ƒh
+    private int role;                // ƒ[ƒ‹ (1:‹³ˆõ, 2:Šw¶, 3:•ÛŒìÒ)
+    private LocalDateTime lastLogin; // ÅIƒƒOƒCƒ““ú
+    private String email;            // ƒ[ƒ‹ƒAƒhƒŒƒX
+    private String phoneNumber;      // “d˜b”Ô†
 
-    // --- å­¦ç”Ÿ (Student) å›ºæœ‰ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ ---
-    private String studentNumber;    // å­¦ç±ç•ªå·
-    private LocalDate dateOfBirth;   // ç”Ÿå¹´æœˆæ—¥
-    private String address;          // ä½æ‰€
+    // --- Šw¶ (Student) ŒÅ—LƒtƒB[ƒ‹ƒh ---
+    private String studentNumber;    // ŠwĞ”Ô†
+    private LocalDate dateOfBirth;   // ¶”NŒ“ú
+    private String address;          // ZŠ
 
-    // --- ä¿è­·è€… (Parent) å›ºæœ‰ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ ---
-    private String parentId;         // ä¿è­·è€… ID (User Beanã§FKã¨ã—ã¦ä¿æŒ)
+    // --- •ÛŒìÒ (Parent) ŒÅ—LƒtƒB[ƒ‹ƒh ---
+    private String parentId;         // •ÛŒìÒ ID (User Bean‚ÅFK‚Æ‚µ‚Ä•Û)
 
-    // --- æ•™å“¡ (Teacher) å›ºæœ‰ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ ---
-    private String subjectInCharge;  // æ‹…å½“ç§‘ç›®
+    // --- ‹³ˆõ (Teacher) ŒÅ—LƒtƒB[ƒ‹ƒh ---
+    private String subjectInCharge;  // ’S“–‰È–Ú
 
-    // --- æ•™å“¡æ¨©é™ (Teacher Permissions) - æ–°è¦è¿½åŠ  ---
-    private boolean canAddProduct;       // ADD_PRODUCT ã«å¯¾å¿œ (å•†å“è¿½åŠ æ¨©é™)
-    private boolean canConfirmRoute;     // ROUTE_CONFIRMATION ã«å¯¾å¿œ (å‡ºæ¬ /ãƒ«ãƒ¼ãƒˆç¢ºèªæ¨©é™)
+    // --- ‹³ˆõŒ ŒÀ (Teacher Permissions) - V‹K’Ç‰Á ---
+    private boolean canAddProduct;       // ADD_PRODUCT ‚É‘Î‰ (¤•i’Ç‰ÁŒ ŒÀ)
+    private boolean canConfirmRoute;     // ROUTE_CONFIRMATION ‚É‘Î‰ (oŒ‡/ƒ‹[ƒgŠm”FŒ ŒÀ)
 
 
-    // --- ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ ---
+    // --- ƒRƒ“ƒXƒgƒ‰ƒNƒ^ ---
     public UserBean() {
     }
 
-    // --- ã‚²ãƒƒã‚¿ãƒ¼ã¨ã‚»ãƒƒã‚¿ãƒ¼ ---
-    // å…±é€š
+    // --- ƒQƒbƒ^[‚ÆƒZƒbƒ^[ ---
+    // ‹¤’Ê
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
 
@@ -57,7 +57,7 @@ public class User {
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 
-    // å­¦ç”Ÿå›ºæœ‰
+    // Šw¶ŒÅ—L
     public String getStudentNumber() { return studentNumber; }
     public void setStudentNumber(String studentNumber) { this.studentNumber = studentNumber; }
 
@@ -67,19 +67,18 @@ public class User {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    // ä¿è­·è€…å›ºæœ‰
+    // •ÛŒìÒŒÅ—L
     public String getParentId() { return parentId; }
     public void setParentId(String parentId) { this.parentId = parentId; }
 
-    // æ•™å“¡å›ºæœ‰
+    // ‹³ˆõŒÅ—L
     public String getSubjectInCharge() { return subjectInCharge; }
     public void setSubjectInCharge(String subjectInCharge) { this.subjectInCharge = subjectInCharge; }
 
-    // æ•™å“¡æ¨©é™
+    // ‹³ˆõŒ ŒÀ
     public boolean isCanAddProduct() { return canAddProduct; }
     public void setCanAddProduct(boolean canAddProduct) { this.canAddProduct = canAddProduct; }
 
     public boolean isCanConfirmRoute() { return canConfirmRoute; }
     public void setCanConfirmRoute(boolean canConfirmRoute) { this.canConfirmRoute = canConfirmRoute; }
 }
-
