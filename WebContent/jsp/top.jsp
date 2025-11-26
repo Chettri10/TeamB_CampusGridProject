@@ -112,7 +112,7 @@ body {
 
     <!-- 上 2 つ -->
     <div class="menu-row">
-        <a class="menu-item green" href="attendance.jsp">
+        <a class="menu-item green" href="student_menu.jsp">
             <div class="icon">📖</div>
             出欠席登録
         </a>
