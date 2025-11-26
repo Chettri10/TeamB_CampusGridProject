@@ -1,18 +1,19 @@
 package bean;
 
 public class Payment {
-	private String cd;
-	private String name;
-	public String getCd() {
-		return cd;
+	private Int Payment_ID;
+	private Int Payment_Type;
+
+	public int getPayment_ID() {
+		return Payment_ID;
 	}
-	public void setCd(String cd) {
-		this.cd = cd;
+	public void setCd(Int Payment_ID) {
+		this.Payment_ID = Payment_ID;
 	}
-	public String getName() {
-		return name;
+	public int getPayment_Type() {
+		return Payment_Type;
 	}
-	public void setName(String name) {
-		this.name = name;
+	public void setPayment_Type(Int Payment_Type) {
+		this.Payment_Type = Payment_Type;
 	}
 }
