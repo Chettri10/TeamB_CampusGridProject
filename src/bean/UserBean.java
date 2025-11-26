@@ -21,7 +21,6 @@ public class UserBean {
 
     // --- 保護者 (Parent) 固有フィールド ---
     private String parentId;         // 保護者 ID (User BeanでFKとして保持)
-
     // --- 教員 (Teacher) 固有フィールド ---
     private String subjectInCharge;  // 担当科目
 
