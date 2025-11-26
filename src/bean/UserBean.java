@@ -82,3 +82,4 @@ public class User {
     public boolean isCanConfirmRoute() { return canConfirmRoute; }
     public void setCanConfirmRoute(boolean canConfirmRoute) { this.canConfirmRoute = canConfirmRoute; }
 }
+
