@@ -12,8 +12,8 @@
       font-family: sans-serif;
     }
     img.logo {
-      width: 150px;
-      margin-bottom: 20px;
+      width: 200px;
+      margin-bottom: 1px;
     }
     input {
       margin: 5px;
@@ -36,9 +36,9 @@
 </head>
 <body>
 
-  <!-- 🖼️ Logo -->
-  <img src="images/スクリーンショット%202025-11-04%20145240.png" alt="Campus Grid Logo" class="logo">
-
+  <img src="<%= request.getContextPath() %>/images/AppLogo.png"
+     alt="Campus Grid Logo"
+     class="logo">
   <h1>キャンパスGRIDへログイン</h1>
 
   <form action="LoginServlet" method="post">
