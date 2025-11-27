@@ -36,9 +36,7 @@ body {
 <div class="container">
 
     <div class="title-main">キャンパスグリッド</div>
-    <a href="chatroom.jsp">藍沢先生</a><br>
-    <a href="chatroom.jsp">井黒正人</a><br>
-    <a href="chatroom.jsp">内田さやか</a><br>
+
  </div>
 
 
