@@ -44,5 +44,7 @@
     <button type="submit">はい</button>
   </form>
 
+  <a href="<%= request.getContextPath() %>/Login/login.jsp">いいえ！</a>
+
 </body>
 </html>
