@@ -2,7 +2,7 @@ package bean;
 
 import java.io.Serializable;
 
-public class Purchase_Detail implements Serializable{
+public class Purchase_Detail implements Serializable {
 	private int Purchase_Details_ID;
 	private int Purchase_ID;
 	private int Product_ID;
@@ -52,5 +52,6 @@ public class Purchase_Detail implements Serializable{
 	public void setQuantity(int Quantity) {
 		this.Quantity = Quantity;
 	}
+
 
 }

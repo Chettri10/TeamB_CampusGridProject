@@ -2,7 +2,7 @@ package bean;
 
 import java.io.Serializable;
 
-public class Payment  implements Serializable {
+public class Payment implements Serializable {
 	private int Payment_ID;
 	private int Payment_Type;
 
