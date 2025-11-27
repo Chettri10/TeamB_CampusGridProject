@@ -36,6 +36,8 @@ body {
 <div class="container">
 
     <div class="title-main">キャンパスグリッド</div>
+    <%String id = request.getParameter("id");%>
+ID: <%= id %>
 
  </div>
 
