@@ -47,7 +47,7 @@
     <input type="submit" value="ログイン"><br>
   </form>
 
-  <a href="#">パスワード忘れましたか?</a>
+  <a href="#">パスワード忘れましたか..?</a>
 
   <p style="color:red;">
     <%= request.getAttribute("error") != null ? request.getAttribute("error") : "" %>
