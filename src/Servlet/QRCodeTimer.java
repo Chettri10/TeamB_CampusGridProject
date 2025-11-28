@@ -21,3 +21,4 @@ public class QRCodeTimer {
         return elapsed < EXPIRATION_SECONDS;
     }
 }
+
