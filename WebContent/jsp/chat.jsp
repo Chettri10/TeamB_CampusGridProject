@@ -8,6 +8,9 @@
 <!-- ▼ スマホ対応 必須タグ ▼ -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- iPhone 15 Plus の論理幅に合わせた viewport -->
+<meta name="viewport" content="width=430, initial-scale=1.0">
+
 <title>ChatRoom - CAMPUS GRID</title>
 <style>
 body {

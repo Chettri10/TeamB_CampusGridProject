@@ -5,6 +5,9 @@
 <meta charset="UTF-8">
 <title>キャンパスグリッド - 遅刻</title>
 
+<!-- iPhone 15 Plus の論理幅に合わせた viewport -->
+<meta name="viewport" content="width=430, initial-scale=1.0">
+
 <style>
     body {
         background-color: #00144a;
