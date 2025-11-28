@@ -10,6 +10,9 @@
 
 <title>欠席登録 - CAMPUS GRID</title>
 
+<!-- iPhone 15 Plus の論理幅に合わせた viewport -->
+<meta name="viewport" content="width=430, initial-scale=1.0">
+
 <style>
 body {
     background-color: #000033;

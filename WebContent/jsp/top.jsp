@@ -12,6 +12,8 @@
 <meta charset="UTF-8">
 <title>CAMPUS GRID - Top</title>
 
+<!-- iPhone 15 Plus の論理幅に合わせた viewport -->
+<meta name="viewport" content="width=430, initial-scale=1.0">
 
 <style>
 /* 全体 */
