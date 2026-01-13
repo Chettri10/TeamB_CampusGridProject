@@ -116,7 +116,7 @@ body {
     <div class="menu-row">
         <a class="menu-item green" href="student_menu.jsp">
             <div class="icon">📖</div>
-            出欠席確認
+            出欠席登録
         </a>
 
         <a class="menu-item blue" href="chat.jsp">
@@ -129,7 +129,7 @@ body {
     <div class="menu-center">
         <a class="menu-item orange" href="purchase.jsp">
             <div class="icon">🛒</div>
-            商品登録
+            購入申込
         </a>
     </div>
 
