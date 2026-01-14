@@ -110,14 +110,12 @@
         <h2>お知らせ投稿</h2>
     </div>
 
-    <!-- NoticePostServlet に送信 -->
-    <form action="noticePost" method="post">
+    <!-- ★ 投稿後に notice_done.jsp に遷移するように変更 ★ -->
+    <form action="notice_done.jsp" method="post">
 
-        <!-- 投稿者ID -->
         <label for="userId">投稿者ID</label>
         <input type="text" id="userId" name="userId" placeholder="例: teacher01" required>
 
-        <!-- カテゴリ -->
         <label for="category">カテゴリ</label>
         <select id="category" name="category">
             <option value="連絡">連絡</option>
@@ -125,7 +123,6 @@
             <option value="イベント">イベント</option>
         </select>
 
-        <!-- 本文 -->
         <label for="content">お知らせ内容</label>
         <textarea id="content" name="content" placeholder="お知らせ内容を入力してください" required></textarea>
 
