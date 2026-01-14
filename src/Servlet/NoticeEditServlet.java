@@ -2,20 +2,20 @@ package Servlet;
 
 import java.io.IOException;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-public class NoticePostServlet extends HttpServlet {
+import dao.NoticeDao;
+
+public class NoticeEditServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 文字化け対策
         request.setCharacterEncoding("UTF-8");
 
         // ★ 教師チェック（追加部分）
@@ -28,24 +28,17 @@ public class NoticePostServlet extends HttpServlet {
         }
         // ★ ここまで追加
 
-        // notice_write.jsp から送られてきたデータを取得
-        String userId = request.getParameter("userId");
+        String id = request.getParameter("id");
         String category = request.getParameter("category");
         String content = request.getParameter("content");
 
         try {
-            // ▼ 本来は DAO を使って DB に保存する
-            // NoticeDao dao = new NoticeDao();
-            // dao.insert(...);
+            NoticeDao dao = new NoticeDao();
+            dao.update(Integer.parseInt(id), category, content);
 
-            // 完了画面に渡したいデータがあればセット
-            request.setAttribute("userId", userId);
-            request.setAttribute("category", category);
-            request.setAttribute("content", content);
-
-            // notice_done.jsp へフォワード
-            RequestDispatcher rd = request.getRequestDispatcher("notice_done.jsp");
-            rd.forward(request, response);
+            // ★ 変更完了画面へ遷移（追加部分）
+            response.sendRedirect("notice_edit_done.jsp");
+            // ★ ここまで追加
 
         } catch (Exception e) {
             e.printStackTrace();

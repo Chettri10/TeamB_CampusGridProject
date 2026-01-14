@@ -1,7 +1,14 @@
 package dao;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class NoticeDao extends DAO {
 
@@ -53,6 +60,18 @@ public class NoticeDao extends DAO {
             return list;
         }
     }
+
+ // ★ 編集画面専用の update（カテゴリと内容だけ更新）
+    public int update(int notificationId, String category, String content) throws Exception {
+        String sql = "UPDATE Notice SET Category=?, Content=? WHERE Notification_ID=?";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, category);
+            ps.setString(2, content);
+            ps.setInt(3, notificationId);
+            return ps.executeUpdate();
+        }
+    }
+
 
     private Map<String, Object> toMap(ResultSet rs) throws SQLException {
         Map<String, Object> m = new LinkedHashMap<>();
