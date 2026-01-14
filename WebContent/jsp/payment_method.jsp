@@ -158,7 +158,7 @@
                 <div class="product-name">カバン</div>
             </div>
 
-            <button class="cart-btn" onclick="location.href='cart.jsp'">カートに移動</button>
+            <button class="cart-btn" onclick="location.href='cart2.jsp'">カートに移動</button>
         </div>
 
     </div>
