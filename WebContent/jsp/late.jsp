@@ -84,7 +84,7 @@
 
     <a href="qr.jsp" class="qr-btn">QRコードを表示　＞</a>
 
-    <form action="lateSubmit" method="post">
+    <form action="student_menu.jsp" method="post">
 
         <label>遅刻した理由は？</label>
         <textarea name="lateReason"></textarea>

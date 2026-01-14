@@ -99,7 +99,7 @@
     <button class="btn" onclick="startTimer()">再表示</button>
 
     <!-- 戻るボタン -->
-    <a href="index.jsp" class="btn">戻る</a>
+    <a href="student_menu.jsp" class="btn">戻る</a>
 
 </div>
 

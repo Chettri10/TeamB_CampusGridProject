@@ -92,7 +92,7 @@
 
     <a href="qr.jsp" class="qr-btn">QRコードを表示　＞</a>
 
-    <form action="leaveSubmit" method="post">
+    <form action="student_menu.jsp" method="post">
 
         <label>早退した理由は？</label>
         <textarea name="leaveReason"></textarea>
@@ -100,6 +100,7 @@
         <label>早退しないためには？</label>
         <textarea name="leavePlan"></textarea>
 
+		<!-- 送信ボタン -->
         <button type="submit" class="submit-btn">送信</button>
 
     </form>
