@@ -1,35 +1,31 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="java.util.*" %>
 <%@ page import="java.text.NumberFormat" %>
 <%@ page import="java.util.Locale" %>
 
 <%
-    // --- 1. Beanを使わず、JSP内で直接データ構造を定義 ---
-    // [商品名, 価格] の形式でデータを格納します。
-    // 画面構成の画像に基づきデータを設定。
-
-    String[][] cartItemsData = {
-        {"キャンパスグリッド有料版", "12800"},
-        {"カバン", "4500"},
-        {"筆箱", "1500"}
-    };
+    // --- 1. サーブレットから渡されたデータを受け取る ---
+    // CartServletのdoGetで "cartList" という名前で保存されたList<Map>を取得します。
+    List<Map<String, Object>> cartList = (List<Map<String, Object>>) request.getAttribute("cartList");
 
     long totalPrice = 0;
+    NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("ja", "JP"));
 
-    // 合計金額を計算
-    for (String[] item : cartItemsData) {
-        try {
-            totalPrice += Long.parseLong(item[1]); // 価格 (item[1]) を long 型に変換して加算
-        } catch (NumberFormatException e) {
-            // エラー処理（念のため）
-            System.err.println("価格の解析エラー: " + item[1]);
+    // --- 2. 合計金額を動的に計算 ---
+    if (cartList != null) {
+        for (Map<String, Object> item : cartList) {
+            try {
+                // TODO: DAOでProductテーブルと結合(JOIN)して"Price"を取得するように修正が必要です。
+                // 現時点では、計算ロジックのみ用意しておきます（DBにPriceカラムがある前提）
+                Object priceObj = item.get("Price");
+                if (priceObj != null) {
+                    totalPrice += Long.parseLong(priceObj.toString()) * (Integer)item.get("Quantity");
+                }
+            } catch (Exception e) {
+                System.err.println("価格計算エラー");
+            }
         }
     }
-
-    // 価格表示用のフォーマッタ (日本円、カンマ区切り)
-    NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("ja", "JP"));
 %>
 
 <!DOCTYPE html>
@@ -46,6 +42,7 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            margin: 0;
         }
         .container {
             width: 90%;
@@ -57,7 +54,6 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        /* 内容確認ボタンのスタイル */
         .content-confirm {
             background-color: #2e435a;
             color: white;
@@ -68,7 +64,6 @@
             border-radius: 5px;
             margin-bottom: 20px;
         }
-        /* 個別商品/ボタンの基本スタイル */
         .item-box {
             background-color: #e5f2ff;
             color: #333;
@@ -83,8 +78,8 @@
         .item-box i {
             margin-right: 15px;
             font-size: 20px;
+            color: #0b1a37;
         }
-        /* 支払いボタンのスタイル */
         .payment-button {
             background-color: #00ffff; /* 明るいシアン */
             color: black;
@@ -95,8 +90,12 @@
             border-radius: 5px;
             margin-top: 30px;
             cursor: pointer;
-            width: 100%; /* 全幅に広げる */
+            width: 100%;
             border: none;
+            transition: opacity 0.2s;
+        }
+        .payment-button:hover {
+            opacity: 0.8;
         }
         .total-price {
             background-color: #2e435a;
@@ -107,8 +106,12 @@
             text-align: right;
             font-weight: bold;
         }
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+        }
     </style>
-    <%-- Font Awesomeのショッピングカートアイコンを使用するために外部CSSを参照 --%>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -116,35 +119,47 @@
 <div class="container">
     <h1>キャンパスグリッド 購入</h1>
 
-    <%-- 1. 内容確認エリア --%>
-    <div class="content-confirm">
-        内容確認
-    </div>
+    <div class="content-confirm">内容確認</div>
 
-    <%-- 2. カートの商品一覧 --%>
-    <% for (String[] item : cartItemsData) { %>
+    <%-- --- 3. 商品一覧の動的表示 --- --%>
+    <%
+        if (cartList != null && !cartList.isEmpty()) {
+            for (Map<String, Object> item : cartList) {
+                // 商品名が取得できていない場合はIDを表示
+                String productName = (item.get("Product_Name") != null) ?
+                                     item.get("Product_Name").toString() :
+                                     "商品ID: " + item.get("Product_ID");
+
+                // 価格が取得できていない場合は0を表示
+                long price = (item.get("Price") != null) ?
+                             Long.parseLong(item.get("Price").toString()) : 0;
+    %>
         <div class="item-box">
             <i class="fas fa-shopping-bag"></i>
-            <%= item[0] %> <%-- 商品名 (item[0]) --%>
+            <%= productName %>
             <span style="margin-left: auto; font-weight: bold;">
-                <%= currencyFormatter.format(Long.parseLong(item[1])) %> <%-- 価格 (item[1]) --%>
+                <%= currencyFormatter.format(price) %>
             </span>
         </div>
+    <%
+            }
+        } else {
+    %>
+        <div class="empty-message">カートに商品は入っていません。</div>
     <% } %>
 
-    <%-- 3. 合計金額表示 --%>
+    <%-- --- 4. 合計金額の表示 --- --%>
     <div class="total-price">
         合計金額: <%= currencyFormatter.format(totalPrice) %>
     </div>
 
-    <%-- 4. 支払いボタン --%>
+    <%-- --- 5. 支払いボタン --- --%>
     <form action="PaymentServlet" method="POST">
         <input type="hidden" name="action" value="processPayment">
         <button type="submit" class="payment-button">
             支払いへ
         </button>
     </form>
-
 </div>
 
 </body>

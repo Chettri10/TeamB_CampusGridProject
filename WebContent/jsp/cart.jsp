@@ -1,7 +1,12 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
-    // 商品データのダミー
-    String[] productList = {"教科書・参考書", "文房具セット", "学校指定ジャージ"};
+    // テスト用の商品データ（本来はデータベースから取得するのが理想）
+    String[][] products = {
+        {"1", "教科書・参考書"},
+        {"2", "文房具セット"},
+        {"3", "学校指定ジャージ"},
+        {"4", "キャンパスバッグ"}
+    };
 %>
 <!DOCTYPE html>
 <html lang="ja">
@@ -13,7 +18,7 @@
     <style>
         /* --- 1. 全体のリセットとベース設定 --- */
         * {
-            box-sizing: border-box; /* パディングが幅に含まれるようにする */
+            box-sizing: border-box;
         }
 
         body {
@@ -23,18 +28,17 @@
             margin: 0;
             padding: 0;
             display: flex;
-            justify-content: center; /* PCで見たときは中央寄せ */
+            justify-content: center;
             min-height: 100vh;
         }
 
-        /* --- 2. コンテナ（スマホ画面の枠） --- */
+        /* --- 2. コンテナ --- */
         .container {
             width: 100%;
-            /* スマホの最大幅（iPhone Pro Max等が約430px）に合わせる */
             max-width: 430px;
-            padding: 20px 24px 100px 24px; /* 下部はカートボタン用に広めに */
+            padding: 20px 24px 120px 24px;
             position: relative;
-            background-color: #020617; /* 背景色をコンテナにも適用 */
+            background-color: #020617;
         }
 
         /* --- 3. ヘッダー --- */
@@ -70,15 +74,14 @@
 
         .search-input {
             width: 100%;
-            height: 50px; /* タップしやすい高さ */
-            padding: 0 15px 0 50px; /* 左側にアイコンスペース */
+            height: 50px;
+            padding: 0 15px 0 50px;
             background-color: #E8F5F6;
             border: none;
             border-radius: 12px;
             font-size: 16px;
             font-weight: bold;
             color: #333;
-            font-family: inherit;
         }
 
         .search-icon {
@@ -90,7 +93,7 @@
             color: #020617;
         }
 
-        /* --- 5. カテゴリーボタン（1つ） --- */
+        /* --- 5. カテゴリーボタン --- */
         .category-area {
             margin-bottom: 32px;
             width: 100%;
@@ -99,7 +102,7 @@
         .category-btn {
             width: 100%;
             height: 50px;
-            background-color: #00FFFF; /* シアン */
+            background-color: #00FFFF;
             color: #000000;
             border: none;
             border-radius: 12px;
@@ -107,37 +110,47 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0, 255, 255, 0.2);
-            transition: opacity 0.2s;
         }
 
-        .category-btn:hover {
-            opacity: 0.9;
-        }
-
-        /* --- 6. 商品リスト --- */
+        /* --- 6. 商品リスト & フォーム --- */
         .product-list {
             display: flex;
             flex-direction: column;
-            gap: 24px; /* アイテム間の隙間 */
+            gap: 24px;
         }
 
-        .product-item {
+        form {
+            margin: 0;
+            width: 100%;
+        }
+
+        .add-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
             display: flex;
             align-items: center;
-            gap: 20px;
-            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            color: inherit;
+            font-family: inherit;
+            transition: transform 0.1s;
+        }
+
+        .add-btn:active {
+            transform: scale(0.97);
         }
 
         .icon-box {
             width: 64px;
             height: 64px;
             background-color: #E8F5F6;
-            border-radius: 16px; /* 角丸を少し柔らかく */
+            border-radius: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
-            border: 2px solid #020617;
-            flex-shrink: 0; /* アイコンが縮まないように固定 */
+            flex-shrink: 0;
         }
 
         .bag-icon {
@@ -155,16 +168,23 @@
             font-weight: 700;
             color: #FFFFFF;
             line-height: 1.4;
+            margin-left: 20px;
         }
 
         /* --- 7. カートボタン（下部固定風） --- */
         .cart-btn-area {
-            margin-top: 50px;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 430px;
+            padding: 0 24px;
         }
 
         .cart-btn {
             width: 100%;
-            height: 56px; /* 一番大きく押しやすく */
+            height: 56px;
             background-color: #00FFFF;
             color: #000000;
             border: none;
@@ -173,13 +193,11 @@
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
-            letter-spacing: 1px;
         }
 
         .cart-btn:hover {
             opacity: 0.9;
         }
-
     </style>
 </head>
 <body>
@@ -201,35 +219,27 @@
         </div>
 
         <div class="product-list">
-            <%
-                if (productList != null) {
-                    for (String name : productList) {
-            %>
+            <% for (String[] p : products) { %>
             <div class="product-item">
-                <div class="icon-box">
-                    <svg class="bag-icon" viewBox="0 0 24 24">
-                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <path d="M16 10a4 4 0 0 1-8 0"></path>
-                    </svg>
-                </div>
-                <div class="product-name"><%= name %></div>
+                <form action="CartServlet" method="POST">
+                    <input type="hidden" name="productId" value="<%= p[0] %>">
+                    <button type="submit" class="add-btn">
+                        <div class="icon-box">
+                            <svg class="bag-icon" viewBox="0 0 24 24">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                        </div>
+                        <div class="product-name"><%= p[1] %></div>
+                    </button>
+                </form>
             </div>
-            <%
-                    }
-                }
-            %>
-
-            <div class="product-item">
-                <div class="icon-box">
-                    <svg class="bag-icon" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                </div>
-                <div class="product-name">商品名</div>
-            </div>
+            <% } %>
         </div>
 
         <div class="cart-btn-area">
-            <button class="cart-btn">カート</button>
+            <button type="button" class="cart-btn" onclick="location.href='CartServlet'">カートを見る</button>
         </div>
 
     </div>
