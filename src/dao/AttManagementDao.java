@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class AttManagementDao {
 
-    private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProjectTest";
+    private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
 
     private final String USER = "sa";
 
