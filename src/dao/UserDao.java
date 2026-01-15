@@ -100,4 +100,64 @@ public class UserDao extends DAO {
         m.put("Parent_ID", rs.getString("Parent_ID"));
         return m;
     }
+// ユーザー登録メソッド
+public boolean registerUser(String userId, String userName, String password, int role) {
+    // ID重複チェックは簡易的に省略（エラーになったらfalseを返す）
+    String sql = "INSERT INTO User (User_ID, User_Name, Password, Role) VALUES (?, ?, ?, ?)";
+
+    try (Connection conn = getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, userId);
+        pstmt.setString(2, userName);
+        pstmt.setString(3, password);
+        pstmt.setInt(4, role);
+
+        int result = pstmt.executeUpdate();
+        return result > 0; // 1行以上追加できれば成功
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return false; // ID重複などで失敗した場合
+    }
+}
+// ユーザー登録メソッド（路線情報対応版）
+public boolean registerUser(String userId, String userName, String password, int role,
+                            String email, String phone, String dob, String address,
+                            String routeInfo) { // ★追加：routeInfo
+
+    // INSERT文に Route_Confirmation を追加
+    String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Email, Phone_Number, Date_Of_Birth, Address, Route_Confirmation) " +
+                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    try (Connection conn = getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+        pstmt.setString(1, userId);
+        pstmt.setString(2, userName);
+        pstmt.setString(3, password);
+        pstmt.setInt(4, role);
+        pstmt.setString(5, email);
+        pstmt.setString(6, phone);
+
+        if (dob != null && !dob.isEmpty()) {
+            pstmt.setDate(7, java.sql.Date.valueOf(dob));
+        } else {
+            pstmt.setDate(7, null);
+        }
+
+        pstmt.setString(8, address);
+
+        // ★追加：路線情報
+        pstmt.setString(9, routeInfo);
+
+        int result = pstmt.executeUpdate();
+        return result > 0;
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return false;
+    }
+
+}
 }

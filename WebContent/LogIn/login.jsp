@@ -1,57 +1,35 @@
-<%@ page contentType="text/html; charset=UTF-8" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Campus Grid Login</title>
-  <style>
-    body {
-      background-color: #001f4d;
-      color: white;
-      text-align: center;
-      margin-top: 50px;
-      font-family: sans-serif;
-    }
-    img.logo {
-      width: 200px;
-      margin-bottom: 1px;
-    }
-    input {
-      margin: 5px;
-      padding: 8px;
-      width: 200px;
-    }
-    input[type="submit"] {
-      background-color: #00bfff;
-      color: white;
-      border: none;
-      width: 100px;
-      height: 30px;
-      cursor: pointer;
-    }
-    a {
-      color: #00bfff;
-      text-decoration: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>ログイン - Campus Grid</title>
+<style>
+    body { background-color: #020617; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }
+    .login-box { background-color: #151f42; padding: 40px; border-radius: 10px; text-align: center; width: 300px; }
+    input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+    button { width: 100%; padding: 10px; background-color: #00ffff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .error { color: #ff453a; font-size: 14px; }
+</style>
 </head>
 <body>
+    <div class="login-box">
+        <h2>Campus Grid Login</h2>
 
-  <img src="<%= request.getContextPath() %>/images/AppLogo.png"
-     alt="Campus Grid Logo"
-     class="logo">
-  <h1>キャンパスGRIDへログイン</h1>
+        <% String error = (String)request.getAttribute("errorMsg"); %>
+        <% if(error != null) { %>
+            <p class="error"><%= error %></p>
+        <% } %>
 
-  <form action="LoginServlet" method="post">
-    <input type="text" name="email" placeholder="メール"><br>
-    <input type="password" name="password" placeholder="パスワード"><br>
-    <input type="submit" value="ログイン"><br>
-  </form>
+        <form action="<%= request.getContextPath() %>/LoginServlet" method="post">
+            <input type="text" name="userId" placeholder="ユーザーID (例: G00001)" required>
+            <input type="password" name="password" placeholder="パスワード" required>
+            <button type="submit">ログイン</button>
+        </form>
 
-  <a href="#">パスワード忘れましたか..?</a>
-
-  <p style="color:red;">
-    <%= request.getAttribute("error") != null ? request.getAttribute("error") : "" %>
-  </p>
-
+        <p style="font-size:12px; color:#aaa; margin-top:20px;">
+            S...学生 / T...先生 / P...保護者
+        </p>
+    </div>
 </body>
 </html>
