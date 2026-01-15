@@ -3,9 +3,7 @@
 <%@ page import="java.text.NumberFormat" %>
 
 <%
-    // サーブレットからデータを受け取る
     List<Map<String, Object>> cartList = (List<Map<String, Object>>) request.getAttribute("cartList");
-
     long totalPrice = 0;
     NumberFormat nf = NumberFormat.getCurrencyInstance(Locale.JAPAN);
 %>
@@ -24,7 +22,10 @@
         .item-info { flex-grow: 1; }
         .price-text { font-weight: bold; margin-left: 10px; display: block; font-size: 0.9em; color: #666; }
         .total-price { background-color: #2e435a; padding: 10px 15px; margin-top: 10px; border-radius: 5px; text-align: right; font-weight: bold; border: 1px solid #00ffff; }
-        .payment-button { background-color: #00ffff; color: black; padding: 20px; text-align: center; font-size: 20px; font-weight: bold; border-radius: 5px; margin-top: 30px; cursor: pointer; width: 100%; border: none; }
+        /* ボタンのスタイル統一 */
+        .payment-button { border: none; padding: 18px; text-align: center; font-size: 18px; font-weight: bold; border-radius: 5px; margin-top: 15px; cursor: pointer; width: 100%; display: block; }
+        .btn-pay { background-color: #00ffff; color: black; }
+        .btn-continue { background-color: #555; color: white; text-decoration: none; }
         .empty-message { text-align: center; padding: 40px 20px; opacity: 0.7; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -36,6 +37,7 @@
     <div class="content-confirm">内容確認</div>
 
     <% if (cartList != null && !cartList.isEmpty()) { %>
+        <%-- 商品がある場合 --%>
         <% for (Map<String, Object> item : cartList) {
             String name = (item.get("Product_Name") != null) ? item.get("Product_Name").toString() : "商品";
             int price = (item.get("Price") != null) ? (Integer)item.get("Price") : 0;
@@ -48,7 +50,6 @@
                     <%= name %>
                     <span class="price-text"><%= nf.format(price) %> (×<%= qty %>)</span>
                 </div>
-                <%-- 削除ボタン(delete-btn)は作成しないため、削除しました --%>
             </div>
         <% } %>
 
@@ -56,17 +57,24 @@
             合計金額: <%= nf.format(totalPrice) %>
         </div>
 
-        <%-- 支払いへ（PaymentServletへ） --%>
+        <%-- 1. 支払いボタン --%>
         <form action="${pageContext.request.contextPath}/PaymentServlet" method="POST">
-            <button type="submit" class="payment-button">支払いへ</button>
+            <button type="submit" class="payment-button btn-pay">
+                <i class="fas fa-credit-card"></i> 支払いへ
+            </button>
         </form>
 
+        <%-- 2. 買い物を続けるボタン --%>
+        <button onclick="location.href='${pageContext.request.contextPath}/jsp/cart.jsp'" class="payment-button btn-continue">
+            買い物を続ける
+        </button>
+
     <% } else { %>
+        <%-- カートが空の場合 --%>
         <div class="empty-message">カートに商品は入っていません。</div>
-        <%-- 同じフォルダ内の cart.jsp へ戻るリンク --%>
-        <button onclick="location.href='${pageContext.request.contextPath}/jsp/cart.jsp'" class="payment-button" style="background-color: #555; color: white;">
-    買い物を続ける
-</button>
+        <button onclick="location.href='${pageContext.request.contextPath}/jsp/cart.jsp'" class="payment-button btn-continue">
+            買い物を続ける
+        </button>
     <% } %>
 </div>
 
