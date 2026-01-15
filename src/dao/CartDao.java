@@ -39,7 +39,7 @@ public class CartDao extends DAO {
                 return rs.next() ? toMap(rs) : null;
             }
         }
-    }
+    };
 
     public List<Map<String, Object>> findAll() throws Exception {
         String sql = "SELECT * FROM Cart";
@@ -56,4 +56,5 @@ public class CartDao extends DAO {
         m.put("User_ID", rs.getString("User_ID"));
         return m;
     }
+
 }

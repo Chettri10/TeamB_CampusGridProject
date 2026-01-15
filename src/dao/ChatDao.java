@@ -65,4 +65,5 @@ public class ChatDao extends DAO {
         m.put("Send_Date_Time", rs.getTimestamp("Send_Date_Time"));
         return m;
     }
+
 }
