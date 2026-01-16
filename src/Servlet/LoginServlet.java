@@ -37,15 +37,19 @@ public class LoginServlet extends HttpServlet {
             // ★★★ 修正箇所: フォルダ名 "LogIn" (大文字I) に合わせる ★★★
             if (userId.startsWith("S")) {
                 // 学生の場合
+            	session.setAttribute("role", "student");
                 response.sendRedirect("LogIn/student_home.jsp");
             } else if (userId.startsWith("T")) {
                 // 先生の場合
+            	session.setAttribute("role", "teacher");
                 response.sendRedirect("LogIn/teacher_home.jsp");
             } else if (userId.startsWith("P")) {
                 // 保護者の場合
+            	session.setAttribute("role", "parent");
                 response.sendRedirect("LogIn/parent_home.jsp");
             } else {
                 // それ以外
+            	session.setAttribute("role", "unknown");
                 response.sendRedirect("LogIn/home.jsp");
             }
 
