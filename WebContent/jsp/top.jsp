@@ -1,9 +1,18 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
-    // ログイン後にセッションからユーザー名を取得する想定
-    String username = (String)session.getAttribute("username");
-    if(username == null){
-        username = "大翔"; // 仮のユーザー名（テスト用）
+    // セッションからユーザー名とIDを取得
+    String username = (String) session.getAttribute("userName");
+    String userId = (String) session.getAttribute("userId");
+
+    // セッションが空の場合（未ログイン）の処理
+    if (username == null || userId == null) {
+        // 本番環境では login.jsp へリダイレクト
+        // response.sendRedirect("login.jsp");
+        // return;
+
+        // テスト用データ
+        username = "大翔";
+        userId = "S23001";
     }
 %>
 <!DOCTYPE html>
@@ -12,7 +21,6 @@
 <meta charset="UTF-8">
 <title>CAMPUS GRID - Top</title>
 
-<!-- iPhone 15 Plus の論理幅に合わせた viewport -->
 <meta name="viewport" content="width=430, initial-scale=1.0">
 
 <style>
@@ -41,6 +49,12 @@ body {
 .greeting {
     margin-top: 8px;
     font-size: 1.3em;
+}
+
+.user-id {
+    font-size: 0.9em;
+    color: #cccccc;
+    margin-top: 4px;
 }
 
 /* 上段の2つボタン */
@@ -72,6 +86,11 @@ body {
     justify-content: center;
     align-items: center;
     box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    transition: transform 0.2s;
+}
+
+.menu-item:active {
+    transform: scale(0.95);
 }
 
 /* アイコン */
@@ -101,31 +120,28 @@ body {
     font-weight: bold;
     margin-bottom: 6px;
 }
-
 </style>
-
 </head>
 <body>
 
     <div class="header">
         <div class="logo">CAMPUS GRID</div>
         <div class="greeting">こんにちは、<%= username %> さん</div>
+        <div class="user-id">(ID: <%= userId %>)</div>
     </div>
 
-    <!-- 上 2 つ -->
     <div class="menu-row">
-        <a class="menu-item green" href="student_menu.jsp">
+        <a class="menu-item green" href="qr_scan.jsp">
             <div class="icon">📖</div>
-            出欠席確認
+            出席QRスキャン
         </a>
 
-        <a class="menu-item blue" href="chat.jsp">
+        <a class="menu-item blue" href="ChatServlet?myId=<%= userId %>&targetId=S00001">
             <div class="icon">💬</div>
             教員・学生 チャット
         </a>
     </div>
 
-    <!-- 下 1 つ -->
     <div class="menu-center">
         <a class="menu-item orange" href="purchase.jsp">
             <div class="icon">🛒</div>
@@ -133,8 +149,6 @@ body {
         </a>
     </div>
 
-
-    <!-- お知らせ -->
     <div class="notification-box">
         <div class="notification-header">【重要】就職活動について（2024/07/15）</div>
         <ul>

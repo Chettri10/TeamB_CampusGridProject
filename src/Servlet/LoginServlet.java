@@ -37,7 +37,7 @@ public class LoginServlet extends HttpServlet {
             // ★★★ 修正箇所: フォルダ名 "LogIn" (大文字I) に合わせる ★★★
             if (userId.startsWith("S")) {
                 // 学生の場合
-                response.sendRedirect("LogIn/student_home.jsp");
+                response.sendRedirect("jsp/top.jsp");
             } else if (userId.startsWith("T")) {
                 // 先生の場合
                 response.sendRedirect("LogIn/teacher_home.jsp");
