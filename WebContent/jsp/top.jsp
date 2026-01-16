@@ -10,10 +10,7 @@
         // response.sendRedirect("login.jsp");
         // return;
 
-        // テスト用データ
-        username = "大翔";
-        userId = "S23001";
-    }
+         }
 %>
 <!DOCTYPE html>
 <html lang="ja">
