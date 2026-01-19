@@ -12,11 +12,13 @@
 
     // ★ ダミーデータ（本来は DB から取得）
     class NoticeData {
+        int id;
         String date;
         String category;
         String message;
 
-        public NoticeData(String date, String category, String message) {
+        public NoticeData(int id, String date, String category, String message) {
+            this.id = id;
             this.date = date;
             this.category = category;
             this.message = message;
@@ -24,9 +26,9 @@
     }
 
     List<NoticeData> list = new ArrayList<>();
-    list.add(new NoticeData("2025/12/01", "重要", "【休講連絡】 12月5日(金) 3限目の「Java基礎」は休講となります。"));
-    list.add(new NoticeData("2025/11/28", "連絡", "進路希望調査票の提出期限は明日までです。"));
-    list.add(new NoticeData("2025/11/25", "イベント", "来週の金曜日は学園祭の準備日です。"));
+    list.add(new NoticeData(1, "2025/12/01", "重要", "【休講連絡】 12月5日(金) 3限目の「Java基礎」は休講となります。"));
+    list.add(new NoticeData(2, "2025/11/28", "連絡", "進路希望調査票の提出期限は明日までです。"));
+    list.add(new NoticeData(3, "2025/11/25", "イベント", "来週の金曜日は学園祭の準備日です。"));
 %>
 
 <!DOCTYPE html>
@@ -45,7 +47,6 @@
         padding: 20px;
     }
 
-    /* 上部：teacher_home1.jsp のデザイン */
     .top-area {
         text-align: center;
         margin-bottom: 40px;
@@ -68,7 +69,6 @@
         text-decoration: none;
     }
 
-    /* お知らせ一覧（teacher_home2.jsp のデザイン） */
     .container {
         width: 100%;
         max-width: 400px;
@@ -169,7 +169,6 @@
 
 <body>
 
-<!-- ★ teacher_home1.jsp の部分 -->
 <div class="top-area">
     <h1>教員用管理画面</h1>
     <p>ようこそ、<%= session.getAttribute("userName") %> 先生</p>
@@ -178,7 +177,6 @@
     <a href="qr_generator.jsp">出席QRコード表示</a>
 </div>
 
-<!-- ★ teacher_home2.jsp の部分（お知らせ一覧） -->
 <div class="container">
     <div class="title-area">
         <h2>お知らせ（教員）</h2>
@@ -203,15 +201,8 @@
             <div class="message-content"><%= item.message %></div>
 
             <div class="btn-area">
-                <a class="btn btn-edit"
-                   href="notice_edit.jsp?date=<%= item.date %>&category=<%= item.category %>&message=<%= item.message %>">
-                    編集
-                </a>
-
-                <a class="btn btn-delete"
-                   href="notice_delete.jsp?date=<%= item.date %>&message=<%= item.message %>">
-                    削除
-                </a>
+                <a class="btn btn-edit" href="notice_edit.jsp?id=<%= item.id %>">編集</a>
+                <a class="btn btn-delete" href="notice_delete.jsp?id=<%= item.id %>">削除</a>
             </div>
         </div>
 
