@@ -22,20 +22,16 @@ public class AttManagementDao {
         return DriverManager.getConnection(URL, USER, PASS);
     }
 
-    // 指定した日の出席状況一覧を取得（学生と出席情報を結合）
+    // --- 1. 一覧取得 (指定した日のクラス全員分) ---
     public List<Map<String, Object>> getDailyAttendanceList(Date targetDate) {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        // SQL解説:
-        // Userテーブル(学生 Role=2) を主役にして、
-        // AttManagementテーブル(出席情報) を LEFT JOIN (紐づけ) します。
-        // ★修正：ここに a.Check_Out_Time を追加しました
         String sql = "SELECT u.User_Name, u.User_ID, " +
                      "a.Check_In_Time, a.Check_Out_Time, a.Status, a.Absance_Reason " +
                      "FROM User u " +
                      "LEFT JOIN AttManagement a " +
                      "ON u.User_ID = a.User_ID AND a.Target_Date = ? " +
-                     "WHERE u.Role = 2 " + // Role 2 = 学生のみ表示
+                     "WHERE u.Role = 2 " +
                      "ORDER BY u.User_ID ASC";
 
         try (Connection conn = getConnection();
@@ -47,34 +43,166 @@ public class AttManagementDao {
 
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
-
                 map.put("userName", rs.getString("User_Name"));
                 map.put("userId", rs.getString("User_ID"));
 
-                // --- 出席時刻 (データがない場合は空文字) ---
                 java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
 
-                // --- ★追加：退室時刻の取得処理 ---
-                // ※データベースのカラム名が Check_Out_Time である前提です
                 java.sql.Timestamp tsOut = rs.getTimestamp("Check_Out_Time");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
 
-                // ステータス (データがない場合は "未登録")
                 String status = rs.getString("Status");
                 map.put("status", (status != null) ? status : "未登録");
 
-                // 遅刻理由 (nullなら空文字)
                 String reason = rs.getString("Absance_Reason");
                 map.put("reason", (reason != null) ? reason : "");
 
                 list.add(map);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return list;
+    }
+
+    // --- 2. 詳細取得 (編集画面用・特定の一人の一日分) ---
+    public Map<String, Object> getAttendanceDetail(String userId, Date targetDate) {
+        Map<String, Object> map = new HashMap<>();
+
+        String sql = "SELECT u.User_Name, u.User_ID, " +
+                     "a.Check_In_Time, a.Check_Out_Time, a.Status, a.Absance_Reason " +
+                     "FROM User u " +
+                     "LEFT JOIN AttManagement a " +
+                     "ON u.User_ID = a.User_ID AND a.Target_Date = ? " +
+                     "WHERE u.User_ID = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setDate(1, targetDate);
+            pstmt.setString(2, userId);
+
+            ResultSet rs = pstmt.executeQuery();
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+
+            if (rs.next()) {
+                map.put("userId", rs.getString("User_ID"));
+                map.put("userName", rs.getString("User_Name"));
+
+                java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
+                map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "");
+
+                java.sql.Timestamp tsOut = rs.getTimestamp("Check_Out_Time");
+                map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "");
+
+                String status = rs.getString("Status");
+                map.put("status", (status != null) ? status : "未登録");
+
+                String reason = rs.getString("Absance_Reason");
+                map.put("reason", (reason != null) ? reason : "");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    // --- 3. 保存処理 (新規・更新対応 / 備考欄対応済み) ---
+    public void saveAttendance(String userId, Date targetDate, String status,
+                               String checkInStr, String checkOutStr, String reason) {
+
+        String sql = "MERGE INTO AttManagement " +
+                     "(User_ID, Target_Date, Status, Check_In_Time, Check_Out_Time, Absance_Reason) " +
+                     "KEY(User_ID, Target_Date) " +
+                     "VALUES (?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            pstmt.setDate(2, targetDate);
+            pstmt.setString(3, status);
+            pstmt.setTimestamp(4, convertToTimestamp(targetDate, checkInStr));
+            pstmt.setTimestamp(5, convertToTimestamp(targetDate, checkOutStr));
+            pstmt.setString(6, reason);
+
+            pstmt.executeUpdate();
+            System.out.println("保存成功: " + userId + " " + reason);
+
+        } catch (Exception e) {
+            System.out.println("保存エラー: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // --- 4. 追加：特定の学生の全出席履歴を取得 (履歴画面用) ---
+    public List<Map<String, Object>> getStudentHistory(String userId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+
+        // 日付の新しい順（降順）で取得
+        String sql = "SELECT Target_Date, Check_In_Time, Check_Out_Time, Status, Absance_Reason " +
+                     "FROM AttManagement " +
+                     "WHERE User_ID = ? " +
+                     "ORDER BY Target_Date DESC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+
+                map.put("date", rs.getDate("Target_Date")); // 日付
+
+                java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
+                map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
+
+                java.sql.Timestamp tsOut = rs.getTimestamp("Check_Out_Time");
+                map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
+
+                String status = rs.getString("Status");
+                map.put("status", (status != null) ? status : "未登録");
+
+                String reason = rs.getString("Absance_Reason");
+                map.put("reason", (reason != null) ? reason : "");
+
+                list.add(map);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // --- 5. 追加：学生の名前を取得する (ヘッダー表示用) ---
+    public String getUserName(String userId) {
+        String name = "";
+        String sql = "SELECT User_Name FROM User WHERE User_ID = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                name = rs.getString("User_Name");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return name;
+    }
+
+    // --- 6. 時刻変換ヘルパーメソッド ---
+    private java.sql.Timestamp convertToTimestamp(Date date, String timeStr) {
+        if (timeStr == null || timeStr.isEmpty() || timeStr.equals("--:--")) return null;
+        try {
+            String dateTimeStr = date.toString() + " " + timeStr + ":00";
+            return java.sql.Timestamp.valueOf(dateTimeStr);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
