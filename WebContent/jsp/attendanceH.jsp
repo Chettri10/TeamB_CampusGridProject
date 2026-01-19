@@ -8,6 +8,15 @@
 List<Map<String, Object>> attendanceList =
     (List<Map<String, Object>>) request.getAttribute("attendanceList");
 %>
+<%
+String message = (String) request.getAttribute("message");
+String checkInTime = (String) request.getAttribute("checkInTime");
+String status = (String) request.getAttribute("status");
+String checkOutTime = (String) request.getAttribute("checkOutTime");
+String Username = (String) request.getAttribute("UserName");
+String UserId = (String) request.getAttribute("UserId");
+
+%>
 
 <!DOCTYPE html>
 <html>
@@ -83,21 +92,16 @@ List<Map<String, Object>> attendanceList =
 
         <%-- 1. 学生情報 --%>
         <div class="round-box">
-        <h3>学生名</h3>
-        学生・組・学籍番号
+        <h3><%= request.getAttribute("UserName") %></h3>
          </div>
 
 
         <%-- 2. 進捗状況 (ドロップダウン) --%>
 
-<%
-String message = (String) request.getAttribute("message");
-String checkInTime = (String) request.getAttribute("checkInTime");
-String status = (String) request.getAttribute("status");
-String checkOutTime = (String) request.getAttribute("checkOutTime");
-%>
+
 
 <form action="<%= request.getContextPath() %>/H_syussekiServlet" method="get">
+
     <label>
         日付を選択：
         <input type="date" id="date" name="date">
@@ -135,26 +139,7 @@ if (attendanceList != null && !attendanceList.isEmpty()) {
 %>
 </table>
 
-<table class="no-border">
-    <tr>
-        <th>出席時間</th>
-        <th>出席状態</th>
-        <th>退席時間</th>
-    </tr>
 
-<% if (message != null) { %>
-    <tr>
-        <td colspan="3"><%= message %></td>
-    </tr>
-<% } else if (checkInTime != null) { %>
-    <tr>
-        <td><%= checkInTime %></td>
-        <td><%= status %></td>
-        <td><%= checkOutTime %></td>
-    </tr>
-<% } %>
-
-</table>
 <h2>コメント</h2>
 <div class="round-box">
         なんか先生のお話（データが入ります）
