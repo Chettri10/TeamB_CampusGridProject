@@ -53,7 +53,7 @@
             msgArea.style.color = "#ffeb3b";
 
             const xhr = new XMLHttpRequest();
-            // ★重要：Attendanceフォルダから一つ上に戻ってサーブレットを呼びます
+            // ★修正点：jspフォルダから一つ上(../)に戻って呼び出します
             xhr.open("POST", "../AttendanceServlet", true);
 
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -74,13 +74,13 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
-                        handleError("サーバー内部エラー(応答不正)");
+                        handleError("サーバーエラー");
                     }
                 } else {
                     handleError("通信エラー: " + xhr.status);
                 }
             };
-            xhr.onerror = function() { handleError("ネットワーク接続不可"); };
+            xhr.onerror = function() { handleError("接続不可"); };
             xhr.ontimeout = function() { handleError("タイムアウト"); };
 
             try {

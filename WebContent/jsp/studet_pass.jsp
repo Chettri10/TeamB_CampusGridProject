@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String myId = (String)session.getAttribute("userId");
-    // ログインしていなければ LogInフォルダの login.jsp へ
+    // ★修正点：ログインしてない場合、jspフォルダから見て LogIn/login.jsp は "../LogIn/login.jsp"
     if(myId == null || !myId.startsWith("S")) {
         response.sendRedirect("../LogIn/login.jsp");
         return;
