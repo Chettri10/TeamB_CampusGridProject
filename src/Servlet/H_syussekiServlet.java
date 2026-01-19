@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import dao.AttManagementDao;
+import dao.AttManagementDao2;
 
 
 @WebServlet("/H_syussekiServlet")
@@ -26,8 +26,21 @@ public class H_syussekiServlet extends HttpServlet {
 		req.setCharacterEncoding("UTF-8");
         res.setContentType("text/html; charset=UTF-8");
 
+       // HttpSession session = req.getSession(false);
+       // String userID = (String) session.getAttribute("stuId");
+       // String userName = (String) session.getAttribute("stuName");
+
+        String userName ="相植男";//仮
+        String userID ="S0002";   //仮
+
          String date = req.getParameter("date");
          Date targetDate;
+
+         String stuID= userID;
+
+         if (stuID == null) {
+        	    stuID = "S0002";
+        	}
 
          if (date == null || date.isEmpty()) {
              targetDate = new Date(System.currentTimeMillis());
@@ -39,16 +52,19 @@ public class H_syussekiServlet extends HttpServlet {
              }
          }
 
-         AttManagementDao dao = new AttManagementDao();
+         AttManagementDao2 dao = new AttManagementDao2();
          List<Map<String, Object>> list = null;
 
          try {
-             list = dao.getDailyAttendanceList(targetDate);
+             list = dao.getDailyAttendanceList2(targetDate,stuID);
          } catch (Exception e) {
              e.printStackTrace();
          }
       // JSPに渡す
       req.setAttribute("attendanceList", list);
+      req.setAttribute("UserName", userName);
+      req.setAttribute("UserId", userID);
+
       req.getRequestDispatcher("jsp/attendanceH.jsp").forward(req, res);
 
 
