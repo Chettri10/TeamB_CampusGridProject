@@ -53,8 +53,9 @@
             msgArea.style.color = "#ffeb3b";
 
             const xhr = new XMLHttpRequest();
-            // ★ここを AttendanceServlet に戻しました
-            xhr.open("POST", "AttendanceServlet", true);
+            // ★重要：Attendanceフォルダから一つ上に戻ってサーブレットを呼びます
+            xhr.open("POST", "../AttendanceServlet", true);
+
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.timeout = 10000;
 
@@ -73,7 +74,6 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
-                        console.error("Unknown response:", res);
                         handleError("サーバー内部エラー(応答不正)");
                     }
                 } else {

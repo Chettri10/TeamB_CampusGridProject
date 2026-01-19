@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import dao.AttendanceDao;
 
-// ★URLを /AttendanceServlet に設定
+// ★URLは "/AttendanceServlet" です
 @WebServlet("/AttendanceServlet")
 public class AttendanceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -29,14 +29,14 @@ public class AttendanceServlet extends HttpServlet {
 
             // 1. データ受信チェック
             if (qrData == null || !qrData.contains(",")) {
-                out.write("ERROR:QRコードの形式が不正です(読み取りデータなし)");
+                out.write("ERROR:QRコードデータなし");
                 return;
             }
 
-            // 2. QRデータ分解
+            // 2. QRデータ分解 (ID, タイムスタンプ)
             String[] parts = qrData.split(",");
             if (parts.length < 2) {
-                out.write("ERROR:QRコードの中身が壊れています");
+                out.write("ERROR:QRデータ形式不正");
                 return;
             }
             String userId = parts[0];
@@ -45,14 +45,14 @@ public class AttendanceServlet extends HttpServlet {
             try {
                 qrTime = Long.parseLong(parts[1]);
             } catch (NumberFormatException e) {
-                out.write("ERROR:時刻データが不正です");
+                out.write("ERROR:時刻データ破損");
                 return;
             }
 
-            // 3. 時間チェック (10秒許容)
+            // 3. 時間チェック (サーバー側は10秒まで許容)
             long currentTime = System.currentTimeMillis();
             if (currentTime - qrTime > 10000) {
-                out.write("ERROR:QRコードの有効期限切れ(10秒経過)");
+                out.write("ERROR:有効期限切れ(10秒経過)");
                 return;
             }
 
@@ -69,7 +69,7 @@ public class AttendanceServlet extends HttpServlet {
                 // 9:20 以降は遅刻
                 boolean isLate = (hour > 9) || (hour == 9 && minute >= 20);
 
-                // 遅刻かつ理由なしの場合
+                // 遅刻かつ理由なしの場合 -> 理由入力を要求
                 if (isLate && (reason == null || reason.isEmpty())) {
                     out.write("REQUIRE_REASON:LATE");
                     return;
@@ -86,6 +86,7 @@ public class AttendanceServlet extends HttpServlet {
                 // 15:10 より前は早退
                 boolean isEarly = (hour < 15) || (hour == 15 && minute < 10);
 
+                // 早退かつ理由なしの場合 -> 理由入力を要求
                 if (isEarly && (reason == null || reason.isEmpty())) {
                     out.write("REQUIRE_REASON:EARLY");
                     return;
@@ -99,7 +100,7 @@ public class AttendanceServlet extends HttpServlet {
 
         } catch (Exception e) {
             e.printStackTrace();
-            out.write("ERROR:システムエラー発生 (" + e.getMessage() + ")");
+            out.write("ERROR:システムエラー (" + e.getMessage() + ")");
         }
     }
 }

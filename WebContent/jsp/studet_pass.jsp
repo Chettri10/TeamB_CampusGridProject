@@ -1,8 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%
     String myId = (String)session.getAttribute("userId");
+    // ログインしていなければ LogInフォルダの login.jsp へ
     if(myId == null || !myId.startsWith("S")) {
-        response.sendRedirect("login.jsp");
+        response.sendRedirect("../LogIn/login.jsp");
         return;
     }
 %>
@@ -20,32 +21,21 @@
         display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         position: relative; overflow: hidden; width: 300px;
     }
-    /* キラキラ枠アニメーション */
     .animated-border {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
         border: 5px solid transparent; border-radius: 15px;
         background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
         background-size: 400%; z-index: -1; animation: glowing 20s linear infinite;
     }
-    @keyframes glowing {
-        0% { background-position: 0 0; } 50% { background-position: 400% 0; } 100% { background-position: 0 0; }
-    }
+    @keyframes glowing { 0% { background-position: 0 0; } 50% { background-position: 400% 0; } 100% { background-position: 0 0; } }
     .card-inner { background: white; border-radius: 12px; padding: 20px; height: 100%; }
     h1 { color: #00bcd4; margin: 0; font-size: 22px; }
     .student-id { font-size: 20px; font-weight: bold; margin: 10px 0; }
     #qrcode { margin: 20px auto; display: flex; justify-content: center; }
-
-    /* 秒読みバー */
     .progress-bar { width: 100%; height: 5px; background-color: #eee; margin-top: 15px; overflow: hidden; border-radius: 3px; }
     .progress-fill { height: 100%; background-color: #00bcd4; width: 100%; animation: countdown 5s linear infinite; }
     @keyframes countdown { from { width: 100%; background-color: #00bcd4; } to { width: 0%; background-color: #ff5252; } }
-
-    /* 隠す時のマスク */
-    #mask {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.95); color: white; z-index: 9999;
-        display: none; flex-direction: column; justify-content: center; align-items: center;
-    }
+    #mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); color: white; z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; }
     .warning-icon { font-size: 50px; color: #ff5252; margin-bottom: 20px; }
 </style>
 </head>
@@ -68,7 +58,9 @@
             <p style="font-size:12px; color:#888; margin-top:10px;">5秒ごとに自動更新されます<br><span style="color:#ff5252;">スクショは無効です</span></p>
         </div>
     </div>
-    <br><br><a href="student_home.jsp">ホームに戻る</a>
+
+    <br><br>
+    <a href="../student_home.jsp">ホームに戻る</a>
 
     <script>
         const userId = "<%= myId %>";
@@ -84,7 +76,7 @@
             bar.style.animation = 'none'; bar.offsetHeight; bar.style.animation = 'countdown 5s linear infinite';
         }
         generateQR();
-        setInterval(generateQR, 5000); // 5秒更新
+        setInterval(generateQR, 5000);
 
         document.addEventListener("visibilitychange", function() {
             if (document.hidden) document.getElementById("mask").style.display = "flex";
