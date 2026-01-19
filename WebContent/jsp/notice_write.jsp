@@ -1,137 +1,75 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<%
+    // ★ 教員チェック
+    String role = (String) session.getAttribute("role");
+    if (role == null || !role.equals("teacher")) {
+        response.sendRedirect("error_permission.jsp");
+        return;
+    }
+%>
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <title>お知らせ投稿</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>キャンパスグリッド - お知らせ投稿</title>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
         body {
             background-color: #030820;
             color: #FFFFFF;
             font-family: 'Noto Sans JP', sans-serif;
+            height: 100vh;
             margin: 0;
-            padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
+            align-items: center;
         }
-
-        .container {
-            width: 100%;
-            max-width: 400px;
-            padding-bottom: 50px;
+        .card {
+            background: #FFF;
+            color: #333;
+            width: 90%;
+            max-width: 380px;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-
-        .title-area {
-            text-align: center;
-            margin-bottom: 30px;
-            margin-top: 20px;
+        h2 { color: #00E5FF; text-align: center; }
+        label { font-size: 14px; margin-top: 10px; display: block; }
+        input, select, textarea {
+            width: 100%; padding: 8px; border-radius: 8px;
+            border: 1px solid #CCC; margin-top: 5px;
         }
-
-        h1 {
-            font-size: 24px;
-            margin: 0;
-            line-height: 1.3;
-            letter-spacing: 1px;
-        }
-
-        h2 {
-            font-size: 24px;
-            margin: 5px 0 0 0;
-            font-weight: 700;
-            color: #00FFFF;
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        label {
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-
-        input[type="text"],
-        textarea,
-        select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-
-        .btn-area {
-            margin-top: 20px;
-            display: flex;
-            gap: 10px;
-            justify-content: space-between;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-submit {
-            background-color: #00E5FF;
-            color: #000;
-        }
-
-        .btn-cancel {
-            background-color: #555;
-            color: #FFF;
-        }
+        textarea { height: 100px; }
+        .btn-area { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: 600; text-align: center; }
+        .btn-post { background: #00E5FF; color: #000; }
+        .btn-cancel { background: #555; color: #FFF; }
     </style>
 </head>
 
 <body>
+<div class="card">
+    <h2>お知らせ投稿</h2>
 
-<div class="container">
-    <div class="title-area">
-        <h1>キャンパスグリッド</h1>
-        <h2>お知らせ投稿</h2>
-    </div>
-
-    <!-- ★ 投稿後に notice_done.jsp に遷移するように変更 ★ -->
-    <form action="notice_done.jsp" method="post">
-
-        <label for="userId">投稿者ID</label>
-        <input type="text" id="userId" name="userId" placeholder="例: teacher01" required>
-
-        <label for="category">カテゴリ</label>
-        <select id="category" name="category">
-            <option value="連絡">連絡</option>
+    <form action="NoticePostServlet" method="post">
+        <label>カテゴリ</label>
+        <select name="category">
             <option value="重要">重要</option>
+            <option value="連絡">連絡</option>
             <option value="イベント">イベント</option>
         </select>
 
-        <label for="content">お知らせ内容</label>
-        <textarea id="content" name="content" placeholder="お知らせ内容を入力してください" required></textarea>
+        <label>内容</label>
+        <textarea name="content"></textarea>
 
         <div class="btn-area">
-            <button type="submit" class="btn btn-submit">投稿する</button>
-            <button type="button" class="btn btn-cancel" onclick="history.back()">戻る</button>
+            <button type="submit" class="btn btn-post">投稿する</button>
+            <a href="teacher_home.jsp" class="btn btn-cancel">戻る</a>
         </div>
     </form>
 </div>
-
 </body>
 </html>

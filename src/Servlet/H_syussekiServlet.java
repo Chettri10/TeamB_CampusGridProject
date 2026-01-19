@@ -1,10 +1,9 @@
 package Servlet;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.sql.Date;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -12,6 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import dao.AttManagementDao;
 
 
 @WebServlet("/H_syussekiServlet")
@@ -27,44 +27,30 @@ public class H_syussekiServlet extends HttpServlet {
         res.setContentType("text/html; charset=UTF-8");
 
          String date = req.getParameter("date");
+         Date targetDate;
 
          if (date == null || date.isEmpty()) {
-        	    date = java.time.LocalDate.now().toString(); // yyyy-MM-dd
-        	}
+             targetDate = new Date(System.currentTimeMillis());
+         } else {
+             try {
+                 targetDate = Date.valueOf(date);
+             } catch (IllegalArgumentException e) {
+                 targetDate = new Date(System.currentTimeMillis());
+             }
+         }
 
-		 String userId = "S00001";
+         AttManagementDao dao = new AttManagementDao();
+         List<Map<String, Object>> list = null;
 
-		 String sql =
-				    "SELECT CHECK_IN_TIME, STATUS, CHECK_OUT_TIME " +
-				    "FROM ATTMANAGEMENT " +
-				    "WHERE USER_ID = ? " +
-				    "AND TARGET_DATE = ?";
+         try {
+             list = dao.getDailyAttendanceList(targetDate);
+         } catch (Exception e) {
+             e.printStackTrace();
+         }
+      // JSPに渡す
+      req.setAttribute("attendanceList", list);
+      req.getRequestDispatcher("jsp/attendanceH.jsp").forward(req, res);
 
-        try (
-                Connection con = DriverManager.getConnection("jdbc:h2:tcp://localhost/~/CampusGridProject");
-                PreparedStatement ps = con.prepareStatement(sql);
-            ) {
-
-                // 日付をセット
-            	ps.setString(1, userId);
-            	ps.setDate(2, java.sql.Date.valueOf(date));
-
-                ResultSet rs = ps.executeQuery();
-
-                if (rs.next()) {
-                    req.setAttribute("checkInTime", rs.getString("CHECK_IN_TIME"));
-                    req.setAttribute("status", rs.getString("STATUS"));
-                    req.setAttribute("checkOutTime", rs.getString("CHECK_OUT_TIME"));
-                } else {
-                    req.setAttribute("message", "この日のデータはありません");
-                }
-
-                req.getRequestDispatcher("/attendanceH.jsp").forward(req, res);
-
-          } catch (Exception e) {
-              e.printStackTrace();
-              res.getWriter().print(e.toString());
-          }
 
 	}}
 

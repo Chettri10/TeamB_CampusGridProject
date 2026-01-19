@@ -27,13 +27,15 @@ public class NoticeDeleteServlet extends HttpServlet {
             return;
         }
 
+        // notice_delete.jsp ‚©‚ç‘—‚ç‚ê‚Ä‚­‚é ID
         String id = request.getParameter("id");
 
         try {
             NoticeDao dao = new NoticeDao();
             dao.delete(Integer.parseInt(id));
 
-            response.sendRedirect("notice.jsp");
+            // íœŠ®—¹‰æ–Ê‚Ö
+            response.sendRedirect("notice_delete_done.jsp");
 
         } catch (Exception e) {
             e.printStackTrace();
