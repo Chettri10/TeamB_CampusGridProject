@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,27 +137,34 @@ public class AttManagementDao {
         }
     }
 
-    // --- 4. 追加：特定の学生の全出席履歴を取得 (履歴画面用) ---
+    // --- 4. 修正版：特定の学生の「過去1年間」の出席履歴を取得 ---
     public List<Map<String, Object>> getStudentHistory(String userId) {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        // 日付の新しい順（降順）で取得
+        // 現在日時から「1年前」の日付を計算
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.YEAR, -1); // 現在から1年引く
+        Date oneYearAgo = new Date(cal.getTimeInMillis());
+
+        // Target_Date >= ? を追加して、1年前以降のデータに絞り込む
         String sql = "SELECT Target_Date, Check_In_Time, Check_Out_Time, Status, Absance_Reason " +
                      "FROM AttManagement " +
-                     "WHERE User_ID = ? " +
+                     "WHERE User_ID = ? AND Target_Date >= ? " +
                      "ORDER BY Target_Date DESC";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
+            pstmt.setDate(2, oneYearAgo); // 2つ目の?に1年前の日付をセット
+
             ResultSet rs = pstmt.executeQuery();
             SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
 
-                map.put("date", rs.getDate("Target_Date")); // 日付
+                map.put("date", rs.getDate("Target_Date"));
 
                 java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
@@ -178,7 +186,7 @@ public class AttManagementDao {
         return list;
     }
 
-    // --- 5. 追加：学生の名前を取得する (ヘッダー表示用) ---
+    // --- 5. 学生の名前を取得する (ヘッダー表示用) ---
     public String getUserName(String userId) {
         String name = "";
         String sql = "SELECT User_Name FROM User WHERE User_ID = ?";
