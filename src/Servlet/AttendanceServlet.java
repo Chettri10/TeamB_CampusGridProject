@@ -1,6 +1,7 @@
 package Servlet;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Calendar;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -14,67 +15,91 @@ import dao.AttendanceDao;
 public class AttendanceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    protected void doPost(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8");
-        response.setContentType("text/plain; charset=UTF-8");
+        req.setCharacterEncoding("UTF-8");
+        res.setContentType("text/plain; charset=UTF-8");
+        PrintWriter out = res.getWriter();
 
-        String qrData = request.getParameter("qrData");
-        String reason = request.getParameter("reason");
+        try {
+            String qrData = req.getParameter("qrData");
+            String reason = req.getParameter("reason");
 
-        if (qrData == null || !qrData.contains(",")) {
-            response.getWriter().write("ERROR:QRコードが不正です");
-            return;
-        }
-
-        // QRデータを分解 [0]=ユーザーID, [1]=生成時刻
-        String[] parts = qrData.split(",");
-        String userId = parts[0];
-        long qrTime = Long.parseLong(parts[1]);
-        long currentTime = System.currentTimeMillis();
-
-        // ★不正防止: 期限切れチェック (10秒許容)
-        if (currentTime - qrTime > 10000) {
-            response.getWriter().write("ERROR:QRコードの有効期限が切れています(再生成してください)");
-            return;
-        }
-
-        AttendanceDao dao = new AttendanceDao();
-        boolean hasCheckedIn = dao.hasCheckedInToday(userId);
-
-        Calendar cal = Calendar.getInstance();
-        int hour = cal.get(Calendar.HOUR_OF_DAY);
-        int minute = cal.get(Calendar.MINUTE);
-
-        // --- 登校 (Check-In) ---
-        if (!hasCheckedIn) {
-            // 9:20 以降は遅刻
-            boolean isLate = (hour > 9) || (hour == 9 && minute >= 20);
-
-            if (isLate && (reason == null || reason.isEmpty())) {
-                response.getWriter().write("REQUIRE_REASON:LATE"); // 理由入力を要求
+            // 1. データ受信チェック
+            if (qrData == null || !qrData.contains(",")) {
+                out.write("ERROR:QRコードの形式が不正です(読み取りデータなし)");
                 return;
             }
 
-            String status = isLate ? "遅刻" : "出席";
-            dao.registerCheckIn(userId, status, (reason != null ? reason : ""));
-            response.getWriter().write("SUCCESS:" + userId + " さんの出席(" + status + ")を登録しました");
-        }
+            // 2. QRデータ分解
+            String[] parts = qrData.split(",");
+            if (parts.length < 2) {
+                out.write("ERROR:QRコードの中身が壊れています");
+                return;
+            }
+            String userId = parts[0];
+            long qrTime = 0;
 
-        // --- 下校 (Check-Out) ---
-        else {
-            // 15:10 より前は早退
-            boolean isEarly = (hour < 15) || (hour == 15 && minute < 10);
-
-            if (isEarly && (reason == null || reason.isEmpty())) {
-                response.getWriter().write("REQUIRE_REASON:EARLY"); // 理由入力を要求
+            try {
+                qrTime = Long.parseLong(parts[1]);
+            } catch (NumberFormatException e) {
+                out.write("ERROR:時刻データが不正です");
                 return;
             }
 
-            String status = isEarly ? "早退" : "";
-            dao.registerCheckOut(userId, status, (reason != null ? reason : ""));
-            response.getWriter().write("SUCCESS:" + userId + " さんの下校" + (isEarly ? "(早退)" : "") + "を登録しました");
+            // 3. 時間チェック (10秒許容)
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - qrTime > 10000) {
+                out.write("ERROR:QRコードの有効期限切れ(10秒経過)");
+                return;
+            }
+
+            // 4. データベース処理
+            AttendanceDao dao = new AttendanceDao();
+            boolean hasCheckedIn = dao.hasCheckedInToday(userId);
+
+            Calendar cal = Calendar.getInstance();
+            int hour = cal.get(Calendar.HOUR_OF_DAY);
+            int minute = cal.get(Calendar.MINUTE);
+
+            // --- 登校処理 ---
+            if (!hasCheckedIn) {
+                // 9:20 以降は遅刻
+                boolean isLate = (hour > 9) || (hour == 9 && minute >= 20);
+
+                // 遅刻かつ理由なしの場合
+                if (isLate && (reason == null || reason.isEmpty())) {
+                    out.write("REQUIRE_REASON:LATE");
+                    return;
+                }
+
+                String status = isLate ? "遅刻" : "出席";
+                dao.registerCheckIn(userId, status, (reason != null ? reason : ""));
+
+                out.write("SUCCESS:" + userId + " さんの出席(" + status + ")を登録しました");
+            }
+
+            // --- 下校処理 ---
+            else {
+                // 15:10 より前は早退
+                boolean isEarly = (hour < 15) || (hour == 15 && minute < 10);
+
+                if (isEarly && (reason == null || reason.isEmpty())) {
+                    out.write("REQUIRE_REASON:EARLY");
+                    return;
+                }
+
+                String status = isEarly ? "早退" : "";
+                dao.registerCheckOut(userId, status, (reason != null ? reason : ""));
+
+                out.write("SUCCESS:" + userId + " さんの下校" + (isEarly ? "(早退)" : "") + "を登録しました");
+            }
+
+        } catch (Exception e) {
+            // 予期せぬエラーが起きた場合、その内容を画面に返す
+            e.printStackTrace(); // コンソールにも出す
+            out.write("ERROR:システムエラー発生 (" + e.getMessage() + ")");
         }
     }
 }
