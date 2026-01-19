@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import dao.AttendanceDao;
 
+// ★URLを /AttendanceServlet に設定
 @WebServlet("/AttendanceServlet")
 public class AttendanceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
@@ -97,8 +98,7 @@ public class AttendanceServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            // 予期せぬエラーが起きた場合、その内容を画面に返す
-            e.printStackTrace(); // コンソールにも出す
+            e.printStackTrace();
             out.write("ERROR:システムエラー発生 (" + e.getMessage() + ")");
         }
     }

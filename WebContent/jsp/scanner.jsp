@@ -13,20 +13,16 @@
     .status { font-size: 12px; background: #00bcd4; padding: 4px 8px; border-radius: 4px; color: #fff; }
     .camera-container { background-color: #000; padding-bottom: 10px; flex-shrink: 0; }
     #reader { width: 100%; max-width: 500px; margin: 0 auto; }
-
-    /* メッセージエリア（エラー詳細を表示） */
     #message-area { font-size: 20px; font-weight: bold; margin: 10px 0; min-height: 35px; text-shadow: 1px 1px 2px #000; color: #00bcd4; word-break: break-all; padding: 0 10px; }
-
     .history-container { flex-grow: 1; background-color: #1c2529; padding: 15px; overflow-y: auto; text-align: left; }
     .history-header { border-bottom: 1px solid #546e7a; padding-bottom: 5px; margin-bottom: 10px; color: #b0bec5; font-size: 14px; }
     #history-list { list-style: none; padding: 0; margin: 0; }
-    .log-item { background: #37474f; border-left: 5px solid #78909c; padding: 10px; margin-bottom: 8px; border-radius: 4px: display: flex; justify-content space-between; align-items: center; animation: fadeIn 0.3s ease-out; }
+    .log-item { background: #37474f; border-left: 5px solid #78909c; padding: 10px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     .log-msg { font-size: 16px; font-weight: bold; }
     .log-time { font-size: 12px; color: #90a4ae; font-family: monospace; }
     .ok-border { border-left-color: #00e676 !important; } .ok-text { color: #00e676; }
     .ng-border { border-left-color: #ff5252 !important; } .ng-text { color: #ff5252; }
-
     #popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
     .popup-box { background: #fff; color: #333; width: 90%; max-width: 350px; padding: 20px; border-radius: 8px; text-align: center; }
     textarea { width: 100%; height: 80px; margin: 15px 0; padding: 8px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
@@ -57,14 +53,14 @@
             msgArea.style.color = "#ffeb3b";
 
             const xhr = new XMLHttpRequest();
-            // ★重要：ここが間違っていると404エラーになります
+            // ★ここを AttendanceServlet に戻しました
             xhr.open("POST", "AttendanceServlet", true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-            xhr.timeout = 10000; // 10秒待つ
+            xhr.timeout = 10000;
 
             xhr.onload = function() {
                 if (xhr.status === 200) {
-                    const res = xhr.responseText.trim(); // 余計な空白除去
+                    const res = xhr.responseText.trim();
                     if (res.startsWith("SUCCESS:")) {
                         const text = res.replace("SUCCESS:", "");
                         showMessage("OK!", "#00e676");
@@ -77,13 +73,11 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
-                        // 想定外の応答（HTMLが返ってきている場合など）
                         console.error("Unknown response:", res);
                         handleError("サーバー内部エラー(応答不正)");
                     }
                 } else {
-                    // 404や500などのHTTPエラー
-                    handleError("通信エラー: " + xhr.status + " " + xhr.statusText);
+                    handleError("通信エラー: " + xhr.status);
                 }
             };
             xhr.onerror = function() { handleError("ネットワーク接続不可"); };
@@ -97,7 +91,6 @@
         }
 
         function handleError(msg) {
-            // エラー内容を画面にしっかり表示する
             showMessage(msg, "#ff5252");
             addLog(msg, "error");
             resetScanner();
