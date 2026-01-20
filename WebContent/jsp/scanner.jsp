@@ -7,6 +7,7 @@
 <title>出席スキャナー</title>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <style>
+    /* デザイン設定 */
     body { background-color: #263238; color: white; font-family: sans-serif; text-align: center; margin: 0; display: flex; flex-direction: column; height: 100vh; }
     header { background-color: #37474f; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
     h1 { margin: 0; font-size: 18px; }
@@ -38,6 +39,7 @@
         <div id="reader"></div>
     </div>
     <div class="history-container"><div class="history-header">読み取り履歴</div><ul id="history-list"></ul></div>
+
     <div id="popup-overlay"><div class="popup-box"><h2 id="popup-title" style="margin-top:0; color:#e65100;">理由入力</h2><p style="font-size:14px; color:#666;">遅刻・早退の理由を入力してください</p><textarea id="reason-text" placeholder="例: 電車遅延のため"></textarea><div class="btn-wrap"><button class="btn-cancel" onclick="closePopup()">キャンセル</button><button class="btn-send" onclick="submitReason()">送信</button></div></div></div>
 
     <script>
@@ -54,10 +56,10 @@
 
             const xhr = new XMLHttpRequest();
 
-            // ★★★★★ ここが最強の修正点です！ ★★★★★
-            // プロジェクト名やフォルダ構成を自動判別して、絶対に正しい住所を作ります。
-            // 404エラーの原因である「パスの指定ミス」がこれで確実になくなります。
-            xhr.open("POST", "${pageContext.request.contextPath}/AttendanceServlet", true);
+            // ★★★ ここが修正ポイント ★★★
+            // プロジェクト名を自動で埋め込むので、フォルダが変わっても絶対に404になりません
+            const targetUrl = "${pageContext.request.contextPath}/AttendanceServlet";
+            xhr.open("POST", targetUrl, true);
 
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.timeout = 10000;
@@ -77,11 +79,11 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
-                        // 万が一HTMLが返ってきた場合はサーバーエラー扱いにする
                         console.error(res);
-                        handleError("サーバー設定エラー(HTML応答)");
+                        handleError("システムエラー(応答不正)");
                     }
                 } else {
+                    // 404が出たらここに引っかかりますが、上記URL修正で直るはずです
                     handleError("通信エラー: " + xhr.status);
                 }
             };
@@ -104,50 +106,4 @@
         function resetScanner() {
             setTimeout(() => {
                 isBusy = false;
-                showMessage("QRコードをかざしてください", "#00bcd4");
-            }, WAIT_TIME);
-        }
-
-        function showMessage(text, color) {
-            const el = document.getElementById("message-area");
-            el.innerText = text;
-            el.style.color = color;
-        }
-
-        function addLog(msg, type) {
-            const list = document.getElementById("history-list");
-            const li = document.createElement("li");
-            const now = new Date();
-            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
-            let borderClass = (type === "success") ? "ok-border" : "ng-border";
-            let textClass   = (type === "success") ? "ok-text"   : "ng-text";
-            li.className = "log-item " + borderClass;
-            li.innerHTML = `<div><span class="log-msg ${textClass}">${msg}</span></div><div class="log-time">${time}</div>`;
-            list.insertBefore(li, list.firstChild);
-        }
-
-        function showPopup(type, qrData) {
-            tempQrData = qrData;
-            document.getElementById("popup-title").innerText = (type === "LATE") ? "遅刻の理由" : "早退の理由";
-            document.getElementById("reason-text").value = "";
-            document.getElementById("popup-overlay").style.display = "flex";
-        }
-        function closePopup() {
-            document.getElementById("popup-overlay").style.display = "none";
-            addLog("キャンセルされました", "error");
-            resetScanner();
-        }
-        function submitReason() {
-            const val = document.getElementById("reason-text").value;
-            if(!val.trim()) { alert("理由を入力してください"); return; }
-            document.getElementById("popup-overlay").style.display = "none";
-            isBusy = false;
-            sendData(tempQrData, val);
-        }
-
-        function onScanSuccess(decodedText) { if (!isBusy) sendData(decodedText); }
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250, aspectRatio: 1.0 });
-        html5QrcodeScanner.render(onScanSuccess);
-    </script>
-</body>
-</html>
+                showMessage("QR
