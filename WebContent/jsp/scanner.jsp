@@ -53,8 +53,11 @@
             msgArea.style.color = "#ffeb3b";
 
             const xhr = new XMLHttpRequest();
-            // ★修正点：jspフォルダから一つ上(../)に戻って呼び出します
-            xhr.open("POST", "../AttendanceServlet", true);
+
+            // ★★★★★ ここが最強の修正点です！ ★★★★★
+            // プロジェクト名やフォルダ構成を自動判別して、絶対に正しい住所を作ります。
+            // 404エラーの原因である「パスの指定ミス」がこれで確実になくなります。
+            xhr.open("POST", "${pageContext.request.contextPath}/AttendanceServlet", true);
 
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.timeout = 10000;
@@ -74,13 +77,15 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
-                        handleError("サーバーエラー");
+                        // 万が一HTMLが返ってきた場合はサーバーエラー扱いにする
+                        console.error(res);
+                        handleError("サーバー設定エラー(HTML応答)");
                     }
                 } else {
                     handleError("通信エラー: " + xhr.status);
                 }
             };
-            xhr.onerror = function() { handleError("接続不可"); };
+            xhr.onerror = function() { handleError("ネットワーク接続不可"); };
             xhr.ontimeout = function() { handleError("タイムアウト"); };
 
             try {
