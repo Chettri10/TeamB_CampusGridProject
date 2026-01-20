@@ -22,7 +22,7 @@ public class LogoutServlet extends HttpServlet {
             session.invalidate();
         }
 
-        // š top.jsp ‚ÖˆÚ“®
-        response.sendRedirect(request.getContextPath() + "/jsp/top.jsp");
+        // š ƒƒOƒCƒ“‰æ–Ê‚Ö–ß‚é
+        response.sendRedirect(request.getContextPath() + "/LogIn/login.jsp");
     }
 }
