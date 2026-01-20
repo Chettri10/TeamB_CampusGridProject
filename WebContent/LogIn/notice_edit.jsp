@@ -3,15 +3,24 @@
 <%@ page import="java.util.*" %>
 
 <%
+    // ★ 教員チェック
     String role = (String) session.getAttribute("role");
     if (role == null || !role.equals("teacher")) {
         response.sendRedirect("error_permission.jsp");
         return;
     }
 
+    // ★ 編集対象ID
     int id = Integer.parseInt(request.getParameter("id"));
+
+    // ★ DBから1件取得
     NoticeDao dao = new NoticeDao();
     Map<String, Object> notice = dao.findById(id);
+
+    if (notice == null) {
+        out.println("データが見つかりません");
+        return;
+    }
 %>
 
 <!DOCTYPE html>
@@ -27,7 +36,7 @@
     h2 { text-align:center; color:#00E5FF; }
     label { font-weight:bold; margin-top:10px; display:block; }
     select, textarea { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
-    .btn { display:block; width:100%; padding:12px; margin-top:20px; background:#00E5FF; color:#000; text-align:center; border-radius:8px; font-weight:600; }
+    .btn { display:block; width:100%; padding:12px; margin-top:20px; background:#00E5FF; color:#000; border-radius:8px; text-align:center; font-weight:600; text-decoration:none; }
 </style>
 </head>
 
@@ -37,6 +46,7 @@
     <h2>お知らせ編集</h2>
 
     <form action="NoticeEditServlet" method="post">
+
         <input type="hidden" name="id" value="<%= notice.get("Notification_ID") %>">
 
         <label>カテゴリ</label>
@@ -49,6 +59,7 @@
         <label>内容</label>
         <textarea name="content" rows="6"><%= notice.get("Content") %></textarea>
 
+        <!-- ★ 更新ボタンのみ -->
         <button type="submit" class="btn">更新する</button>
     </form>
 

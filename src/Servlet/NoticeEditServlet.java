@@ -35,7 +35,9 @@ public class NoticeEditServlet extends HttpServlet {
             NoticeDao dao = new NoticeDao();
             dao.update(id, category, content);
 
-            response.sendRedirect("teacher_home.jsp");
+            // Åö äÆóπâÊñ Ç÷
+            response.sendRedirect(request.getContextPath() + "/LogIn/notice_edit_done.jsp");
+
 
         } catch (Exception e) {
             e.printStackTrace();
