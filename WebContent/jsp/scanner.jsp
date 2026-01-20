@@ -39,7 +39,6 @@
         <div id="reader"></div>
     </div>
     <div class="history-container"><div class="history-header">読み取り履歴</div><ul id="history-list"></ul></div>
-
     <div id="popup-overlay"><div class="popup-box"><h2 id="popup-title" style="margin-top:0; color:#e65100;">理由入力</h2><p style="font-size:14px; color:#666;">遅刻・早退の理由を入力してください</p><textarea id="reason-text" placeholder="例: 電車遅延のため"></textarea><div class="btn-wrap"><button class="btn-cancel" onclick="closePopup()">キャンセル</button><button class="btn-send" onclick="submitReason()">送信</button></div></div></div>
 
     <script>
@@ -56,11 +55,12 @@
 
             const xhr = new XMLHttpRequest();
 
-            // ★★★ ここが修正ポイント ★★★
-            // プロジェクト名を自動で埋め込むので、フォルダが変わっても絶対に404になりません
+            // ★★★★★ 重要修正 ★★★★★
+            // 「${pageContext.request.contextPath}」を使うことで、
+            // どんなフォルダにあっても、自動的に正しいURL (/CampusGridAppProject/AttendanceServlet) を作ります。
             const targetUrl = "${pageContext.request.contextPath}/AttendanceServlet";
-            xhr.open("POST", targetUrl, true);
 
+            xhr.open("POST", targetUrl, true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.timeout = 10000;
 
@@ -79,12 +79,13 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
+                        // 予期せぬ応答（HTMLなど）が返ってきた場合
                         console.error(res);
                         handleError("システムエラー(応答不正)");
                     }
                 } else {
-                    // 404が出たらここに引っかかりますが、上記URL修正で直るはずです
-                    handleError("通信エラー: " + xhr.status);
+                    // 404の場合はここで引っかかります
+                    handleError("通信エラー: " + xhr.status + " (接続先が見つかりません)");
                 }
             };
             xhr.onerror = function() { handleError("ネットワーク接続不可"); };

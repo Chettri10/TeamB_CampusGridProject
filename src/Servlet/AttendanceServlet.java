@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import dao.AttendanceDao;
 
-// ÅöÇ±Ç±ÇÃURLÇÕ "/AttendanceServlet" ÇÃÇ‹Ç‹Ç≈OKÇ≈Ç∑
+// URLÇÕÇ±ÇÍÇ≈å≈íËÇ≈Ç∑
 @WebServlet("/AttendanceServlet")
 public class AttendanceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
