@@ -39,7 +39,6 @@
         <div id="reader"></div>
     </div>
     <div class="history-container"><div class="history-header">読み取り履歴</div><ul id="history-list"></ul></div>
-
     <div id="popup-overlay"><div class="popup-box"><h2 id="popup-title" style="margin-top:0; color:#e65100;">理由入力</h2><p style="font-size:14px; color:#666;">遅刻・早退の理由を入力してください</p><textarea id="reason-text" placeholder="例: 電車遅延のため"></textarea><div class="btn-wrap"><button class="btn-cancel" onclick="closePopup()">キャンセル</button><button class="btn-send" onclick="submitReason()">送信</button></div></div></div>
 
     <script>
@@ -56,11 +55,12 @@
 
             const xhr = new XMLHttpRequest();
 
-            // ★★★ ここが修正ポイント ★★★
-            // プロジェクト名を自動で埋め込むので、フォルダが変わっても絶対に404になりません
+            // ★★★★★ 重要修正 ★★★★★
+            // 「${pageContext.request.contextPath}」を使うことで、
+            // どんなフォルダにあっても、自動的に正しいURL (/CampusGridAppProject/AttendanceServlet) を作ります。
             const targetUrl = "${pageContext.request.contextPath}/AttendanceServlet";
-            xhr.open("POST", targetUrl, true);
 
+            xhr.open("POST", targetUrl, true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
             xhr.timeout = 10000;
 
@@ -79,12 +79,13 @@
                         const err = res.replace("ERROR:", "");
                         handleError(err);
                     } else {
+                        // 予期せぬ応答（HTMLなど）が返ってきた場合
                         console.error(res);
                         handleError("システムエラー(応答不正)");
                     }
                 } else {
-                    // 404が出たらここに引っかかりますが、上記URL修正で直るはずです
-                    handleError("通信エラー: " + xhr.status);
+                    // 404の場合はここで引っかかります
+                    handleError("通信エラー: " + xhr.status + " (接続先が見つかりません)");
                 }
             };
             xhr.onerror = function() { handleError("ネットワーク接続不可"); };
@@ -106,4 +107,50 @@
         function resetScanner() {
             setTimeout(() => {
                 isBusy = false;
-                showMessage("QR
+                showMessage("QRコードをかざしてください", "#00bcd4");
+            }, WAIT_TIME);
+        }
+
+        function showMessage(text, color) {
+            const el = document.getElementById("message-area");
+            el.innerText = text;
+            el.style.color = color;
+        }
+
+        function addLog(msg, type) {
+            const list = document.getElementById("history-list");
+            const li = document.createElement("li");
+            const now = new Date();
+            const time = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
+            let borderClass = (type === "success") ? "ok-border" : "ng-border";
+            let textClass   = (type === "success") ? "ok-text"   : "ng-text";
+            li.className = "log-item " + borderClass;
+            li.innerHTML = `<div><span class="log-msg ${textClass}">${msg}</span></div><div class="log-time">${time}</div>`;
+            list.insertBefore(li, list.firstChild);
+        }
+
+        function showPopup(type, qrData) {
+            tempQrData = qrData;
+            document.getElementById("popup-title").innerText = (type === "LATE") ? "遅刻の理由" : "早退の理由";
+            document.getElementById("reason-text").value = "";
+            document.getElementById("popup-overlay").style.display = "flex";
+        }
+        function closePopup() {
+            document.getElementById("popup-overlay").style.display = "none";
+            addLog("キャンセルされました", "error");
+            resetScanner();
+        }
+        function submitReason() {
+            const val = document.getElementById("reason-text").value;
+            if(!val.trim()) { alert("理由を入力してください"); return; }
+            document.getElementById("popup-overlay").style.display = "none";
+            isBusy = false;
+            sendData(tempQrData, val);
+        }
+
+        function onScanSuccess(decodedText) { if (!isBusy) sendData(decodedText); }
+        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250, aspectRatio: 1.0 });
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>
