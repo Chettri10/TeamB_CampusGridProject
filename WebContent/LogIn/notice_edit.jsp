@@ -1,74 +1,59 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="dao.NoticeDao" %>
+<%@ page import="java.util.*" %>
 
 <%
-    String date = request.getParameter("date");
-    String category = request.getParameter("category");
-    String message = request.getParameter("message");
+    String role = (String) session.getAttribute("role");
+    if (role == null || !role.equals("teacher")) {
+        response.sendRedirect("error_permission.jsp");
+        return;
+    }
+
+    int id = Integer.parseInt(request.getParameter("id"));
+    NoticeDao dao = new NoticeDao();
+    Map<String, Object> notice = dao.findById(id);
 %>
 
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>お知らせ編集</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>お知らせ編集</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body {
-            background-color: #030820;
-            color: #FFFFFF;
-            font-family: 'Noto Sans JP', sans-serif;
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .card {
-            background: #FFF;
-            color: #333;
-            width: 90%;
-            max-width: 380px;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        h2 { color: #00E5FF; text-align: center; }
-        label { font-size: 14px; margin-top: 10px; display: block; }
-        input, select, textarea {
-            width: 100%; padding: 8px; border-radius: 8px;
-            border: 1px solid #CCC; margin-top: 5px;
-        }
-        textarea { height: 100px; }
-        .btn-area { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { flex: 1; padding: 10px; border-radius: 8px; font-weight: 600; text-align: center; }
-        .btn-update { background: #00E5FF; color: #000; }
-        .btn-cancel { background: #555; color: #FFF; }
-    </style>
+<style>
+    body { background:#030820; color:#fff; font-family:'Noto Sans JP'; padding:20px; }
+    .container { max-width:400px; margin:0 auto; background:#fff; color:#333; padding:20px; border-radius:12px; }
+    h2 { text-align:center; color:#00E5FF; }
+    label { font-weight:bold; margin-top:10px; display:block; }
+    select, textarea { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
+    .btn { display:block; width:100%; padding:12px; margin-top:20px; background:#00E5FF; color:#000; text-align:center; border-radius:8px; font-weight:600; }
+</style>
 </head>
 
 <body>
-<div class="card">
+
+<div class="container">
     <h2>お知らせ編集</h2>
 
     <form action="NoticeEditServlet" method="post">
-        <input type="hidden" name="id" value="<%= date %>">
+        <input type="hidden" name="id" value="<%= notice.get("Notification_ID") %>">
 
         <label>カテゴリ</label>
         <select name="category">
-            <option value="重要" <%= "重要".equals(category) ? "selected" : "" %>>重要</option>
-            <option value="連絡" <%= "連絡".equals(category) ? "selected" : "" %>>連絡</option>
-            <option value="イベント" <%= "イベント".equals(category) ? "selected" : "" %>>イベント</option>
+            <option value="重要" <%= "重要".equals(notice.get("CATEGORY")) ? "selected" : "" %>>重要</option>
+            <option value="連絡" <%= "連絡".equals(notice.get("CATEGORY")) ? "selected" : "" %>>連絡</option>
+            <option value="イベント" <%= "イベント".equals(notice.get("CATEGORY")) ? "selected" : "" %>>イベント</option>
         </select>
 
         <label>内容</label>
-        <textarea name="content"><%= message %></textarea>
+        <textarea name="content" rows="6"><%= notice.get("Content") %></textarea>
 
-        <div class="btn-area">
-            <button type="submit" class="btn btn-update">更新する</button>
-            <a href="notice.jsp" class="btn btn-cancel">戻る</a>
-        </div>
+        <button type="submit" class="btn">更新する</button>
     </form>
+
+    <a href="teacher_home.jsp" class="btn" style="margin-top:10px;">戻る</a>
 </div>
+
 </body>
 </html>
