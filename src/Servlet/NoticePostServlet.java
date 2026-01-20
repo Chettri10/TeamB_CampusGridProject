@@ -4,47 +4,44 @@ import java.io.IOException;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+@WebServlet("/NoticePostServlet")
 public class NoticePostServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 文字化け対策
         request.setCharacterEncoding("UTF-8");
 
-        // ★ 教師チェック（追加部分）
+        // 教員チェック
         HttpSession session = request.getSession();
         String role = (String) session.getAttribute("role");
-
         if (role == null || !role.equals("teacher")) {
             response.sendRedirect("error_permission.jsp");
             return;
         }
-        // ★ ここまで追加
 
-        // notice_write.jsp から送られてきたデータを取得
-        String userId = request.getParameter("userId");
+        // userId はセッションから取得
+        String userId = (String) session.getAttribute("userId");
+
+        // フォームの内容
         String category = request.getParameter("category");
         String content = request.getParameter("content");
 
         try {
-            // ▼ 本来は DAO を使って DB に保存する
-            // NoticeDao dao = new NoticeDao();
-            // dao.insert(...);
-
-            // 完了画面に渡したいデータがあればセット
+            // 完了画面に渡すデータ
             request.setAttribute("userId", userId);
             request.setAttribute("category", category);
             request.setAttribute("content", content);
 
-            // notice_done.jsp へフォワード
-            RequestDispatcher rd = request.getRequestDispatcher("notice_done.jsp");
+            // ★ LogIn フォルダ内の notice_done.jsp にフォワード
+            RequestDispatcher rd = request.getRequestDispatcher("/LogIn/notice_done.jsp");
             rd.forward(request, response);
 
         } catch (Exception e) {
