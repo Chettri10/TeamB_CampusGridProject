@@ -45,7 +45,8 @@
 <div class="container">
     <h2>お知らせ編集</h2>
 
-    <form action="NoticeEditServlet" method="post">
+    <form action="<%= request.getContextPath() %>/NoticeEditServlet" method="post">
+
 
         <input type="hidden" name="id" value="<%= notice.get("Notification_ID") %>">
 
