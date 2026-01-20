@@ -54,7 +54,9 @@
 <div class="card">
     <h2>お知らせ投稿</h2>
 
-    <form action="NoticePostServlet" method="post">
+    <!-- ★ 重要：絶対パスで Servlet に送る -->
+    <form action="<%= request.getContextPath() %>/NoticePostServlet" method="post">
+
         <label>カテゴリ</label>
         <select name="category">
             <option value="重要">重要</option>

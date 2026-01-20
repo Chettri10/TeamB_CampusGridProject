@@ -10,15 +10,15 @@
 <style>
     /* --- クール＆モダンな青テーマ --- */
     :root {
-        --bg-main: #021024;       /* 背景：濃紺 (Deep Navy) */
-        --text-main: #ffffff;     /* メイン文字：白 */
-        --accent-cyan: #00e5ff;   /* アクセント：鮮やかなシアン */
-        --accent-hover: #6effff;  /* ホバー時のシアン */
-        --panel-bg: #ffffff;      /* パネル背景：白 */
-        --table-header: #052c48;  /* テーブルヘッダー：少し明るい紺 */
-        --status-green: #00c853;  /* 出席色 */
-        --status-red: #ff1744;    /* 遅刻色 */
-        --status-orange: #ff9100; /* 早退色 */
+        --bg-main: #021024;
+        --text-main: #ffffff;
+        --accent-cyan: #00e5ff;
+        --accent-hover: #6effff;
+        --panel-bg: #ffffff;
+        --table-header: #052c48;
+        --status-green: #00c853;
+        --status-red: #ff1744;
+        --status-orange: #ff9100;
     }
 
     body {
@@ -54,13 +54,12 @@
     }
     .nav-link:hover { color: var(--accent-hover); text-shadow: 0 0 8px var(--accent-cyan); }
 
-    /* 日付入力フォームのデザイン */
     .date-form-container {
         display: inline-block;
-        background: rgba(255, 255, 255, 0.1); /* 半透明の白 */
+        background: rgba(255, 255, 255, 0.1);
         padding: 8px 15px;
         border-radius: 8px;
-        border: 1px solid rgba(0, 229, 255, 0.3); /* 薄いシアンの枠 */
+        border: 1px solid rgba(0, 229, 255, 0.3);
     }
 
     input[type="date"] {
@@ -75,7 +74,7 @@
     button {
         padding: 6px 20px;
         background-color: var(--accent-cyan);
-        color: #021024; /* 文字は濃紺でコントラスト確保 */
+        color: #021024;
         border: none;
         cursor: pointer;
         border-radius: 4px;
@@ -105,9 +104,8 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         width: 110px;
         text-align: center;
-        border-bottom: 4px solid #ccc; /* 下線アクセント */
+        border-bottom: 4px solid #ccc;
     }
-    /* カードごとの色設定 */
     .card-present { border-bottom-color: var(--status-green); }
     .card-late { border-bottom-color: var(--status-red); }
     .card-early { border-bottom-color: var(--status-orange); }
@@ -116,7 +114,6 @@
     .status-label { font-size: 14px; color: #666; font-weight: bold; display: block; margin-bottom: 5px; }
     .count-number { font-size: 26px; font-weight: bold; display: block; }
 
-    /* 数字の色 */
     .text-green { color: var(--status-green); }
     .text-red { color: var(--status-red); }
     .text-orange { color: var(--status-orange); }
@@ -124,7 +121,7 @@
 
     /* --- テーブルデザイン --- */
     table {
-        width: 95%;
+        width: 60%; /* カラムが減ったので幅を少し狭く */
         margin: 0 auto;
         border-collapse: separate;
         border-spacing: 0;
@@ -140,60 +137,32 @@
     th {
         padding: 15px;
         font-weight: normal;
-        border-bottom: 2px solid var(--accent-cyan); /* ヘッダー下にシアンのライン */
+        border-bottom: 2px solid var(--accent-cyan);
     }
     td {
         border-bottom: 1px solid #eee;
-        padding: 12px;
+        padding: 15px;
         color: #333;
         text-align: center;
     }
     tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background-color: #f0f8ff; } /* ホバー時に薄い青 */
+    tbody tr:hover { background-color: #f0f8ff; }
 
-    /* 学生名リンクのスタイル (New!) */
+    /* 学生名リンクのスタイル */
     .link-student {
-        color: #052c48; /* 白背景なので濃い紺色で見やすく */
+        color: #052c48;
         font-weight: bold;
         text-decoration: none;
         transition: color 0.2s;
         border-bottom: 1px solid transparent;
+        font-size: 1.1em;
+        display: block; /* クリック領域を広げる */
+        width: 100%;
+        height: 100%;
     }
     .link-student:hover {
-        color: var(--accent-cyan); /* ホバー時はテーマカラーのシアン */
-        border-bottom: 1px solid var(--accent-cyan);
-    }
-
-    /* ステータスバッジ風デザイン */
-    .status-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 15px;
-        font-size: 14px;
-        font-weight: bold;
-        min-width: 60px;
-    }
-    .badge-出席 { background-color: #e8f5e9; color: var(--status-green); border: 1px solid var(--status-green); }
-    .badge-遅刻 { background-color: #ffebee; color: var(--status-red); border: 1px solid var(--status-red); }
-    .badge-早退 { background-color: #fff3e0; color: var(--status-orange); border: 1px solid var(--status-orange); }
-    .badge-未登録 { background-color: #f5f5f5; color: #999; border: 1px solid #ccc; }
-
-    /* 編集ボタン */
-    .btn-edit {
-        background-color: var(--accent-cyan);
-        color: #021024;
-        padding: 6px 16px;
-        text-decoration: none;
-        border-radius: 20px;
-        font-size: 13px;
-        font-weight: bold;
-        transition: all 0.2s;
-        display: inline-block;
-    }
-    .btn-edit:hover {
-        background-color: var(--accent-hover);
-        box-shadow: 0 0 8px var(--accent-cyan);
-        transform: translateY(-1px);
+        color: var(--accent-cyan);
+        border-bottom-color: var(--accent-cyan);
     }
 
     a.home-link {
@@ -248,25 +217,16 @@
     <table>
         <thead>
             <tr>
-                <th>学籍番号</th>
-                <th>氏名</th>
-                <th>出席時刻</th>
-                <th>退室時刻</th>
-                <th>状況</th>
-                <th>備考 (遅刻理由など)</th>
-                <th>操作</th>
+                <th width="30%">学籍番号</th>
+                <th width="70%">氏名</th>
             </tr>
         </thead>
         <tbody>
         <%
             List<Map<String, Object>> list = (List<Map<String, Object>>) request.getAttribute("attendanceList");
-            Date displayDate = (Date)request.getAttribute("displayDate");
 
             if (list != null && !list.isEmpty()) {
                 for (Map<String, Object> data : list) {
-                    String status = (String)data.get("status");
-                    Object checkOutObj = data.get("checkOutTime");
-                    String checkOutStr = (checkOutObj == null) ? "--:--" : checkOutObj.toString();
         %>
             <tr>
                 <td>
@@ -280,23 +240,13 @@
                         <%= data.get("userName") %>
                     </a>
                 </td>
-
-                <td style="font-family: monospace; font-size: 1.1em;"><%= data.get("checkInTime") == null ? "--:--" : data.get("checkInTime") %></td>
-                <td style="font-family: monospace; font-size: 1.1em;"><%= checkOutStr %></td>
-                <td>
-                    <span class="status-badge badge-<%= status %>"><%= status %></span>
-                </td>
-                <td style="text-align: left;"><%= data.get("reason") == null ? "" : data.get("reason") %></td>
-                <td>
-                    <a href="AttManagementEditServlet?userId=<%= data.get("userId") %>&targetDate=<%= displayDate %>" class="btn-edit">編集</a>
-                </td>
             </tr>
         <%
                 }
             } else {
         %>
             <tr>
-                <td colspan="7">データがありません。</td>
+                <td colspan="2">データがありません。</td>
             </tr>
         <%
             }
@@ -305,7 +255,8 @@
     </table>
 
     <br>
-    <a href="teacher_home.jsp" class="home-link">ホームへ戻る</a>
+    <p style="color: #ccc; font-size: 0.9em;">※学生をクリックすると詳細・履歴の確認と編集ができます。</p>
+    <a href="teacher_home.jsp" class="home-link">先生ホームへ戻る</a>
 
 </body>
 </html>

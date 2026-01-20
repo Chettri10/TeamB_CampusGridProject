@@ -1,6 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.List" %>
+<%@ page import="dao.NoticeDao" %>
+<%@ page import="java.util.*" %>
 
 <%
     // ★ 教員チェック
@@ -10,25 +10,9 @@
         return;
     }
 
-    // ★ ダミーデータ（本来は DB から取得）
-    class NoticeData {
-        int id;
-        String date;
-        String category;
-        String message;
-
-        public NoticeData(int id, String date, String category, String message) {
-            this.id = id;
-            this.date = date;
-            this.category = category;
-            this.message = message;
-        }
-    }
-
-    List<NoticeData> list = new ArrayList<>();
-    list.add(new NoticeData(1, "2025/12/01", "重要", "【休講連絡】 12月5日(金) 3限目の「Java基礎」は休講となります。"));
-    list.add(new NoticeData(2, "2025/11/28", "連絡", "進路希望調査票の提出期限は明日までです。"));
-    list.add(new NoticeData(3, "2025/11/25", "イベント", "来週の金曜日は学園祭の準備日です。"));
+    // ★ DB からお知らせ一覧を取得
+    NoticeDao dao = new NoticeDao();
+    List<Map<String, Object>> list = dao.findAll();
 %>
 
 <!DOCTYPE html>
@@ -84,6 +68,17 @@
         font-size: 26px;
         margin: 0;
         color: #00FFFF;
+    }
+
+    .new-post-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background: #00E5FF;
+        color: #000;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 20px;
     }
 
     .notification-list {
@@ -182,27 +177,37 @@
         <h2>お知らせ（教員）</h2>
     </div>
 
+    <div style="text-align:center;">
+        <a href="notice_write.jsp" class="new-post-btn">＋ 新規投稿</a>
+    </div>
+
     <div class="notification-list">
         <%
-            for (NoticeData item : list) {
-                String borderColor = "border-blue";
-                String badgeColor = "bg-blue";
+            for (Map<String, Object> item : list) {
 
-                if ("重要".equals(item.category)) { borderColor = "border-red"; badgeColor = "bg-red"; }
-                else if ("イベント".equals(item.category)) { borderColor = "border-green"; badgeColor = "bg-green"; }
+                String category = (String)item.get("CATEGORY");
+                String content  = (String)item.get("Content");
+                String date     = String.valueOf(item.get("Posted_On"));
+                int id          = (int)item.get("Notification_ID");
+
+                String borderColor = "border-blue";
+                String badgeColor  = "bg-blue";
+
+                if ("重要".equals(category)) { borderColor = "border-red"; badgeColor = "bg-red"; }
+                else if ("イベント".equals(category)) { borderColor = "border-green"; badgeColor = "bg-green"; }
         %>
 
         <div class="notice-card <%= borderColor %>">
             <div class="card-header">
-                <span class="category-badge <%= badgeColor %>"><%= item.category %></span>
-                <span class="notice-date"><%= item.date %></span>
+                <span class="category-badge <%= badgeColor %>"><%= category %></span>
+                <span class="notice-date"><%= date %></span>
             </div>
 
-            <div class="message-content"><%= item.message %></div>
+            <div class="message-content"><%= content %></div>
 
             <div class="btn-area">
-                <a class="btn btn-edit" href="notice_edit.jsp?id=<%= item.id %>">編集</a>
-                <a class="btn btn-delete" href="notice_delete.jsp?id=<%= item.id %>">削除</a>
+                <a class="btn btn-edit" href="notice_edit.jsp?id=<%= id %>">編集</a>
+                <a class="btn btn-delete" href="notice_delete.jsp?id=<%= id %>">削除</a>
             </div>
         </div>
 

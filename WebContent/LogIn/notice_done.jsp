@@ -35,11 +35,15 @@
             padding: 25px;
             border-radius: 12px;
             text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        h2 { color: #00E5FF; }
+        h2 {
+            color: #00E5FF;
+            margin-bottom: 20px;
+        }
         .btn {
             display: block;
-            margin-top: 20px;
+            margin-top: 25px;
             padding: 12px;
             background: #00E5FF;
             color: #000;
@@ -53,9 +57,13 @@
 <body>
 <div class="card">
     <h2>投稿が完了しました</h2>
+
     <p>お知らせが正常に投稿されました。</p>
 
-    <a href="teacher_home.jsp" class="btn">お知らせ一覧へ戻る</a>
+    <!-- ★ 絶対パスで LogIn/teacher_home.jsp に戻る -->
+    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="btn">
+        お知らせ一覧へ戻る
+    </a>
 </div>
 </body>
 </html>

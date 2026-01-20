@@ -128,19 +128,19 @@ body {
     </div>
 
     <div class="menu-row">
-        <a class="menu-item green" href="qr_scan.jsp">
+        <a class="menu-item green" href="qr_generator.jsp">
             <div class="icon">📖</div>
             出席QRスキャン
         </a>
 
-        <a class="menu-item blue" href="ChatServlet?myId=<%= userId %>&targetId=S00001">
+        <a class="menu-item blue" href="chat.jsp">
             <div class="icon">💬</div>
             教員・学生 チャット
         </a>
     </div>
 
     <div class="menu-center">
-        <a class="menu-item orange" href="purchase.jsp">
+        <a class="menu-item orange" href="cart.jsp">
             <div class="icon">🛒</div>
             商品登録
         </a>

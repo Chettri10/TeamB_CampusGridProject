@@ -41,7 +41,7 @@ public class AttManagementEditServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.setCharacterEncoding("UTF-8"); // •¶Žš‰»‚¯–hŽ~
+        request.setCharacterEncoding	("UTF-8"); // •¶Žš‰»‚¯–hŽ~
 
         String userId = request.getParameter("userId");
         String dateStr = request.getParameter("targetDate");
