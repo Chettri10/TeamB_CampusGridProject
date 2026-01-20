@@ -25,7 +25,6 @@
     .btn { display:block; width:100%; padding:12px; margin-top:20px; border-radius:8px; text-align:center; font-weight:600; text-decoration:none; }
     .btn-del { background:#FF5252; color:#fff; }
     .btn-back { background:#00E5FF; color:#000; }
-    .btn-test { background:#00C853; color:#fff; }
 </style>
 </head>
 
@@ -34,13 +33,11 @@
 <div class="container">
     <h2>本当に削除しますか？</h2>
 
-    <form action="NoticeDeleteServlet" method="post">
+    <!-- ★ 削除ボタンだけ残す -->
+    <form action="<%= request.getContextPath() %>/NoticeDeleteServlet" method="post">
         <input type="hidden" name="id" value="<%= id %>">
         <button type="submit" class="btn btn-del">削除する</button>
     </form>
-
-    <!-- ★ 削除完了画面へ直接移動（テスト用） -->
-    <a href="notice_delete_done.jsp" class="btn btn-test">削除完了画面へ</a>
 
     <a href="teacher_home.jsp" class="btn btn-back">戻る</a>
 </div>
