@@ -19,6 +19,7 @@
         --status-green: #00c853;
         --status-red: #ff1744;
         --status-orange: #ff9100;
+        --status-purple: #d500f9;
     }
 
     body {
@@ -109,6 +110,7 @@
     .card-present { border-bottom-color: var(--status-green); }
     .card-late { border-bottom-color: var(--status-red); }
     .card-early { border-bottom-color: var(--status-orange); }
+    .card-absent { border-bottom-color: var(--status-purple); }
     .card-unregistered { border-bottom-color: #999; }
 
     .status-label { font-size: 14px; color: #666; font-weight: bold; display: block; margin-bottom: 5px; }
@@ -117,11 +119,12 @@
     .text-green { color: var(--status-green); }
     .text-red { color: var(--status-red); }
     .text-orange { color: var(--status-orange); }
+    .text-purple { color: var(--status-purple); }
     .text-gray { color: #666; }
 
     /* --- テーブルデザイン --- */
     table {
-        width: 60%; /* カラムが減ったので幅を少し狭く */
+        width: 60%;
         margin: 0 auto;
         border-collapse: separate;
         border-spacing: 0;
@@ -156,7 +159,7 @@
         transition: color 0.2s;
         border-bottom: 1px solid transparent;
         font-size: 1.1em;
-        display: block; /* クリック領域を広げる */
+        display: block;
         width: 100%;
         height: 100%;
     }
@@ -208,6 +211,10 @@
             <span class="status-label">早退</span>
             <span class="count-number text-orange"><%= request.getAttribute("countEarly") %>名</span>
         </div>
+        <div class="status-card card-absent">
+            <span class="status-label">欠席</span>
+            <span class="count-number text-purple"><%= request.getAttribute("countAbsent") %>名</span>
+        </div>
         <div class="status-card card-unregistered">
             <span class="status-label">未登録</span>
             <span class="count-number text-gray"><%= request.getAttribute("countUnregistered") %>名</span>
@@ -234,7 +241,6 @@
                         <%= data.get("userId") %>
                     </a>
                 </td>
-
                 <td>
                     <a href="StudentHistoryServlet?userId=<%= data.get("userId") %>" class="link-student">
                         <%= data.get("userName") %>
