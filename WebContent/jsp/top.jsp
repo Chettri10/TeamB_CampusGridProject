@@ -128,7 +128,7 @@ body {
     </div>
 
     <div class="menu-row">
-        <a class="menu-item green" href="qr_generator.jsp">
+        <a class="menu-item green" href="student_pass.jsp">
             <div class="icon">📖</div>
             出席QRスキャン
         </a>
