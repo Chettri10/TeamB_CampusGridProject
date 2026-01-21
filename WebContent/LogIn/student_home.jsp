@@ -128,12 +128,12 @@ body {
     </div>
 
     <div class="menu-row">
-        <a class="menu-item green" href="qr_generator.jsp">
+        <a class="menu-item green" href="${pageContext.request.contextPath}/jsp/student_pass.jsp">
             <div class="icon">📖</div>
             出席QRスキャン
         </a>
 
-        <a class="menu-item blue" href="chat.jsp">
+        <a class="menu-item blue" href="${pageContext.request.contextPath}/jsp/chat.jsp">
             <div class="icon">💬</div>
             教員・学生 チャット
         </a>

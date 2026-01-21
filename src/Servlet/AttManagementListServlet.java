@@ -22,15 +22,14 @@ public class AttManagementListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // --- 1. 先生チェック（セッション確認） ---
+        // --- 1. 先生チェック ---
         HttpSession session = request.getSession();
 
-        // ★重要: teacher_home.jspに合わせて "userId" を取得
+        // ★セッションキーは "userId" で統一
         String loginId = (String) session.getAttribute("userId");
 
         // ログインしていない、または先生(IDがTで始まらない)でない場合はログイン画面へ
         if (loginId == null || !loginId.startsWith("T")) {
-            // フォルダ名が「LogIn」であることを確認しましたので合わせます
             response.sendRedirect("LogIn/login.jsp");
             return;
         }
@@ -111,7 +110,7 @@ public class AttManagementListServlet extends HttpServlet {
         request.setAttribute("nextDate", nextDate);
 
         // --- 6. JSPへフォワード ---
-        // ※ attendance_check.jsp は「jsp」フォルダにある前提です
+        // ※ attendance_check.jsp は「jsp」フォルダにある想定です
         request.getRequestDispatcher("jsp/attendance_check.jsp").forward(request, response);
     }
 }
