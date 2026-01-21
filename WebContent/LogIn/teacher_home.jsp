@@ -214,7 +214,7 @@
         <% } %>
     </div>
 
-    <a href="logout.jsp" class="logout-btn">ログアウト</a>
+    <a href="<%= request.getContextPath() %>/LogoutServlet" class="logout-btn">ログアウト</a>
 </div>
 
 </body>

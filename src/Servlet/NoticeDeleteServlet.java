@@ -33,8 +33,8 @@ public class NoticeDeleteServlet extends HttpServlet {
             NoticeDao dao = new NoticeDao();
             dao.delete(id);
 
-            // š íœŠ®—¹‰æ–Ê‚Ö
-            response.sendRedirect("notice_delete_done.jsp");
+            // š íœŠ®—¹‰æ–Ê‚Ö‘JˆÚ
+            response.sendRedirect(request.getContextPath() + "/LogIn/notice_delete_done.jsp");
 
         } catch (Exception e) {
             e.printStackTrace();

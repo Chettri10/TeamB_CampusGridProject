@@ -4,7 +4,7 @@
     // ★ 教員チェック
     String role = (String) session.getAttribute("role");
     if (role == null || !role.equals("teacher")) {
-        response.sendRedirect("error_permission.jsp");
+        response.sendRedirect("../jsp/error_permission.jsp");
         return;
     }
 %>
