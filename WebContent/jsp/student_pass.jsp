@@ -60,7 +60,7 @@
     </div>
 
     <br><br>
-    <a href="../student_home.jsp">ホームに戻る</a>
+    <a href="student_home.jsp">ホームに戻る</a>
 
     <script>
         const userId = "<%= myId %>";
