@@ -38,14 +38,12 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* 左側：商品情報（アイコン・名前・価格） */
         .product-info-group { display: flex; align-items: center; gap: 12px; }
         .icon-box { width: 56px; height: 56px; background-color: #E8F5F6; border-radius: 12px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
         .bag-icon { width: 28px; height: 28px; stroke: #020617; stroke-width: 2.5; fill: none; }
         .product-name { font-size: 16px; font-weight: 700; display: block; }
         .product-price { font-size: 14px; color: #00FFFF; font-weight: bold; }
 
-        /* 右側：個数入力と追加ボタンの横並び */
         .action-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .qty-input {
             width: 48px; height: 40px;
@@ -66,17 +64,21 @@
             height: 40px;
             font-weight: 700;
             cursor: pointer;
+            transition: 0.1s;
         }
+        .add-btn:active { transform: scale(0.95); opacity: 0.8; }
 
         /* フッターのカートを見るボタン */
         .cart-btn-area { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; padding: 0 24px; }
-        .cart-btn { width: 100%; height: 56px; background-color: #00FFFF; color: #000000; border: none; border-radius: 14px; font-size: 18px; font-weight: 700; cursor: pointer; }
+        .cart-btn { width: 100%; height: 56px; background-color: #00FFFF; color: #000000; border: none; border-radius: 14px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3); }
+        .cart-btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
     <div class="container">
         <nav class="back-nav">
-            <a href="${pageContext.request.contextPath}/jsp/top.jsp" class="back-link">
+            <%-- 修正箇所：Login/ を削除し、ルート直下の student_home.jsp へ --%>
+            <a href="${pageContext.request.contextPath}/LogIn/student_home.jsp" class="back-link">
                 <i class="fas fa-chevron-left"></i> 戻る
             </a>
         </nav>
@@ -115,7 +117,7 @@
                     </div>
                     <div class="product-text">
                         <span class="product-name"><%= name %></span>
-                        <span class="product-price">¥<%= price %></span>
+                        <span class="product-price">¥<%= String.format("%,d", price) %></span>
                     </div>
                 </div>
 
@@ -129,7 +131,7 @@
                         }
                     }
                 } catch (Exception e) {
-                    out.println("<p style='color:red;'>エラー: " + e.getMessage() + "</p>");
+                    out.println("<p style='color:#ff5555;'>接続エラー: " + e.getMessage() + "</p>");
                 }
             %>
         </div>

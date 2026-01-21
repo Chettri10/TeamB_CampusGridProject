@@ -38,7 +38,7 @@ public class LoginServlet extends HttpServlet {
             if (userId.startsWith("S")) {
                 // Šw¶‚Ìê‡
             	session.setAttribute("role", "student");
-                response.sendRedirect("jsp/top.jsp");
+                response.sendRedirect("LogIn/student_home.jsp");
             } else if (userId.startsWith("T")) {
                 // æ¶‚Ìê‡
             	session.setAttribute("role", "teacher");
