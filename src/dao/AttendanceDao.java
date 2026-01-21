@@ -8,7 +8,7 @@ import java.sql.Timestamp;
 
 public class AttendanceDao {
     // Ú‘±İ’è (‚²©g‚ÌŠÂ‹«‚É‡‚í‚¹‚Ä•ÏX‚µ‚Ä‚­‚¾‚³‚¢)
-    private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProjectTest";
+    private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
     private final String USER = "sa";
     private final String PASS = "";
 
