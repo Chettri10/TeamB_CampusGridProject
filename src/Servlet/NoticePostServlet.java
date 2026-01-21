@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import dao.NoticeDao;
+
 @WebServlet("/NoticePostServlet")
 public class NoticePostServlet extends HttpServlet {
 
@@ -35,12 +37,11 @@ public class NoticePostServlet extends HttpServlet {
         String content = request.getParameter("content");
 
         try {
-            // 完了画面に渡すデータ
-            request.setAttribute("userId", userId);
-            request.setAttribute("category", category);
-            request.setAttribute("content", content);
+            // ★ DB に保存
+            NoticeDao dao = new NoticeDao();
+            dao.insert(userId, category, content);
 
-            // ★ LogIn フォルダ内の notice_done.jsp にフォワード
+            // 完了画面へ
             RequestDispatcher rd = request.getRequestDispatcher("/LogIn/notice_done.jsp");
             rd.forward(request, response);
 

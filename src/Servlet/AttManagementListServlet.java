@@ -11,6 +11,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import dao.AttManagementDao;
 
@@ -21,9 +22,23 @@ public class AttManagementListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // --- 1. 先生チェック（セッション確認） ---
+        HttpSession session = request.getSession();
+
+        // ★重要: teacher_home.jspに合わせて "userId" を取得
+        String loginId = (String) session.getAttribute("userId");
+
+        // ログインしていない、または先生(IDがTで始まらない)でない場合はログイン画面へ
+        if (loginId == null || !loginId.startsWith("T")) {
+            // フォルダ名が「LogIn」であることを確認しましたので合わせます
+            response.sendRedirect("LogIn/login.jsp");
+            return;
+        }
+        // ---------------------------
+
         request.setCharacterEncoding("UTF-8");
 
-        // 1. 日付パラメータの取得
+        // --- 2. 日付パラメータの取得 ---
         String dateStr = request.getParameter("targetDate");
         Date targetDate;
 
@@ -47,7 +62,7 @@ public class AttManagementListServlet extends HttpServlet {
         cal.add(Calendar.DAY_OF_MONTH, 1);
         Date nextDate = new Date(cal.getTimeInMillis());
 
-        // 2. DAOを使ってデータを取得
+        // --- 3. DAOを使ってデータを取得 ---
         AttManagementDao dao = new AttManagementDao();
         List<Map<String, Object>> list = null;
 
@@ -57,12 +72,12 @@ public class AttManagementListServlet extends HttpServlet {
             e.printStackTrace();
         }
 
-        // --- 集計処理（早退を追加） ---
+        // --- 4. 集計処理 ---
         int countPresent = 0;      // 出席
         int countLate = 0;         // 遅刻
-        int countEarly = 0;        // 早退 (New!)
+        int countEarly = 0;        // 早退
+        int countAbsent = 0;       // 欠席
         int countUnregistered = 0; // 未登録
-        int countOther = 0;        // その他（欠席など）
 
         if (list != null) {
             for (Map<String, Object> data : list) {
@@ -75,9 +90,9 @@ public class AttManagementListServlet extends HttpServlet {
                 } else if (status.equals("遅刻")) {
                     countLate++;
                 } else if (status.equals("早退")) {
-                    countEarly++; // 早退をカウント
-                } else {
-                    countOther++;
+                    countEarly++;
+                } else if (status.equals("欠席")) {
+                    countAbsent++;
                 }
             }
         }
@@ -85,18 +100,18 @@ public class AttManagementListServlet extends HttpServlet {
         // 集計結果をリクエストスコープにセット
         request.setAttribute("countPresent", countPresent);
         request.setAttribute("countLate", countLate);
-        request.setAttribute("countEarly", countEarly); // 追加
+        request.setAttribute("countEarly", countEarly);
+        request.setAttribute("countAbsent", countAbsent);
         request.setAttribute("countUnregistered", countUnregistered);
-        request.setAttribute("countOther", countOther);
-        // ------------------------
 
-        // 3. JSPにデータを渡す
+        // --- 5. JSPにデータを渡す ---
         request.setAttribute("attendanceList", list);
         request.setAttribute("displayDate", targetDate);
         request.setAttribute("prevDate", prevDate);
         request.setAttribute("nextDate", nextDate);
 
-        // 4. JSPへフォワード
+        // --- 6. JSPへフォワード ---
+        // ※ attendance_check.jsp は「jsp」フォルダにある前提です
         request.getRequestDispatcher("jsp/attendance_check.jsp").forward(request, response);
     }
 }
