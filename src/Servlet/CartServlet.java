@@ -24,45 +24,53 @@ public class CartServlet extends HttpServlet {
 
         String action = request.getParameter("action");
         CartDetailDao detailDao = new CartDetailDao();
+        HttpSession session = request.getSession();
 
         try {
-            // 1. 削除処理
+            // --- 追加：注文確定時の全消去処理 ---
+            if ("clearCart".equals(action)) {
+                // 1. セッションの情報を削除
+                session.removeAttribute("cartList");
+                session.removeAttribute("price");
+
+                // 2. データベース（CART_DETAILSテーブル）から全てのレコードを削除
+                // ※本来はユーザーIDに紐づくもののみですが、現状のfindAll()構成に合わせて全削除を実行します
+                detailDao.deleteAll();
+
+                // 3. 完了画面へリダイレクト
+                response.sendRedirect(request.getContextPath() + "/jsp/payment_finish.jsp");
+                return;
+            }
+
+            // --- 既存の削除処理（1件削除） ---
             if ("delete".equals(action)) {
                 String detailIdStr = request.getParameter("detailId");
                 if (detailIdStr != null) {
                     int detailId = Integer.parseInt(detailIdStr);
-                    detailDao.delete(detailId); //
+                    detailDao.delete(detailId);
                 }
             }
-            // 2. カートへの追加処理
+            // --- 既存のカートへの追加処理 ---
             else {
-                HttpSession session = request.getSession();
                 String userId = (String) session.getAttribute("userId");
-
-                // USER_IDのVARCHAR(6)制限に合わせたテスト用ID
                 if (userId == null) userId = "U001";
 
                 String productIdStr = request.getParameter("productId");
                 String quantityStr = request.getParameter("quantity");
                 int quantity = (quantityStr != null) ? Integer.parseInt(quantityStr) : 1;
 
-                // 本来はセッション等で既存のcartIdを保持すべきですが、
-                // 現状の構成を活かしつつユニークなIDを生成します
                 CartDao cartDao = new CartDao();
                 int cartId = (int) (System.currentTimeMillis() % 1000000);
-
-                // カート親テーブルに登録
                 cartDao.insert(cartId, userId);
 
                 if (productIdStr != null) {
                     int productId = Integer.parseInt(productIdStr);
-                    // Cart_details_IDを生成して登録
                     int detailId = (int) (System.currentTimeMillis() % 1000000 + 1);
                     detailDao.insert(detailId, cartId, productId, quantity);
                 }
             }
 
-            // 処理後は一覧表示(doGet)へリダイレクト
+            // 通常の追加・削除処理後は一覧へ戻る
             response.sendRedirect(request.getContextPath() + "/CartServlet");
 
         } catch (Exception e) {
@@ -76,10 +84,11 @@ public class CartServlet extends HttpServlet {
             throws ServletException, IOException {
         try {
             CartDetailDao detailDao = new CartDetailDao();
-            // JOINを使って商品名や価格を含めたリストを取得
+            // JOINを使って最新のDB状態を取得
             List<Map<String, Object>> cartList = detailDao.findAllWithProductInfo();
 
             request.setAttribute("cartList", cartList);
+            // カート確認画面へ
             request.getRequestDispatcher("/jsp/cart_confirm.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();

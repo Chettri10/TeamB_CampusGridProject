@@ -12,6 +12,18 @@ import java.util.Map;
 
 public class CartDetailDao extends DAO {
 
+    /**
+     * カート詳細の全削除（注文確定時に呼び出す）
+     * これにより、購入後に「内容確認」が空になります。
+     */
+    public int deleteAll() throws Exception {
+        // あなたのプロジェクトのテーブル名「CartDetail」に合わせています
+        String sql = "DELETE FROM CartDetail";
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            return ps.executeUpdate();
+        }
+    }
+
     // --- 新規登録 ---
     public int insert(int cartDetailsId, int cartId, int productId, int quantity) throws Exception {
         String sql = "INSERT INTO CartDetail (Cart_details_ID, Cart_ID, Product_ID, Quantity) VALUES (?, ?, ?, ?)";
@@ -36,7 +48,7 @@ public class CartDetailDao extends DAO {
         }
     }
 
-    // --- 削除 ---
+    // --- 削除 (1件) ---
     public int delete(int cartDetailsId) throws Exception {
         String sql = "DELETE FROM CartDetail WHERE Cart_details_ID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -56,8 +68,7 @@ public class CartDetailDao extends DAO {
         }
     }
 
-    // --- 【重要】商品情報を含めた全件取得 (JOINを使用) ---
-    // これにより、JSPで商品名や価格が表示できるようになります
+    // --- 商品情報を含めた全件取得 (JOINを使用) ---
     public List<Map<String, Object>> findAllWithProductInfo() throws Exception {
         String sql = "SELECT cd.*, p.Product_Name, p.Price " +
                      "FROM CartDetail cd " +
@@ -69,7 +80,6 @@ public class CartDetailDao extends DAO {
 
             List<Map<String, Object>> list = new ArrayList<>();
             while (rs.next()) {
-                // toMapの結果に商品名と価格を追加
                 Map<String, Object> m = toMap(rs);
                 m.put("Product_Name", rs.getString("Product_Name"));
                 m.put("Price", rs.getInt("Price"));
@@ -87,9 +97,7 @@ public class CartDetailDao extends DAO {
         m.put("Product_ID", rs.getInt("Product_ID"));
         m.put("Quantity", rs.getInt("Quantity"));
 
-        // ResultSetにカラムが含まれている場合のみ追加（エラー回避用）
         try {
-            // カラムが存在しない場合は例外を投げるが、ここでは無視して進める
             ResultSetMetaData rsmd = rs.getMetaData();
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 String colName = rsmd.getColumnName(i);
@@ -99,7 +107,6 @@ public class CartDetailDao extends DAO {
         } catch (SQLException e) {
             // メタデータが取れない場合は無視
         }
-
         return m;
     }
 }
