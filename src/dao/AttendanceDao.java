@@ -8,20 +8,23 @@ import java.sql.Timestamp;
 
 public class AttendanceDao {
 
-    // ★修正1: URLの末尾の「Test」を消しました。これでH2コンソールと同じ場所を見ます。
+    // ★重要: 画像で確認した「本番用データベース」のURLに合わせています
     private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
     private final String USER = "sa";
     private final String PASS = "";
 
+    // 接続取得メソッド
     private Connection getConnection() throws Exception {
+        // ドライバの読み込み
         Class.forName("org.h2.Driver");
         return DriverManager.getConnection(URL, USER, PASS);
     }
 
     // 今日の出席データがあるか確認
     public boolean hasCheckedInToday(String userId) {
-        // ★修正: カラム名を新しいテーブル定義に合わせました
+        // SQL: ユーザーIDと今日の日付で検索
         String sql = "SELECT Count(*) FROM ATTMANAGEMENT WHERE User_ID = ? AND Target_Date = CURRENT_DATE";
+
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -30,7 +33,7 @@ public class AttendanceDao {
 
             if (rs.next()) {
                 int count = rs.getInt(1);
-                System.out.println("DAO確認: User=" + userId + ", Count=" + count);
+                System.out.println("DAO確認: User=" + userId + " の本日のデータ数=" + count);
                 return count > 0;
             }
         } catch (Exception e) {
@@ -40,10 +43,10 @@ public class AttendanceDao {
         return false;
     }
 
-    // 登校登録
+    // 登校登録 (INSERT)
     public boolean registerCheckIn(String userId, String status, String reason) {
-        // ★修正: 正しいカラム名でINSERTします
-        String sql = "INSERT INTO ATTMANAGEMENT (User_ID, Target_Date, Check_In_Time, Status, Absance_Reason) VALUES (?, CURRENT_DATE, ?, ?, ?)";
+        // SQL: 新しいテーブル定義に合わせてINSERT
+        String sql = "INSERT INTO ATTMANAGEMENT (User_ID, Target_Date, Check_In_Time, Status, Absence_Reason) VALUES (?, CURRENT_DATE, ?, ?, ?)";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -54,7 +57,7 @@ public class AttendanceDao {
             pstmt.setString(4, reason);
 
             int rows = pstmt.executeUpdate();
-            System.out.println("DAO登校登録: 完了 (件数=" + rows + ")");
+            System.out.println("DAO登校登録: 完了 (更新件数=" + rows + ")");
             return rows > 0;
 
         } catch (Exception e) {
@@ -64,11 +67,12 @@ public class AttendanceDao {
         }
     }
 
-    // 下校登録
+    // 下校登録 (UPDATE)
     public boolean registerCheckOut(String userId, String status, String reason) {
+        // SQL: 下校時刻を更新。理由があればそれも更新。
         String sql = "UPDATE ATTMANAGEMENT SET Check_Out_Time = ?, "
                    + "Status = CASE WHEN ? <> '' THEN ? ELSE Status END, "
-                   + "Absance_Reason = CASE WHEN ? <> '' THEN ? ELSE Absance_Reason END "
+                   + "Absence_Reason = CASE WHEN ? <> '' THEN ? ELSE Absence_Reason END "
                    + "WHERE User_ID = ? AND Target_Date = CURRENT_DATE";
 
         try (Connection conn = getConnection();
@@ -82,7 +86,7 @@ public class AttendanceDao {
             pstmt.setString(6, userId);
 
             int rows = pstmt.executeUpdate();
-            System.out.println("DAO下校登録: 完了 (件数=" + rows + ")");
+            System.out.println("DAO下校登録: 完了 (更新件数=" + rows + ")");
             return rows > 0;
 
         } catch (Exception e) {
