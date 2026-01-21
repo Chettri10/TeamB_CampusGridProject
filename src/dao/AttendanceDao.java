@@ -8,8 +8,7 @@ import java.sql.Timestamp;
 
 public class AttendanceDao {
 
-    // ★重要: 全員のPCで動く「標準の接続先」です
-    // H2コンソールの「JDBC URL」もこれと同じにしてください
+    // チーム開発用の安全なパス（相対パス）
     private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
     private final String USER = "sa";
     private final String PASS = "";
@@ -39,9 +38,10 @@ public class AttendanceDao {
         return false;
     }
 
-    // 登校登録
-    public boolean registerCheckIn(String userId, String status, String reason) {
-        String sql = "INSERT INTO ATTMANAGEMENT (User_ID, Target_Date, Check_In_Time, Status, Absence_Reason) VALUES (?, CURRENT_DATE, ?, ?, ?)";
+    // 登校登録（画像パス対応）
+    public boolean registerCheckIn(String userId, String status, String reason, String imagePath) {
+        // 画像パス(CERTIFICATE_PATH)も保存します
+        String sql = "INSERT INTO ATTMANAGEMENT (User_ID, Target_Date, Check_In_Time, Status, Absence_Reason, CERTIFICATE_PATH) VALUES (?, CURRENT_DATE, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -50,6 +50,7 @@ public class AttendanceDao {
             pstmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
             pstmt.setString(3, status);
             pstmt.setString(4, reason);
+            pstmt.setString(5, imagePath); // 画像の保存場所
 
             int rows = pstmt.executeUpdate();
             System.out.println("DAO登校登録: 完了 (件数=" + rows + ")");
@@ -62,22 +63,39 @@ public class AttendanceDao {
         }
     }
 
-    // 下校登録
-    public boolean registerCheckOut(String userId, String status, String reason) {
+    // 下校登録（ステータス合体機能 ＆ 画像パス対応）
+    public boolean registerCheckOut(String userId, String status, String reason, String imagePath) {
+        // ロジック: もし既に「遅刻」で、今回「早退」なら → 「遅刻・早退」にする
+        String statusLogic = "CASE WHEN Status LIKE '%遅刻%' AND ? <> '' THEN '遅刻・早退' "
+                           + "WHEN ? <> '' THEN ? ELSE Status END";
+
+        // SQL: 下校時刻、ステータス、理由、画像パスを更新
         String sql = "UPDATE ATTMANAGEMENT SET Check_Out_Time = ?, "
-                   + "Status = CASE WHEN ? <> '' THEN ? ELSE Status END, "
-                   + "Absence_Reason = CASE WHEN ? <> '' THEN ? ELSE Absence_Reason END "
+                   + "Status = " + statusLogic + ", "
+                   + "Absence_Reason = CASE WHEN ? <> '' THEN ? ELSE Absence_Reason END, "
+                   + "CERTIFICATE_PATH = CASE WHEN ? <> '' THEN ? ELSE CERTIFICATE_PATH END "
                    + "WHERE User_ID = ? AND Target_Date = CURRENT_DATE";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-            pstmt.setString(2, status);
-            pstmt.setString(3, status);
-            pstmt.setString(4, reason);
+
+            // ステータス判定用パラメータ (3つ)
+            pstmt.setString(2, status); // 早退フラグチェック用
+            pstmt.setString(3, status); // 通常更新チェック用
+            pstmt.setString(4, status); // セットする値
+
+            // 理由更新用 (2つ)
             pstmt.setString(5, reason);
-            pstmt.setString(6, userId);
+            pstmt.setString(6, reason);
+
+            // 画像パス更新用 (2つ)
+            pstmt.setString(7, imagePath);
+            pstmt.setString(8, imagePath);
+
+            // 誰のデータを更新するか
+            pstmt.setString(9, userId);
 
             int rows = pstmt.executeUpdate();
             System.out.println("DAO下校登録: 完了 (件数=" + rows + ")");
@@ -90,17 +108,17 @@ public class AttendanceDao {
         }
     }
 
-    // ★便利機能: データベースの中身をEclipseのコンソールに表示する
+    // デバッグ用：データベースの中身をコンソールに表示
     public void printAllData() {
         String sql = "SELECT * FROM ATTMANAGEMENT ORDER BY Target_Date DESC, Check_In_Time DESC";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
-            System.out.println("===============================================================");
-            System.out.println("【現在のデータベース保存状況】(最新順)");
-            System.out.println("ID      | 日付       | 登校時間 | 下校時間 | 状態 | 理由");
-            System.out.println("---------------------------------------------------------------");
+            System.out.println("===================================================================================");
+            System.out.println("【現在のデータベース保存状況】");
+            System.out.println("ID      | 日付       | 登校     | 下校     | 状態        | 理由         | 画像");
+            System.out.println("-----------------------------------------------------------------------------------");
 
             while (rs.next()) {
                 String id = rs.getString("User_ID");
@@ -112,13 +130,17 @@ public class AttendanceDao {
                 Timestamp outTs = rs.getTimestamp("Check_Out_Time");
                 String outTime = (outTs != null) ? outTs.toString().substring(11, 19) : "--:--:--";
 
-                String status = rs.getString("Status");
-                String reason = rs.getString("Absence_Reason");
-                if(reason == null) reason = "";
+                String stat = rs.getString("Status");
+                String reas = rs.getString("Absence_Reason");
+                if(reas == null) reas = "";
 
-                System.out.println(id + " | " + date + " | " + inTime + " | " + outTime + " | " + status + " | " + reason);
+                String img = rs.getString("CERTIFICATE_PATH");
+                if(img == null) img = "(なし)";
+                else img = "(あり)"; // 長いのでコンソールでは省略
+
+                System.out.println(id + " | " + date + " | " + inTime + " | " + outTime + " | " + stat + " | " + reas + " | " + img);
             }
-            System.out.println("===============================================================");
+            System.out.println("===================================================================================");
 
         } catch (Exception e) {
             e.printStackTrace();
