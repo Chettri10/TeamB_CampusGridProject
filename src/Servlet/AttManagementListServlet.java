@@ -2,6 +2,8 @@ package Servlet;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.util.Calendar;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletException;
@@ -13,20 +15,22 @@ import javax.servlet.http.HttpSession;
 
 import dao.AttManagementDao;
 
-@WebServlet("/AttManagementEditServlet")
+@WebServlet("/AttManagementListServlet")
 public class AttManagementListServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // 編集画面を表示する (GET)
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // --- 先生チェック ---
+        // --- 1. 先生チェック（セッション確認） ---
         HttpSession session = request.getSession();
-        // ★修正：teacher_home.jspに合わせて "userId" を取得
+
+        // ★重要: teacher_home.jspに合わせて "userId" を取得
         String loginId = (String) session.getAttribute("userId");
 
+        // ログインしていない、または先生(IDがTで始まらない)でない場合はログイン画面へ
         if (loginId == null || !loginId.startsWith("T")) {
+            // フォルダ名が「LogIn」であることを確認しましたので合わせます
             response.sendRedirect("LogIn/login.jsp");
             return;
         }
@@ -34,52 +38,80 @@ public class AttManagementListServlet extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
 
-        String userId = request.getParameter("userId");
+        // --- 2. 日付パラメータの取得 ---
         String dateStr = request.getParameter("targetDate");
+        Date targetDate;
 
-        if (userId == null || dateStr == null) {
-            response.sendRedirect("AttManagementListServlet");
-            return;
+        if (dateStr == null || dateStr.isEmpty()) {
+            targetDate = new Date(System.currentTimeMillis());
+        } else {
+            try {
+                targetDate = Date.valueOf(dateStr);
+            } catch (IllegalArgumentException e) {
+                targetDate = new Date(System.currentTimeMillis());
+            }
         }
 
-        Date targetDate = Date.valueOf(dateStr);
+        // 前日・翌日の計算
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(targetDate);
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+        Date prevDate = new Date(cal.getTimeInMillis());
+
+        cal.setTime(targetDate);
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        Date nextDate = new Date(cal.getTimeInMillis());
+
+        // --- 3. DAOを使ってデータを取得 ---
         AttManagementDao dao = new AttManagementDao();
-        Map<String, Object> data = dao.getAttendanceDetail(userId, targetDate);
+        List<Map<String, Object>> list = null;
 
-        request.setAttribute("attData", data);
-        request.setAttribute("targetDate", targetDate);
-        request.getRequestDispatcher("jsp/attendance_edit.jsp").forward(request, response);
-    }
-
-    // 編集内容を保存する (POST)
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        // --- 先生チェック ---
-        HttpSession session = request.getSession();
-        String loginId = (String) session.getAttribute("userId"); // ★ここも userId に修正
-
-        if (loginId == null || !loginId.startsWith("T")) {
-            response.sendRedirect("LogIn/login.jsp");
-            return;
+        try {
+            list = dao.getDailyAttendanceList(targetDate);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        // ---------------------------
 
-        request.setCharacterEncoding("UTF-8");
+        // --- 4. 集計処理 ---
+        int countPresent = 0;      // 出席
+        int countLate = 0;         // 遅刻
+        int countEarly = 0;        // 早退
+        int countAbsent = 0;       // 欠席
+        int countUnregistered = 0; // 未登録
 
-        String userId = request.getParameter("userId");
-        String dateStr = request.getParameter("targetDate");
-        String status = request.getParameter("status");
-        String checkInTime = request.getParameter("checkInTime");
-        String checkOutTime = request.getParameter("checkOutTime");
-        String reason = request.getParameter("reason");
+        if (list != null) {
+            for (Map<String, Object> data : list) {
+                String status = (String) data.get("status");
 
-        System.out.println("■更新処理開始: ID=" + userId + ", 備考=" + reason);
+                if (status == null || status.equals("未登録")) {
+                    countUnregistered++;
+                } else if (status.equals("出席")) {
+                    countPresent++;
+                } else if (status.equals("遅刻")) {
+                    countLate++;
+                } else if (status.equals("早退")) {
+                    countEarly++;
+                } else if (status.equals("欠席")) {
+                    countAbsent++;
+                }
+            }
+        }
 
-        Date targetDate = Date.valueOf(dateStr);
-        AttManagementDao dao = new AttManagementDao();
-        dao.saveAttendance(userId, targetDate, status, checkInTime, checkOutTime, reason);
+        // 集計結果をリクエストスコープにセット
+        request.setAttribute("countPresent", countPresent);
+        request.setAttribute("countLate", countLate);
+        request.setAttribute("countEarly", countEarly);
+        request.setAttribute("countAbsent", countAbsent);
+        request.setAttribute("countUnregistered", countUnregistered);
 
-        response.sendRedirect("AttManagementListServlet?targetDate=" + dateStr);
+        // --- 5. JSPにデータを渡す ---
+        request.setAttribute("attendanceList", list);
+        request.setAttribute("displayDate", targetDate);
+        request.setAttribute("prevDate", prevDate);
+        request.setAttribute("nextDate", nextDate);
+
+        // --- 6. JSPへフォワード ---
+        // ※ attendance_check.jsp は「jsp」フォルダにある前提です
+        request.getRequestDispatcher("jsp/attendance_check.jsp").forward(request, response);
     }
 }
