@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import dao.AttManagementDao2;
 
@@ -26,12 +27,9 @@ public class H_syussekiServlet extends HttpServlet {
 		req.setCharacterEncoding("UTF-8");
         res.setContentType("text/html; charset=UTF-8");
 
-       // HttpSession session = req.getSession(false);
-       // String userID = (String) session.getAttribute("stuId");
-       // String userName = (String) session.getAttribute("stuName");
-
-        String userName ="相植男";//仮
-        String userID ="S0002";   //仮
+        HttpSession session = req.getSession(false);
+        String userID = (String) session.getAttribute("stuId");
+        String userName = (String) session.getAttribute("stuName");
 
          String date = req.getParameter("date");
          Date targetDate;
