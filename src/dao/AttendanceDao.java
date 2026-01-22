@@ -5,6 +5,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class AttendanceDao {
 
@@ -84,7 +88,7 @@ public class AttendanceDao {
             // ステータス判定用パラメータ (3つ)
             pstmt.setString(2, status); // 早退フラグチェック用
             pstmt.setString(3, status); // 通常更新チェック用
-            pstmt.setString(4, status); // セットする値
+            pstmt.setString(4, status); // セット用
 
             // 理由更新用 (2つ)
             pstmt.setString(5, reason);
@@ -136,7 +140,7 @@ public class AttendanceDao {
 
                 String img = rs.getString("CERTIFICATE_PATH");
                 if(img == null) img = "(なし)";
-                else img = "(あり)"; // 長いのでコンソールでは省略
+                else img = "(あり)";
 
                 System.out.println(id + " | " + date + " | " + inTime + " | " + outTime + " | " + stat + " | " + reas + " | " + img);
             }
@@ -145,5 +149,48 @@ public class AttendanceDao {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // ★修正済み：USERテーブルと結合して「ユーザー名」も一緒に取得するメソッド
+    public List<Map<String, String>> getRecordsWithImages() {
+        List<Map<String, String>> list = new ArrayList<>();
+
+        // SQL: USERテーブルと結合(JOIN)して、ATTMANAGEMENTの全データ(A.*)とUSERテーブルの名前(U.USER_NAME)を取得
+        String sql = "SELECT A.*, U.USER_NAME " +
+                     "FROM ATTMANAGEMENT A " +
+                     "LEFT JOIN USER U ON A.User_ID = U.USER_ID " +
+                     "WHERE A.CERTIFICATE_PATH IS NOT NULL AND A.CERTIFICATE_PATH <> '' " +
+                     "ORDER BY A.Target_Date DESC, A.Check_In_Time DESC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                Map<String, String> map = new HashMap<>();
+                map.put("id", rs.getString("User_ID"));
+
+                // ★名前を取得 (もしUSERテーブルに見つからなければ「未登録」とする)
+                String name = rs.getString("USER_NAME");
+                if (name == null) name = "未登録ユーザー";
+                map.put("userName", name);
+
+                // 日時を見やすく整形 (例: 2026-01-21 09:30)
+                String date = rs.getDate("Target_Date").toString();
+                Timestamp inTs = rs.getTimestamp("Check_In_Time");
+                String time = (inTs != null) ? inTs.toString().substring(11, 16) : "--:--";
+                map.put("datetime", date + " " + time);
+
+                map.put("status", rs.getString("Status"));
+                map.put("reason", rs.getString("Absence_Reason"));
+                map.put("image", rs.getString("CERTIFICATE_PATH"));
+
+                list.add(map);
+            }
+        } catch (Exception e) {
+            System.out.println("DAO画像取得エラー: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
     }
 }

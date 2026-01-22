@@ -1,10 +1,20 @@
 package dao;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class UserDao extends DAO {
+
+    // --- 既存の基本メソッド (変更なし) ---
 
     public int insert(String userId, String userName, String password, int role,
                       Timestamp lastLogIn, String subjectInCharge, Boolean addProduct,
@@ -24,7 +34,8 @@ public class UserDao extends DAO {
             ps.setString(9, email);
             ps.setString(10, phoneNumber);
             ps.setString(11, studentNumber);
-            ps.setDate(12, (java.sql.Date) dateOfBirth);
+            // Date型変換の安全対策
+            if (dateOfBirth != null) ps.setDate(12, new java.sql.Date(dateOfBirth.getTime())); else ps.setDate(12, null);
             ps.setString(13, address);
             ps.setString(14, parentId);
             return ps.executeUpdate();
@@ -47,7 +58,7 @@ public class UserDao extends DAO {
             ps.setString(8, email);
             ps.setString(9, phoneNumber);
             ps.setString(10, studentNumber);
-            ps.setDate(11, (java.sql.Date) dateOfBirth);
+            if (dateOfBirth != null) ps.setDate(11, new java.sql.Date(dateOfBirth.getTime())); else ps.setDate(11, null);
             ps.setString(12, address);
             ps.setString(13, parentId);
             ps.setString(14, userId);
@@ -100,64 +111,63 @@ public class UserDao extends DAO {
         m.put("Parent_ID", rs.getString("Parent_ID"));
         return m;
     }
-// ユーザー登録メソッド
-public boolean registerUser(String userId, String userName, String password, int role) {
-    // ID重複チェックは簡易的に省略（エラーになったらfalseを返す）
-    String sql = "INSERT INTO User (User_ID, User_Name, Password, Role) VALUES (?, ?, ?, ?)";
 
-    try (Connection conn = getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    // --- ★ここから下：登録画面用のメソッド ---
 
-        pstmt.setString(1, userId);
-        pstmt.setString(2, userName);
-        pstmt.setString(3, password);
-        pstmt.setInt(4, role);
+    // 1. RegisterServletで使用するメソッド（ID, 名前, PW, Email）
+    public boolean registerUser(String userId, String userName, String password, String email) {
+        // ROLE=2 (学生) として登録
+        String sql = "INSERT INTO USER (USER_ID, USER_NAME, PASSWORD, EMAIL, ROLE) VALUES (?, ?, ?, ?, 2)";
 
-        int result = pstmt.executeUpdate();
-        return result > 0; // 1行以上追加できれば成功
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-    } catch (Exception e) {
-        e.printStackTrace();
-        return false; // ID重複などで失敗した場合
-    }
-}
-// ユーザー登録メソッド（路線情報対応版）
-public boolean registerUser(String userId, String userName, String password, int role,
-                            String email, String phone, String dob, String address,
-                            String routeInfo) { // ★追加：routeInfo
+            pstmt.setString(1, userId);
+            pstmt.setString(2, userName);
+            pstmt.setString(3, password);
+            pstmt.setString(4, email);
 
-    // INSERT文に Route_Confirmation を追加
-    String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Email, Phone_Number, Date_Of_Birth, Address, Route_Confirmation) " +
-                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            return pstmt.executeUpdate() > 0;
 
-    try (Connection conn = getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-        pstmt.setString(1, userId);
-        pstmt.setString(2, userName);
-        pstmt.setString(3, password);
-        pstmt.setInt(4, role);
-        pstmt.setString(5, email);
-        pstmt.setString(6, phone);
-
-        if (dob != null && !dob.isEmpty()) {
-            pstmt.setDate(7, java.sql.Date.valueOf(dob));
-        } else {
-            pstmt.setDate(7, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-
-        pstmt.setString(8, address);
-
-        // ★追加：路線情報
-        pstmt.setString(9, routeInfo);
-
-        int result = pstmt.executeUpdate();
-        return result > 0;
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        return false;
     }
 
-}
+    // 2. 詳細情報（誕生日・住所・路線情報など）を含めて登録したい場合用
+    public boolean registerUserFull(String userId, String userName, String password, int role,
+                                    String email, String phone, String dobString, String address,
+                                    String routeInfo) {
+
+        String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Email, Phone_Number, Date_Of_Birth, Address, Route_Confirmation) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, userId);
+            pstmt.setString(2, userName);
+            pstmt.setString(3, password);
+            pstmt.setInt(4, role);
+            pstmt.setString(5, email);
+            pstmt.setString(6, phone);
+
+            // 誕生日(String)をSQL Dateに変換
+            if (dobString != null && !dobString.isEmpty()) {
+                pstmt.setDate(7, java.sql.Date.valueOf(dobString));
+            } else {
+                pstmt.setDate(7, null);
+            }
+
+            pstmt.setString(8, address);
+            pstmt.setString(9, routeInfo); // 路線情報をRoute_Confirmationカラムに保存
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
