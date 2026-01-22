@@ -10,16 +10,16 @@
 <style>
     /* --- クール＆モダンな青テーマ --- */
     :root {
-        --bg-main: #021024;
-        --text-main: #ffffff;
-        --accent-cyan: #00e5ff;
-        --accent-hover: #6effff;
-        --panel-bg: #ffffff;
-        --table-header: #052c48;
-        --status-green: #00c853;
-        --status-red: #ff1744;
-        --status-orange: #ff9100;
-        --status-purple: #d500f9;
+        --bg-main: #021024;       /* 背景：濃紺 */
+        --text-main: #ffffff;     /* 文字：白 */
+        --accent-cyan: #00e5ff;   /* アクセント：シアン */
+        --accent-hover: #6effff;  /* ホバー時 */
+        --panel-bg: #ffffff;      /* パネル背景：白 */
+        --table-header: #052c48;  /* 表ヘッダー */
+        --status-green: #00c853;  /* 出席 */
+        --status-red: #ff1744;    /* 遅刻 */
+        --status-orange: #ff9100; /* 早退 */
+        --status-purple: #d500f9; /* 欠席 */
     }
 
     body {
@@ -241,6 +241,7 @@
                         <%= data.get("userId") %>
                     </a>
                 </td>
+
                 <td>
                     <a href="StudentHistoryServlet?userId=<%= data.get("userId") %>" class="link-student">
                         <%= data.get("userName") %>
@@ -262,7 +263,8 @@
 
     <br>
     <p style="color: #ccc; font-size: 0.9em;">※学生をクリックすると詳細・履歴の確認と編集ができます。</p>
-    <a href="teacher_home.jsp" class="home-link">先生ホームへ戻る</a>
+
+    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="home-link">ホームへ戻る</a>
 
 </body>
 </html>

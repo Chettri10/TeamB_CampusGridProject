@@ -1,17 +1,25 @@
 package Servlet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Calendar;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import dao.AttendanceDao;
 
 @WebServlet("/AttendanceServlet")
+@MultipartConfig(
+    fileSizeThreshold = 1024 * 1024 * 2,  // 2MB
+    maxFileSize = 1024 * 1024 * 10,       // 10MB
+    maxRequestSize = 1024 * 1024 * 50     // 50MB
+)
 public class AttendanceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
@@ -24,31 +32,64 @@ public class AttendanceServlet extends HttpServlet {
 
         try {
             System.out.println("=== AttendanceServlet 開始 ===");
+
+            // ---------------------------------------------------------
+            // 1. 先にQRデータを読み込んで「誰なのか(userId)」を特定する
+            // ---------------------------------------------------------
+            // ※ここを最初にやらないと、ファイル名に名前を入れられません
             String qrData = req.getParameter("qrData");
             String reason = req.getParameter("reason");
 
             if (qrData == null || !qrData.contains(",")) {
-                out.write("ERROR:QRコードデータなし");
+                out.write("ERROR:QRデータなし");
                 return;
             }
 
-            // QRデータ分解
             String[] parts = qrData.split(",");
-            if (parts.length < 2) {
-                out.write("ERROR:QRデータ形式不正");
-                return;
+            String userId = parts[0]; // ★ここでユーザーIDをゲット！
+
+            // ---------------------------------------------------------
+            // 2. 画像ファイルの保存処理 (IDを使って名前をつける)
+            // ---------------------------------------------------------
+            String imagePath = "";
+            Part filePart = null;
+            try {
+                filePart = req.getPart("certificateImage");
+            } catch (Exception e) {
+                // 画像なしの場合は無視
             }
-            String userId = parts[0];
+
+            if (filePart != null && filePart.getSize() > 0) {
+                // 保存先フォルダ
+                String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
+                File uploadDir = new File(uploadPath);
+                if (!uploadDir.exists()) uploadDir.mkdir();
+
+                // ★重要：ファイル名の先頭に userId を付ける
+                // 例: S0001_17399999_filename.jpg
+                String fileName = userId + "_" + System.currentTimeMillis() + "_" + getFileName(filePart);
+
+                filePart.write(uploadPath + File.separator + fileName);
+                imagePath = "uploads/" + fileName; // データベースにはこのパスを入れる
+
+                System.out.println("【画像保存成功】User: " + userId + " Path: " + imagePath);
+            }
+
+            // ---------------------------------------------------------
+            // 3. 有効期限チェック
+            // ---------------------------------------------------------
             long qrTime = 0;
             try { qrTime = Long.parseLong(parts[1]); } catch(Exception e){}
-
-            // 有効期限チェック (理由入力がある場合は5分、なければ10秒)
             long timeLimit = (reason != null && !reason.isEmpty()) ? 300000 : 10000;
+
             if (System.currentTimeMillis() - qrTime > timeLimit) {
                 out.write("ERROR:有効期限切れ(再スキャンしてください)");
                 return;
             }
 
+            // ---------------------------------------------------------
+            // 4. データベース処理
+            // ---------------------------------------------------------
             AttendanceDao dao = new AttendanceDao();
             boolean hasCheckedIn = dao.hasCheckedInToday(userId);
             Calendar cal = Calendar.getInstance();
@@ -58,7 +99,6 @@ public class AttendanceServlet extends HttpServlet {
             boolean result = false;
             String status = "";
             String finalReason = (reason != null) ? reason : "";
-            boolean isLateOrEarly = false;
 
             if (!hasCheckedIn) {
                 // 登校
@@ -68,8 +108,7 @@ public class AttendanceServlet extends HttpServlet {
                     return;
                 }
                 status = isLate ? "遅刻" : "出席";
-                result = dao.registerCheckIn(userId, status, finalReason);
-                isLateOrEarly = isLate;
+                result = dao.registerCheckIn(userId, status, finalReason, imagePath);
 
                 if(result) out.write("SUCCESS:" + userId + " さんの出席(" + status + ")完了");
 
@@ -81,8 +120,7 @@ public class AttendanceServlet extends HttpServlet {
                     return;
                 }
                 status = isEarly ? "早退" : "";
-                result = dao.registerCheckOut(userId, status, finalReason);
-                isLateOrEarly = isEarly;
+                result = dao.registerCheckOut(userId, status, finalReason, imagePath);
 
                 if(result) out.write("SUCCESS:" + userId + " さんの下校完了");
             }
@@ -90,8 +128,6 @@ public class AttendanceServlet extends HttpServlet {
             if (!result) {
                 out.write("ERROR:データベース保存失敗");
             } else {
-                // ★成功したらコンソールに現在の中身を表示する！
-                System.out.println("▼ ▼ ▼ データベース最新情報 ▼ ▼ ▼");
                 dao.printAllData();
             }
 
@@ -99,5 +135,16 @@ public class AttendanceServlet extends HttpServlet {
             e.printStackTrace();
             out.write("ERROR:システムエラー (" + e.getMessage() + ")");
         }
+    }
+
+    private String getFileName(Part part) {
+        String contentDisp = part.getHeader("content-disposition");
+        String[] tokens = contentDisp.split(";");
+        for (String token : tokens) {
+            if (token.trim().startsWith("filename")) {
+                return token.substring(token.indexOf("=") + 2, token.length() - 1);
+            }
+        }
+        return "unknown.jpg";
     }
 }

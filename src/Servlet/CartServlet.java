@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 
 import dao.CartDao;
 import dao.CartDetailDao;
+import dao.PurchaseDao;
 
 @WebServlet("/CartServlet")
 public class CartServlet extends HttpServlet {
@@ -27,22 +28,44 @@ public class CartServlet extends HttpServlet {
         HttpSession session = request.getSession();
 
         try {
-            // --- 追加：注文確定時の全消去処理 ---
+            // --- 注文確定時の保存と全消去処理 ---
             if ("clearCart".equals(action)) {
-                // 1. セッションの情報を削除
+                // 1. セッションからユーザー情報と金額を取得
+                String userId = (String) session.getAttribute("userId");
+                if (userId == null) userId = "U001";
+
+                Integer totalAmount = (Integer) session.getAttribute("price");
+                if (totalAmount == null) totalAmount = 0;
+
+                // 2. 【最重要】修正：DBから「実在するCART_ID」を検索して取得する
+                CartDao cartDao = new CartDao();
+                int cartId = cartDao.getActiveCartId(userId);
+
+                // エラー回避：DBに存在しない架空のIDを作らない
+                if (cartId == -1) {
+                    throw new Exception("有効なカート(CART_ID)がデータベースに見つかりません。商品をカートに入れ直してください。");
+                }
+
+                // 購入履歴ID（これは新しく作る番号でOK）
+                int purchaseId = (int) (System.currentTimeMillis() % 1000000);
+
+                // 3. PURCHASEテーブルへ保存（本物のcartIdを渡すことで制約エラーを解決）
+                PurchaseDao purchaseDao = new PurchaseDao();
+                purchaseDao.insert(purchaseId, userId, cartId, totalAmount);
+
+                // 4. 保存に成功したら、古いカート情報をDBから削除
+                detailDao.deleteAll();
+
+                // 5. セッション情報のクリア
                 session.removeAttribute("cartList");
                 session.removeAttribute("price");
 
-                // 2. データベース（CART_DETAILSテーブル）から全てのレコードを削除
-                // ※本来はユーザーIDに紐づくもののみですが、現状のfindAll()構成に合わせて全削除を実行します
-                detailDao.deleteAll();
-
-                // 3. 完了画面へリダイレクト
+                // 6. 完了画面へ
                 response.sendRedirect(request.getContextPath() + "/jsp/payment_finish.jsp");
                 return;
             }
 
-            // --- 既存の削除処理（1件削除） ---
+            // --- 削除処理（1件削除） ---
             if ("delete".equals(action)) {
                 String detailIdStr = request.getParameter("detailId");
                 if (detailIdStr != null) {
@@ -50,7 +73,7 @@ public class CartServlet extends HttpServlet {
                     detailDao.delete(detailId);
                 }
             }
-            // --- 既存のカートへの追加処理 ---
+            // --- カートへの追加処理 ---
             else {
                 String userId = (String) session.getAttribute("userId");
                 if (userId == null) userId = "U001";
@@ -60,6 +83,7 @@ public class CartServlet extends HttpServlet {
                 int quantity = (quantityStr != null) ? Integer.parseInt(quantityStr) : 1;
 
                 CartDao cartDao = new CartDao();
+                // 追加時は新しくカートIDを生成してDBに登録する
                 int cartId = (int) (System.currentTimeMillis() % 1000000);
                 cartDao.insert(cartId, userId);
 
@@ -70,7 +94,6 @@ public class CartServlet extends HttpServlet {
                 }
             }
 
-            // 通常の追加・削除処理後は一覧へ戻る
             response.sendRedirect(request.getContextPath() + "/CartServlet");
 
         } catch (Exception e) {
@@ -84,11 +107,8 @@ public class CartServlet extends HttpServlet {
             throws ServletException, IOException {
         try {
             CartDetailDao detailDao = new CartDetailDao();
-            // JOINを使って最新のDB状態を取得
             List<Map<String, Object>> cartList = detailDao.findAllWithProductInfo();
-
             request.setAttribute("cartList", cartList);
-            // カート確認画面へ
             request.getRequestDispatcher("/jsp/cart_confirm.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();
