@@ -65,6 +65,21 @@ public class NoticeDao extends DAO {
         }
     }
 
+    //学生・保護者画面に標示されるようにコード追加
+    public void insert(String userId, String category, String content, String role) throws Exception {
+        Connection conn = getConnection();
+        String sql = "INSERT INTO notice (User_ID, CATEGORY, Content, Role, Posted_On) VALUES (?, ?, ?, ?, NOW())";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setString(1, userId);
+        stmt.setString(2, category);
+        stmt.setString(3, content);
+        stmt.setString(4, role);
+        stmt.executeUpdate();
+        stmt.close();
+        conn.close();
+    }
+
+
     // ★ ResultSet → Map 変換（teacher_home.jsp が使うキー名に完全対応）
     private Map<String, Object> toMap(ResultSet rs) throws SQLException {
         Map<String, Object> m = new LinkedHashMap<>();
@@ -73,6 +88,7 @@ public class NoticeDao extends DAO {
         m.put("CATEGORY", rs.getString("Category"));  // ★ 重要
         m.put("Content", rs.getString("Content"));
         m.put("Posted_On", rs.getTimestamp("Posted_On"));
+        m.put("Role", rs.getString("Role"));
         return m;
     }
 }
