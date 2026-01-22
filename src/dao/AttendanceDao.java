@@ -112,6 +112,36 @@ public class AttendanceDao {
         }
     }
 
+    // ★追加: 学生IDを指定して、その学生の出席記録を全て取得するメソッド（保護者画面用）
+    public List<Map<String, Object>> getAttendanceByStudentId(String studentId) {
+        List<Map<String, Object>> list = new ArrayList<>();
+
+        // 日付の新しい順に取得
+        String sql = "SELECT * FROM ATTMANAGEMENT WHERE User_ID = ? ORDER BY Target_Date DESC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, studentId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("Target_Date", rs.getDate("Target_Date"));
+                    map.put("Status", rs.getString("Status"));
+                    map.put("Check_In_Time", rs.getTimestamp("Check_In_Time"));
+                    map.put("Check_Out_Time", rs.getTimestamp("Check_Out_Time"));
+                    map.put("Absence_Reason", rs.getString("Absence_Reason"));
+                    list.add(map);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("DAOエラー(getAttendanceByStudentId): " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     // デバッグ用：データベースの中身をコンソールに表示
     public void printAllData() {
         String sql = "SELECT * FROM ATTMANAGEMENT ORDER BY Target_Date DESC, Check_In_Time DESC";
@@ -121,7 +151,7 @@ public class AttendanceDao {
 
             System.out.println("===================================================================================");
             System.out.println("【現在のデータベース保存状況】");
-            System.out.println("ID      | 日付       | 登校     | 下校     | 状態        | 理由         | 画像");
+            System.out.println("ID      | 日付        | 登校      | 下校      | 状態         | 理由           | 画像");
             System.out.println("-----------------------------------------------------------------------------------");
 
             while (rs.next()) {
@@ -151,7 +181,7 @@ public class AttendanceDao {
         }
     }
 
-    // ★修正済み：USERテーブルと結合して「ユーザー名」も一緒に取得するメソッド
+    // USERテーブルと結合して「ユーザー名」も一緒に取得するメソッド
     public List<Map<String, String>> getRecordsWithImages() {
         List<Map<String, String>> list = new ArrayList<>();
 
@@ -170,7 +200,7 @@ public class AttendanceDao {
                 Map<String, String> map = new HashMap<>();
                 map.put("id", rs.getString("User_ID"));
 
-                // ★名前を取得 (もしUSERテーブルに見つからなければ「未登録」とする)
+                // 名前を取得 (もしUSERテーブルに見つからなければ「未登録」とする)
                 String name = rs.getString("USER_NAME");
                 if (name == null) name = "未登録ユーザー";
                 map.put("userName", name);
