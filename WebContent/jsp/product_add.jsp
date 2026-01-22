@@ -159,7 +159,7 @@
             </button>
         </form>
 
-        <a href="${pageContext.request.contextPath}/Admin/master_manager.jsp" class="back-link">
+        <a href="${pageContext.request.contextPath}/jsp/prodect_regist.jsp" class="back-link">
             <i class="fas fa-arrow-left"></i> 管理パネルへ戻る
         </a>
     </div>
