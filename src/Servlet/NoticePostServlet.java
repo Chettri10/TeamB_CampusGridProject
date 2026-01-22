@@ -37,9 +37,9 @@ public class NoticePostServlet extends HttpServlet {
         String content = request.getParameter("content");
 
         try {
-            // Åö DB Ç…ï€ë∂
+            // Åö DB Ç…ï€ë∂Åirole Çí«â¡Åj
             NoticeDao dao = new NoticeDao();
-            dao.insert(userId, category, content);
+            dao.insert(userId, category, content, role);
 
             // äÆóπâÊñ Ç÷
             RequestDispatcher rd = request.getRequestDispatcher("/LogIn/notice_done.jsp");

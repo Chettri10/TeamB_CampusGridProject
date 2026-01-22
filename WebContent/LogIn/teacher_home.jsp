@@ -222,10 +222,6 @@
         <i class="fas fa-comments icon-large"></i>
         <span class="menu-label">教員・学生 チャット</span>
     </a>
-        <a href="qr_generator.jsp" class="menu-card card-orange">
-            <i class="fas fa-qrcode icon-large"></i>
-            <span class="menu-label">出席QRコード表示</span>
-        </a>
 
     </div>
 
