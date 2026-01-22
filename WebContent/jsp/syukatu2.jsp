@@ -3,8 +3,6 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Arrays" %>
 
-
-
 <%
     // --- JSPスクリプトレットで選択肢データを準備 ---
     // 進捗状況の選択肢
@@ -94,74 +92,12 @@
 <body>
 
 <div class="container">
-
-<%
-String error = (String) request.getAttribute("error");
-if (error != null) {
-%>
-    <p style="color:red;"><%= error %></p>
-<%
-}
-%>
     <h1>就活状況の入力</h1>
-     <%-- フォームの開始。アクション先は後続のServletを想定 --%>
-    <form action="<%= request.getContextPath() %>/JobSearchRegisterServlet" method="POST">
+    <h1>登録が完了しました！</h1>
 
-        <%-- 1. 会社名 (テキスト入力) --%>
-        <div class="form-group">
-            <label for="companyName" class="label">会社名</label>
-            <div class="input-control">
-                <input type="text" id="companyName" name="companyName" placeholder="会社" required>
-            </div>
-        </div>
+    <a href="<%= request.getContextPath() %>/syukatu.jsp">戻る</a>
 
-        <%-- 2. 進捗状況 (ドロップダウン) --%>
-        <div class="form-group">
-            <label for="progressStatus" class="label">進捗状況</label>
-            <div class="input-control">
-                <select id="progressStatus" name="progressStatus" required>
-                    <%-- JSPスクリプトレットで選択肢を生成 --%>
-                    <% for (String status : statusOptions) { %>
-                        <option value="<%= status %>" <%= status.equals("選考") ? "selected" : "" %>>
-                            <%= status %>
-                        </option>
-                    <% } %>
-                </select>
-            </div>
-        </div>
+</div>
 
-        <%-- 3. 志望度 (ラジオボタン) --%>
-        <div class="form-group">
-            <label class="label">志望度</label>
-            <div class="input-control radio-group">
-                <label><input type="radio" name="motivation" value="高" checked>高</label>
-                <label><input type="radio" name="motivation" value="中">中</label>
-                <label><input type="radio" name="motivation" value="低">低</label>
-            </div>
-        </div>
-
-        <%-- 4. エントリー ID (テキスト入力) --%>
-        <div class="form-group">
-            <label for="entryId" class="label">エントリー ID</label>
-            <div class="input-control">
-                <input type="text" id="entryId" name="entryId" placeholder="エントリー ID">
-            </div>
-        </div>
-
-        <%-- 5. 備考 (テキストエリア) --%>
-        <div class="form-group">
-            <label for="notes" class="label">備考</label>
-            <div class="input-control">
-                <textarea id="notes" name="notes" placeholder="備考"></textarea>
-            </div>
-        </div>
-
-        <%-- 6. 完了ボタン --%>
-        <button type="submit" class="submit-button">
-            完了
-        </button>
-    </form>
-
-   </div>
 </body>
 </html>

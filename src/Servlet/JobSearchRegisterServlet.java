@@ -11,16 +11,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-@WebServlet("/AbsenceServlet")
+@WebServlet("/JobSearchRegisterServlet")
 public class JobSearchRegisterServlet extends HttpServlet {
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 譁�蟄怜喧縺鷹亟豁｢
+
         request.setCharacterEncoding("UTF-8");
 
-        // JSP縺九ｉ騾√ｉ繧後※縺阪◆蛟､繧貞叙蠕�
+
 
         String companyName = request.getParameter("companyName");
         String progressStatus = request.getParameter("progressStatus");
@@ -28,9 +28,16 @@ public class JobSearchRegisterServlet extends HttpServlet {
         String entryId = request.getParameter("entryId");
         String notes = request.getParameter("notes");
 
-        // �ｼ亥ｿ�隕√↑繧会ｼ峨Μ繧ｯ繧ｨ繧ｹ繝医せ繧ｳ繝ｼ繝励↓菫晏ｭ�
+
 //        request.setAttribute("companyName", companyName);
 //        request.setAttribute("progressStatus",progressStatus);
+
+        if (companyName == null || companyName.isEmpty()) {
+            request.setAttribute("error", "企業名は必須です");
+            request.getRequestDispatcher("jsp/syukatu.jsp")
+                   .forward(request, response);
+            return;
+        }
 
 
 
@@ -40,33 +47,32 @@ public class JobSearchRegisterServlet extends HttpServlet {
                    + "VALUES (?, ?, ?, ?, ?)";
 
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.h2.Driver");
 
             try (Connection con = DriverManager.getConnection(
-                    "jdbc:h2:tcp://localhost/~/CampusGridProject?useUnicode=true&characterEncoding=UTF-8",
-                    "user", "password");
+                    "jdbc:h2:tcp://localhost/~/CampusGridProject",
+                    "sa",
+                    "");
                  PreparedStatement ps = con.prepareStatement(sql)) {
 
                 ps.setString(1, companyName);
                 ps.setString(2, progressStatus);
-                ps.setString(4, motivation);
-                ps.setString(5, entryId);
-                ps.setString(6, notes);
+                ps.setString(3, motivation);
+                ps.setString(4, entryId);
+                ps.setString(5, notes);
 
                 ps.executeUpdate();
             }
 
-            response.sendRedirect("Absence/absenceComplete.jsp");
+            response.sendRedirect("jsp/syukatu2.jsp");
 
         } catch (Exception e) {
             e.printStackTrace();
             request.setAttribute("error", "登録に失敗しました");
-            request.getRequestDispatcher("syukatu.jsp")
+            request.getRequestDispatcher("jsp/syukatu.jsp")
                    .forward(request, response);
         }
 
-        // 谺｡縺ｮ逕ｻ髱｢縺ｸ驕ｷ遘ｻ�ｼ育｢ｺ隱咲判髱｢縺ｪ縺ｩ�ｼ�
-        request.getRequestDispatcher("Absence/absenceConfirm.jsp")
-               .forward(request, response);
+        }
     }
-}
+
