@@ -54,6 +54,7 @@
 
     button {
         width: 100%; padding: 12px; background-color: #00ffff;
+
         border: none; border-radius: 5px; cursor: pointer;
         font-weight: bold; font-size: 16px; margin-top: 30px;
         transition: background 0.3s;
@@ -89,6 +90,14 @@
             <div class="input-group">
                 <span id="id-prefix" class="prefix-span">S</span>
                 <input type="text" name="idSuffix" class="input-field" placeholder="00001" required maxlength="5" pattern="\d*">
+            </div>
+
+            <div id="child-id-container" class="hidden">
+                <div class="label-text">お子様のユーザーID (学生番号)</div>
+                <div class="input-group">
+                    <span class="prefix-span">S</span>
+                    <input type="text" id="child-id-input" name="childId" class="input-field" placeholder="お子様の番号 (例: 00001)" maxlength="5" pattern="\d*">
+                </div>
             </div>
 
             <div class="label-text">お名前</div>
@@ -146,19 +155,41 @@
             // 1. IDの頭文字を変える
             document.getElementById('id-prefix').innerText = roleChar;
 
-            // 2. 学生かどうか判定して、路線入力欄を出し分け
+            // 各要素の取得
             const routeContainer = document.getElementById('route-container');
             const routeInput = document.getElementById('route-input');
 
+            const childIdContainer = document.getElementById('child-id-container');
+            const childIdInput = document.getElementById('child-id-input');
+
+            // 2. 役割ごとの表示・非表示設定
             if (roleChar === 'S') {
-                // 学生の場合：表示して、入力を必須(required)にする
+                // 学生: 路線を表示(必須)、子供IDは非表示
                 routeContainer.classList.remove('hidden');
                 routeInput.required = true;
-            } else {
-                // 先生・保護者の場合：隠して、入力必須を外す
+
+                childIdContainer.classList.add('hidden');
+                childIdInput.required = false;
+                childIdInput.value = "";
+
+            } else if (roleChar === 'P') {
+                // 保護者: 路線は非表示、子供IDを表示(必須)
                 routeContainer.classList.add('hidden');
                 routeInput.required = false;
-                routeInput.value = ""; // 選択をリセット
+                routeInput.value = "";
+
+                childIdContainer.classList.remove('hidden');
+                childIdInput.required = true;
+
+            } else {
+                // 先生(T): 両方非表示
+                routeContainer.classList.add('hidden');
+                routeInput.required = false;
+                routeInput.value = "";
+
+                childIdContainer.classList.add('hidden');
+                childIdInput.required = false;
+                childIdInput.value = "";
             }
         }
 

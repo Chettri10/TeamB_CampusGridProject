@@ -1,7 +1,6 @@
 package Servlet;
 
 import java.io.IOException;
-
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -9,7 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import dao.UserDao;
-import dao.RouteDao; // ★追加：運行状況モニター用
 
 @WebServlet("/SignupServlet")
 public class SignupServlet extends HttpServlet {
@@ -18,60 +16,81 @@ public class SignupServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // 1. 文字化け防止
         request.setCharacterEncoding("UTF-8");
 
-        // 1. 各パラメータの取得
-        String roleType = request.getParameter("roleType");
-        String idSuffix = request.getParameter("idSuffix");
+        // 2. JSPからデータを取得
+        String roleType = request.getParameter("roleType"); // "S", "T", "P"
+        String idSuffix = request.getParameter("idSuffix"); // "00001" など
         String userName = request.getParameter("userName");
+        String email = request.getParameter("email");
+        String phone = request.getParameter("phone");
+        String dob = request.getParameter("dob"); // "2023-01-01"
+        String address = request.getParameter("address");
+        String routeInfo = request.getParameter("routeInfo"); // 学生用
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
 
-        String email = request.getParameter("email");
-        String phone = request.getParameter("phone");
-        String dob = request.getParameter("dob");
-        String address = request.getParameter("address");
+        // お子様のID (保護者の場合のみ値が入る)
+        String childId = request.getParameter("childId");
 
-        // 路線情報の取得
-        String routeInfo = request.getParameter("routeInfo");
-
-        // パスワード一致チェック
+        // 3. バリデーション (簡易チェック)
         if (password == null || !password.equals(confirmPassword)) {
-            request.setAttribute("errorMsg", "パスワードが一致しません。");
-            request.getRequestDispatcher("LogIn/signup.jsp").forward(request, response);
+            request.setAttribute("errorMsg", "パスワードが一致しません");
+            // ★修正: LogInフォルダの中を指定
+            request.getRequestDispatcher("/LogIn/signup.jsp").forward(request, response);
             return;
         }
 
-        // ID合体処理
+        // 4. IDの結合 (例: "S" + "00001" = "S00001")
         String fullUserId = roleType + idSuffix;
 
-        int roleId = 2; // デフォルト学生
+        // 5. 役割(Role)を数値に変換 (1:先生, 2:学生, 3:保護者)
+        int roleInt = 2; // デフォルトは学生
         if ("T".equals(roleType)) {
-            roleId = 1; // 先生
+            roleInt = 1;
         } else if ("P".equals(roleType)) {
-            roleId = 3; // 保護者
+            roleInt = 3;
         }
 
-        // 2. ユーザー情報の保存
-        UserDao dao = new UserDao();
+        // 6. データの調整
+        if (!"S".equals(roleType)) {
+            routeInfo = null; // 学生以外は路線情報なし
+        }
 
-        // ★修正：DAOにある「registerUserFull」という名前のメソッドを呼び出す
-        boolean isSuccess = dao.registerUserFull(fullUserId, userName, password, roleId, email, phone, dob, address, routeInfo);
+        if (!"P".equals(roleType)) {
+            childId = null; // 保護者以外は子供IDなし
+        } else {
+            // "S"がついていない場合につける処理（念のため）
+             if (childId != null && !childId.isEmpty() && !childId.startsWith("S")) {
+                 childId = "S" + childId;
+             }
+        }
+
+        // 7. DAOを使って登録処理
+        UserDao dao = new UserDao();
+        boolean isSuccess = dao.registerUserFull(
+                fullUserId,
+                userName,
+                password,
+                roleInt,
+                email,
+                phone,
+                dob,
+                address,
+                routeInfo,
+                childId
+        );
 
         if (isSuccess) {
-            // ★重要追加：路線情報がある場合、運行モニター用のテーブル(STUDENT_ROUTE)にも保存する
-            // これがないと、先生の「運行状況モニター」にこの学生が表示されません
-            if (routeInfo != null && !routeInfo.isEmpty() && roleId == 2) {
-                RouteDao routeDao = new RouteDao();
-                routeDao.addRoute(fullUserId, routeInfo);
-            }
-
-            // 成功時はログイン画面へ
-            response.sendRedirect("LogIn/login.jsp");
+            // 8. 成功したらログイン画面へ
+            // ★修正: LogInフォルダの中を指定
+            response.sendRedirect(request.getContextPath() + "/LogIn/login.jsp");
         } else {
-            // 失敗時
-            request.setAttribute("errorMsg", "登録に失敗しました。IDが重複している可能性があります。");
-            request.getRequestDispatcher("LogIn/signup.jsp").forward(request, response);
+            // 9. 失敗したらエラーを出して戻る
+            request.setAttribute("errorMsg", "登録に失敗しました。IDが既に使用されている可能性があります。");
+            // ★修正: LogInフォルダの中を指定
+            request.getRequestDispatcher("/LogIn/signup.jsp").forward(request, response);
         }
     }
 }

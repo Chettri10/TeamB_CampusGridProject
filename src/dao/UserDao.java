@@ -135,13 +135,14 @@ public class UserDao extends DAO {
         }
     }
 
-    // 2. Ú×î•ñi’a¶“úEZŠE˜Hüî•ñ‚È‚Çj‚ðŠÜ‚ß‚Ä“o˜^‚µ‚½‚¢ê‡—p
+    // 2. Ú×î•ñi’a¶“úEZŠE˜Hüî•ñEy’Ç‰Áz‚¨Žq—l‚ÌIDj‚ðŠÜ‚ß‚Ä“o˜^‚µ‚½‚¢ê‡—p
     public boolean registerUserFull(String userId, String userName, String password, int role,
                                     String email, String phone, String dobString, String address,
-                                    String routeInfo) {
+                                    String routeInfo, String childId) { // ©ˆø”childId‚ð’Ç‰Á
 
-        String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Email, Phone_Number, Date_Of_Birth, Address, Route_Confirmation) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // SQL‚É Parent_ID ‚ð’Ç‰Á
+        String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Email, Phone_Number, Date_Of_Birth, Address, Route_Confirmation, Parent_ID) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -162,6 +163,13 @@ public class UserDao extends DAO {
 
             pstmt.setString(8, address);
             pstmt.setString(9, routeInfo); // ˜Hüî•ñ‚ðRoute_ConfirmationƒJƒ‰ƒ€‚É•Û‘¶
+
+            // š’Ç‰Á: ‚¨Žq—l‚ÌID‚ð Parent_ID ƒJƒ‰ƒ€‚ÉƒZƒbƒg
+            if (childId != null && !childId.isEmpty()) {
+                pstmt.setString(10, childId);
+            } else {
+                pstmt.setString(10, null);
+            }
 
             return pstmt.executeUpdate() > 0;
 
