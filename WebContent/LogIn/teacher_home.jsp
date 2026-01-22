@@ -5,14 +5,20 @@
 <%
     // ★ 教員チェック
     String role = (String) session.getAttribute("role");
+    /* ※必要に応じてコメントアウトを外してください
     if (role == null || !role.equals("teacher")) {
-        // ログインしていない場合などの処理
-        // response.sendRedirect("LogIn/login.jsp");
+        response.sendRedirect("../LogIn/login.jsp");
+        return;
     }
+    */
 
     // ユーザー名取得
     String userName = (String) session.getAttribute("userName");
     String userId   = (String) session.getAttribute("userId");
+
+    // null対策
+    if(userName == null) userName = "先生";
+    if(userId == null) userId = "Unknown";
 
     // ★ DB からお知らせ一覧を取得
     NoticeDao dao = new NoticeDao();
@@ -69,7 +75,7 @@
         gap: 30px;
         margin: 40px auto;
         flex-wrap: wrap;
-        max-width: 800px;
+        max-width: 900px;
     }
 
     /* ボタン共通スタイル */
@@ -219,10 +225,15 @@
 
         <a href="<%= request.getContextPath() %>/ChatServlet?action=list&myId=<%= userId %>" class="menu-card card-blue">
             <i class="fas fa-comments icon-large"></i>
-            <span class="menu-label">教員・学生 チャット</span>
+            <span class="menu-label">学生チャット</span>
         </a>
 
-        </div>
+        <a href="<%= request.getContextPath() %>/RouteServlet?action=view" class="menu-card card-orange">
+            <i class="fas fa-train icon-large"></i>
+            <span class="menu-label">路線情報(運行状況)</span>
+        </a>
+
+    </div>
 
     <div class="notice-board">
         <div class="notice-header-area">
