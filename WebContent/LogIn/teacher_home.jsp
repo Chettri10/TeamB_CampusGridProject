@@ -75,7 +75,8 @@
         gap: 30px;
         margin: 40px auto;
         flex-wrap: wrap;
-        max-width: 900px;
+        /* ★修正箇所：幅を狭くして、2つ並んだら折り返すようにしました */
+        max-width: 550px;
     }
 
     /* ボタン共通スタイル */
@@ -116,6 +117,9 @@
     }
     .card-orange {
         background: linear-gradient(135deg, #ff8c00, #ff4500);
+    }
+    .card-purple {
+        background: linear-gradient(135deg, #d946ef, #a21caf);
     }
 
     /* お知らせボード（白背景） */
@@ -233,6 +237,11 @@
             <span class="menu-label">路線情報(運行状況)</span>
         </a>
 
+        <a href="<%= request.getContextPath() %>/jsp/product_regist.jsp" class="menu-card card-purple">
+            <i class="fas fa-cart-plus icon-large"></i>
+            <span class="menu-label">商品登録</span>
+        </a>
+
     </div>
 
     <div class="notice-board">
@@ -276,7 +285,7 @@
         </div>
     </div>
 
-    <a href="LogOut.jsp" class="logout-link">ログアウト</a>
+    <a href="logout.jsp" class="logout-link">ログアウト</a>
 
 </body>
 </html>

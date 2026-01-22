@@ -10,7 +10,26 @@
 <style>
     body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #111827; color: #f3f4f6; margin: 0; padding: 20px; }
 
-    header { text-align: center; margin-bottom: 30px; }
+    /* ★追加：戻るボタンのスタイル */
+    .back-btn {
+        position: absolute;
+        top: 25px;
+        left: 30px;
+        color: #9ca3af;
+        text-decoration: none;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: color 0.3s, transform 0.2s;
+        z-index: 100;
+    }
+    .back-btn:hover {
+        color: #00ffff;
+        transform: translateX(-3px);
+    }
+
+    header { text-align: center; margin-bottom: 30px; position: relative; }
     h2 { font-size: 24px; color: #fff; display: inline-block; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; }
     .last-update { font-size: 12px; color: #9ca3af; margin-top: 5px; }
 
@@ -80,6 +99,10 @@
 </style>
 </head>
 <body>
+
+    <a href="${pageContext.request.contextPath}/LogIn/teacher_home.jsp" class="back-btn">
+        <i class="fas fa-arrow-left"></i> ホームへ戻る
+    </a>
 
     <header>
         <h2><i class="fas fa-desktop"></i> 運行状況モニター</h2>
