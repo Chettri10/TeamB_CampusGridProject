@@ -120,11 +120,11 @@
         <form action="${pageContext.request.contextPath}/CategoryRegistServlet" method="post">
             <div class="field">
                 <label>カテゴリーID</label>
-                <input type="number" name="categoryId" placeholder="例: 3" required>
+                <input type="number" name="categoryId" placeholder="例: 0" required>
             </div>
             <div class="field">
                 <label>カテゴリー名</label>
-                <input type="text" name="categoryName" placeholder="例: 免許代" required>
+                <input type="text" name="categoryName" placeholder="例: 専門用具" required>
             </div>
             <button type="submit" class="btn btn-category">カテゴリーを登録する</button>
         </form>
