@@ -115,19 +115,19 @@ body {
 </div>
 
 <div class="menu-row">
-    <a class="menu-item green" href="${pageContext.request.contextPath}/jsp/student_pass.jsp">
+    <a class="menu-item green" href="<%= request.getContextPath() %>/jsp/student_pass.jsp">
         <div class="icon">📖</div>
         出席QRスキャン
     </a>
 
-    <a class="menu-item blue" href="${pageContext.request.contextPath}/jsp/chat.jsp">
+    <a class="menu-item blue" href="<%= request.getContextPath() %>/ChatServlet?action=list&myId=<%= userId %>">
         <div class="icon">💬</div>
         教員・学生 チャット
     </a>
 </div>
 
 <div class="menu-center">
-    <a class="menu-item orange" href="${pageContext.request.contextPath}/jsp/cart.jsp">
+    <a class="menu-item orange" href="<%= request.getContextPath() %>/jsp/cart.jsp">
         <div class="icon">🛒</div>
         商品登録
     </a>

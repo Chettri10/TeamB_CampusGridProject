@@ -186,7 +186,7 @@
                     <input type="hidden" name="myId" value="<%= request.getAttribute("myId") %>">
                     <input type="hidden" name="targetId" value="<%= request.getAttribute("targetId") %>">
                     <input type="hidden" name="action" value="delete">
-                    <input type="hidden" id="deleteChatId" name="deleteChatId" value="">
+                    <input type="hidden" id="deleteChatId" name="targetChatId" value="">
 
                     <button type="submit" class="action-btn btn-delete">送信を取り消す</button>
                 </form>

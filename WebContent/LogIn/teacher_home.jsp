@@ -6,9 +6,8 @@
     // ★ 教員チェック
     String role = (String) session.getAttribute("role");
     if (role == null || !role.equals("teacher")) {
-        // ログインしていない場合などの処理（必要に応じて有効化）
+        // ログインしていない場合などの処理
         // response.sendRedirect("LogIn/login.jsp");
-        // return;
     }
 
     // ユーザー名取得
@@ -218,12 +217,12 @@
             <span class="menu-label">出席状況一覧</span>
         </a>
 
-<a href="<%= request.getContextPath() %>/jsp/user_list.jsp?myId=<%= userId %>" class="menu-card card-blue">
-        <i class="fas fa-comments icon-large"></i>
-        <span class="menu-label">教員・学生 チャット</span>
-    </a>
+        <a href="<%= request.getContextPath() %>/ChatServlet?action=list&myId=<%= userId %>" class="menu-card card-blue">
+            <i class="fas fa-comments icon-large"></i>
+            <span class="menu-label">教員・学生 チャット</span>
+        </a>
 
-    </div>
+        </div>
 
     <div class="notice-board">
         <div class="notice-header-area">
@@ -266,7 +265,7 @@
         </div>
     </div>
 
-    <a href="logout.jsp" class="logout-link">ログアウト</a>
+    <a href="LogOut.jsp" class="logout-link">ログアウト</a>
 
 </body>
 </html>

@@ -122,12 +122,20 @@ public class ChatDao {
         return list;
     }
 
+    // ★★★ここを修正しました（SかTで始まるユーザーのみ取得）★★★
     public List<String[]> getChattableUsers(String myId) {
         List<String[]> userList = new ArrayList<>();
-        String sql = "SELECT User_ID, User_Name FROM User WHERE Role != 4 AND User_ID != ?";
+
+        // IDが 'S' (学生) または 'T' (教員) で始まり、かつ自分ではないユーザーを取得
+        String sql = "SELECT User_ID, User_Name FROM User "
+                   + "WHERE (User_ID LIKE 'S%' OR User_ID LIKE 'T%') "
+                   + "AND User_ID != ?";
+
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             pstmt.setString(1, myId);
+
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 String[] user = { rs.getString("User_ID"), rs.getString("User_Name") };
@@ -155,7 +163,8 @@ public class ChatDao {
     private String getRoomId(String id1, String id2) {
         return (id1.compareTo(id2) < 0) ? "ROOM_" + id1 + "_" + id2 : "ROOM_" + id2 + "_" + id1;
     }
- // ★追加：IDからユーザー名を取得するメソッド
+
+    // ★追加：IDからユーザー名を取得するメソッド
     public String getUserName(String userId) {
         String name = "";
         String sql = "SELECT User_Name FROM User WHERE User_ID = ?";
@@ -172,7 +181,8 @@ public class ChatDao {
         // 名前が取れなかったらIDを返す
         return name.isEmpty() ? userId : name;
     }
- // ★追加：メッセージ編集機能
+
+    // ★追加：メッセージ編集機能
     public void editMessage(String chatId, String newMessage) {
         String sql = "UPDATE Chat SET Message = ? WHERE Chat_ID = ?";
         try (Connection conn = getConnection();
@@ -185,4 +195,3 @@ public class ChatDao {
         }
     }
 }
-

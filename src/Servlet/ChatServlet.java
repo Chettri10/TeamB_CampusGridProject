@@ -17,6 +17,30 @@ public class ChatServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+
+        // ★追加：文字コード指定
+        request.setCharacterEncoding("UTF-8");
+
+        // ★追加：actionパラメータを受け取る
+        String action = request.getParameter("action");
+        String myId = request.getParameter("myId");
+
+        // ★追加：「ユーザー一覧画面を表示したい」というリクエストの場合
+        if ("list".equals(action)) {
+            ChatDao dao = new ChatDao();
+            // DAOを使ってチャット可能なユーザー一覧を取得
+            List<String[]> userList = dao.getChattableUsers(myId);
+
+            // JSPにデータを渡す
+            request.setAttribute("userList", userList);
+            request.setAttribute("myId", myId);
+
+            // user_list.jsp へフォワード（画面移動）
+            request.getRequestDispatcher("jsp/user_list.jsp").forward(request, response);
+            return; // ここで処理を終了させる
+        }
+
+        // それ以外（通常のチャット画面表示など）は既存の処理へ
         processRequest(request, response);
     }
 
@@ -27,23 +51,19 @@ public class ChatServlet extends HttpServlet {
         String myId = request.getParameter("myId");
         String targetId = request.getParameter("targetId");
         String message = request.getParameter("message");
-
-        // アクション判定用
-        String action = request.getParameter("action");
-        String targetChatId = request.getParameter("targetChatId"); // 削除・編集対象のID
-        String editMessage = request.getParameter("editMessage");   // 編集後のメッセージ
+        String action = request.getParameter("action"); // param取得
+        String targetChatId = request.getParameter("targetChatId");
+        String editMessage = request.getParameter("editMessage");
 
         ChatDao dao = new ChatDao();
 
-        // ■ 削除の場合
+        // 削除・編集・送信などのロジック（既存のコードのまま）
         if ("delete".equals(action) && targetChatId != null) {
             dao.deleteMessage(targetChatId);
         }
-        // ■ 編集の場合（★追加）
         else if ("edit".equals(action) && targetChatId != null && editMessage != null) {
             dao.editMessage(targetChatId, editMessage);
         }
-        // ■ 新規送信の場合
         else if (message != null && !message.isEmpty()) {
             if (!dao.isParent(myId) && !dao.isParent(targetId)) {
                 dao.sendMessage(myId, targetId, message);
@@ -58,8 +78,16 @@ public class ChatServlet extends HttpServlet {
     private void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // 既存のチャット画面表示ロジック
         String myId = request.getParameter("myId");
         String targetId = request.getParameter("targetId");
+
+        // ★念のためnullチェックを追加しておくと安全です
+        if (targetId == null) {
+            // targetIdがないのにここに来てしまった場合は、リスト画面へ戻すなどの対策
+            // response.sendRedirect("ChatServlet?action=list&myId=" + myId);
+            // return;
+        }
 
         ChatDao dao = new ChatDao();
 
