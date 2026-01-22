@@ -17,6 +17,13 @@ String Username = (String) request.getAttribute("UserName");
 String UserId = (String) request.getAttribute("UserId");
 
 %>
+<%
+String role = (String) session.getAttribute("role");
+    if (role == null || !role.equals("parent")) {
+        response.sendRedirect("error_permission.jsp");
+        return;
+    }
+%>
 
 <!DOCTYPE html>
 <html>
