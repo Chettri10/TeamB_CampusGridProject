@@ -1,77 +1,45 @@
 package dao;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException; // 追加
+import java.sql.Timestamp;
 
 public class PurchaseDao extends DAO {
 
-    public int insert(int purchaseId, String userId, int cartId, Timestamp purchaseDatetime,
-                      int totalAmount, String shippingAddress, int paymentMethodId) throws Exception {
-        String sql = "INSERT INTO Purchase (Purchase_Id, User_Id, Cart_Id, Purchase_Datetime, Total_Amount, Shipping_Address, Payment_Method_id) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+    /**
+     * 購入情報をPURCHASEテーブルに保存します。
+     * @param purchaseId 購入ID
+     * @param userId ユーザーID
+     * @param cartId カートID（CARTテーブルに存在するIDである必要があります）
+     * @param totalAmount 合計金額
+     * @return 実行結果（1なら成功）
+     * @throws Exception データベースエラー
+     */
+    public int insert(int purchaseId, String userId, int cartId, int totalAmount) throws Exception {
+
+        // SQL文を1つの文字列としてスッキリまとめました
+        String sql = "INSERT INTO PURCHASE ("
+                   + "PURCHASE_ID, USER_ID, CART_ID, PURCHASE_DATETIME, "
+                   + "TOTAL_AMOUNT, SHIPPING_ADDRESS, PAYMENT_METHOD_ID"
+                   + ") VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, purchaseId);
             ps.setString(2, userId);
             ps.setInt(3, cartId);
-            ps.setTimestamp(4, purchaseDatetime);
+            ps.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
             ps.setInt(5, totalAmount);
-            ps.setString(6, shippingAddress);
-            ps.setInt(7, paymentMethodId);
+            ps.setString(6, "店舗受取");
+            ps.setInt(7, 1); // 1: クレジットカード等
+
             return ps.executeUpdate();
+        } catch (SQLException e) {
+            // エラーが発生した際、コンソールに詳細を出力するようにするとデバッグが楽になります
+            e.printStackTrace();
+            throw e;
         }
-    }
-
-    public int update(int purchaseId, String userId, int cartId, Timestamp purchaseDatetime,
-                      int totalAmount, String shippingAddress, int paymentMethodId) throws Exception {
-        String sql = "UPDATE Purchase SET User_Id=?, Cart_Id=?, Purchase_Datetime=?, Total_Amount=?, Shipping_Address=?, Payment_Method_id=? WHERE Purchase_Id=?";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, userId);
-            ps.setInt(2, cartId);
-            ps.setTimestamp(3, purchaseDatetime);
-            ps.setInt(4, totalAmount);
-            ps.setString(5, shippingAddress);
-            ps.setInt(6, paymentMethodId);
-            ps.setInt(7, purchaseId);
-            return ps.executeUpdate();
-        }
-    }
-
-    public int delete(int purchaseId) throws Exception {
-        String sql = "DELETE FROM Purchase WHERE Purchase_Id=?";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, purchaseId);
-            return ps.executeUpdate();
-        }
-    }
-
-    public Map<String, Object> findById(int purchaseId) throws Exception {
-        String sql = "SELECT * FROM Purchase WHERE Purchase_Id=?";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, purchaseId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? toMap(rs) : null;
-            }
-        }
-    }
-
-    public List<Map<String, Object>> findAll() throws Exception {
-        String sql = "SELECT * FROM Purchase";
-        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            List<Map<String, Object>> list = new ArrayList<>();
-            while (rs.next()) list.add(toMap(rs));
-            return list;
-        }
-    }
-
-    private Map<String, Object> toMap(ResultSet rs) throws SQLException {
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("Purchase_Id", rs.getInt("Purchase_Id"));
-        m.put("User_Id", rs.getString("User_Id"));
-        m.put("Cart_Id", rs.getInt("Cart_Id"));
-        m.put("Purchase_Datetime", rs.getTimestamp("Purchase_Datetime"));
-        m.put("Total_Amount", rs.getInt("Total_Amount"));
-        m.put("Shipping_Address", rs.getString("Shipping_Address"));
-        m.put("Payment_Method_id", rs.getInt("Payment_Method_id"));
-        return m;
     }
 }

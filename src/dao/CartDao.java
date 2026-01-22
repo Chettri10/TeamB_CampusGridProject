@@ -1,9 +1,38 @@
 package dao;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class CartDao extends DAO {
+
+    /**
+     * 指定されたユーザーの最新のカートIDを取得します
+     * 参照整合性エラーを防ぐために、実際にDBにあるIDを返します
+     */
+    public int getActiveCartId(String userId) throws Exception {
+        // 最新のカートIDを取得するSQL
+        String sql = "SELECT Cart_ID FROM Cart WHERE User_ID = ? ORDER BY Cart_ID DESC LIMIT 1";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("Cart_ID");
+                }
+            }
+        }
+        // カートが見つからない場合は -1 を返す
+        return -1;
+    }
 
     public int insert(int cartId, String userId) throws Exception {
         String sql = "INSERT INTO Cart (Cart_ID, User_ID) VALUES (?, ?)";
@@ -39,7 +68,7 @@ public class CartDao extends DAO {
                 return rs.next() ? toMap(rs) : null;
             }
         }
-    };
+    }
 
     public List<Map<String, Object>> findAll() throws Exception {
         String sql = "SELECT * FROM Cart";
@@ -56,5 +85,4 @@ public class CartDao extends DAO {
         m.put("User_ID", rs.getString("User_ID"));
         return m;
     }
-
 }
