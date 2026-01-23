@@ -24,7 +24,7 @@
     h2 { color:#FF5252; }
     .btn { display:block; width:100%; padding:12px; margin-top:20px; border-radius:8px; text-align:center; font-weight:600; text-decoration:none; }
     .btn-del { background:#FF5252; color:#fff; }
-    .btn-back { background:#00E5FF; color:#000; }
+    .btn-back { background:#00E5FF; color:#000;width:350px; margin: 30px auto 0 auto;}
 </style>
 </head>
 
