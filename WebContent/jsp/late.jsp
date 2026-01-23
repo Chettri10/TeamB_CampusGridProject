@@ -10,7 +10,7 @@
 
 <style>
     body {
-        background-color: #00144a;
+        background-color: #151f42;
         color: white;
         font-family: "Meiryo", sans-serif;
         margin: 0;
@@ -33,7 +33,7 @@
         margin-bottom: 15px;
     }
     .qr-btn {
-        background-color: #aeeaff;
+        background-color:#00ffff;
         padding: 12px 20px;
         border-radius: 12px;
         color: black;
@@ -61,7 +61,7 @@
     }
     .submit-btn {
         width: 85%;
-        background-color: #aee0ff;
+        background-color: #00ffff;
         color: black;
         border: none;
         padding: 15px;
