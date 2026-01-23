@@ -39,7 +39,7 @@
     h2 {
         font-size: 20px;
         margin-bottom: 25px;
-        color: #a8f5ff;
+        color: #00ffff;
     }
 
     /* ボタン共通 */
@@ -57,7 +57,7 @@
 
     /* 個別色 */
     .btn-blue {
-        background-color: #7eeaff;
+        background-color: #00ffff;
         color: black;
     }
     .btn-dark {
