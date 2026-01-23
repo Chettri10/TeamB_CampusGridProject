@@ -2,20 +2,7 @@
 <%@ page import="dao.NoticeDao" %>
 <%@ page import="java.util.*" %>
 <%
-    // セッションからユーザー情報を取得
-    Map<String, Object> userMap = (Map<String, Object>) session.getAttribute("user");
-    String userName = "ゲスト";
-
-    if (userMap != null) {
-        Object nameObj = userMap.get("User_Name");
-        if (nameObj != null) {
-            userName = (String) nameObj;
-        }
-    } else {
-        response.sendRedirect("login.jsp");
-        return;
-    }
-
+    String userName = (String) session.getAttribute("userName");
     NoticeDao dao = new NoticeDao();
     List<Map<String, Object>> list = dao.findAll();
 %>
@@ -39,7 +26,7 @@
 
     .header-area {
         margin-top: 40px;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
     }
 
     h1 {
@@ -55,47 +42,12 @@
         color: #eee;
     }
 
-    /* メニューボタンエリア */
-    .action-menu {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin: 30px auto;
-        flex-wrap: wrap;
-    }
-
-    /* アクションボタンのデザイン */
-    .btn-action {
-        background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
-        color: #020617;
-        padding: 15px 30px;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 16px;
-        box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
-        transition: transform 0.2s, box-shadow 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .btn-action:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
-    }
-
-    .btn-action i {
-        font-size: 20px;
-    }
-
-    /* お知らせ板 */
     .notice-board {
         background-color: #ffffff;
         color: #333;
         width: 85%;
         max-width: 700px;
-        margin: 0 auto 50px auto;
+        margin: 50px auto;
         border-radius: 12px;
         padding: 25px;
         text-align: left;
@@ -119,9 +71,15 @@
         padding: 10px 0;
     }
 
-    .notice-item:last-child { border-bottom: none; }
+    .notice-item:last-child {
+        border-bottom: none;
+    }
 
-    .notice-meta { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .notice-meta {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 4px;
+    }
 
     .badge {
         padding: 2px 8px;
@@ -135,7 +93,9 @@
     .bg-blue { background-color: #448aff; }
     .bg-green { background-color: #00c853; }
 
-    .notice-content { font-size: 15px; }
+    .notice-content {
+        font-size: 15px;
+    }
 
     .logout-link {
         display: inline-block;
@@ -144,29 +104,26 @@
         text-decoration: none;
         font-size: 14px;
     }
-    .logout-link:hover { color: white; }
+
+    .logout-link:hover {
+        color: white;
+    }
 </style>
 </head>
 <body>
 
     <div class="header-area">
-        <h1>CAMPUS GRID</h1>
-        <div class="welcome-msg">こんにちは、<%= userName %> 様（保護者）</div>
-    </div>
-
-    <div class="action-menu">
-        <a href="<%= request.getContextPath() %>/AttendanceParentServlet" class="btn-action">
-            <i class="fas fa-calendar-check"></i> 出席状況を確認
-        </a>
-    </div>
+<h1>CAMPUS GRID</h1>
+<div class="welcome-msg">こんにちは、<%= userName %> 様（保護者）</div>
+</div>
 
     <div class="notice-board">
-        <div class="notice-header-area">
-            <div class="notice-title">お知らせ（教員より）</div>
-        </div>
+<div class="notice-header-area">
+<div class="notice-title">お知らせ（教員より）</div>
+</div>
 
         <div class="notice-list">
-            <%
+<%
                 if (list != null && !list.isEmpty()) {
                     for (Map<String, Object> item : list) {
                         String category = (String)item.get("CATEGORY");
@@ -179,24 +136,24 @@
                             if ("重要".equals(category)) { badgeClass = "bg-red"; }
                             else if ("イベント".equals(category)) { badgeClass = "bg-green"; }
             %>
-            <div class="notice-item">
-                <div class="notice-meta">
-                    <span class="badge <%= badgeClass %>"><%= category %></span>
-                    <%= date %>
-                </div>
-                <div class="notice-content"><%= content %></div>
-            </div>
-            <%
+<div class="notice-item">
+<div class="notice-meta">
+<span class="badge <%= badgeClass %>"><%= category %></span>
+<%= date %>
+</div>
+<div class="notice-content"><%= content %></div>
+</div>
+<%
                         }
                     }
                 } else {
             %>
-            <p style="color:#888; text-align:center; padding:20px;">現在、お知らせはありません。</p>
-            <%
+<p style="color:#888; text-align:center; padding:20px;">現在、お知らせはありません。</p>
+<%
                 }
             %>
-        </div>
-    </div>
+</div>
+</div>
 
     <a href="logout.jsp" class="logout-link">ログアウト</a>
 
