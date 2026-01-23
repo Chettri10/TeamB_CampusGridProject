@@ -6,10 +6,10 @@
     <title>出席登録スキャナー</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background-color: #222; color: #fff; margin: 0; }
+        body { font-family: sans-serif; text-align: center; background-color: #151f42; color: #fff; margin: 0; }
         h1 { margin-top: 20px; font-size: 24px; }
-        #canvas { width: 100%; max-width: 640px; margin: 20px auto; display: block; background-color: #000; border: 4px solid #fff; border-radius: 8px; }
-        #status { font-size: 18px; font-weight: bold; margin: 20px; padding: 15px; border-radius: 5px; min-height: 30px; white-space: pre-wrap; }
+        #canvas { width: 100%; max-width: 640px; margin: 20px auto; display: block; background-color: #000; border: 4px solid #00ffff; border-radius: 8px; }
+        #status { font-size: 18px; font-weight: bold; margin: 20px; padding: 15px;  border-radius: 5px; min-height: 30px; white-space: pre-wrap; }
         .success { background-color: #28a745; color: white; }
         .error { background-color: #dc3545; color: white; }
         .waiting { background-color: #444; color: #ccc; }
@@ -48,7 +48,7 @@
 
     <h1>QRコードをかざしてください</h1>
     <canvas id="canvas"></canvas>
-    <div id="status" class="waiting">カメラ起動中...</div>
+    <div id="status" class="waiting" background="#1e293b">カメラ起動中...</div>
 
     <div id="reasonModal">
         <div class="modal-content">
