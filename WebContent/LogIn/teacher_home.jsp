@@ -3,24 +3,21 @@
 <%@ page import="java.util.*" %>
 
 <%
-    // ★ 教員チェック
+    // --- 1. ログイン・教員チェック ---
+    String userId = (String) session.getAttribute("userId");
+    String userName = (String) session.getAttribute("userName");
     String role = (String) session.getAttribute("role");
-    /* ※必要に応じてコメントアウトを外してください
-    if (role == null || !role.equals("teacher")) {
-        response.sendRedirect("../LogIn/login.jsp");
+
+    // ログインしていない、または教員でない場合はログイン画面へ
+    if (userId == null || (!userId.startsWith("T") && !"teacher".equals(role))) {
+        response.sendRedirect(request.getContextPath() + "/LogIn/login.jsp");
         return;
     }
-    */
-
-    // ユーザー名取得
-    String userName = (String) session.getAttribute("userName");
-    String userId   = (String) session.getAttribute("userId");
 
     // null対策
     if(userName == null) userName = "先生";
-    if(userId == null) userId = "Unknown";
 
-    // ★ DB からお知らせ一覧を取得
+    // --- 2. DB からお知らせ一覧を取得 ---
     NoticeDao dao = new NoticeDao();
     List<Map<String, Object>> list = dao.findAll();
 %>
@@ -36,7 +33,7 @@
 <style>
     /* 全体設定 */
     body {
-        background-color: #020617; /* 濃紺 */
+        background-color: #020617;
         color: white;
         font-family: "Helvetica Neue", Arial, sans-serif;
         margin: 0;
@@ -51,7 +48,7 @@
     }
 
     h1 {
-        color: #00ffff; /* シアン */
+        color: #00ffff;
         font-size: 32px;
         margin-bottom: 10px;
         font-weight: bold;
@@ -75,7 +72,6 @@
         gap: 30px;
         margin: 40px auto;
         flex-wrap: wrap;
-        /* ★修正箇所：幅を狭くして、2つ並んだら折り返すようにしました */
         max-width: 550px;
     }
 
@@ -109,20 +105,12 @@
     }
 
     /* 色別スタイル */
-    .card-green {
-        background: linear-gradient(135deg, #32cd32, #228b22);
-    }
-    .card-blue {
-        background: linear-gradient(135deg, #1e90ff, #0000cd);
-    }
-    .card-orange {
-        background: linear-gradient(135deg, #ff8c00, #ff4500);
-    }
-    .card-purple {
-        background: linear-gradient(135deg, #d946ef, #a21caf);
-    }
+    .card-green  { background: linear-gradient(135deg, #32cd32, #228b22); }
+    .card-blue   { background: linear-gradient(135deg, #1e90ff, #0000cd); }
+    .card-orange { background: linear-gradient(135deg, #ff8c00, #ff4500); }
+    .card-purple { background: linear-gradient(135deg, #d946ef, #a21caf); }
 
-    /* お知らせボード（白背景） */
+    /* お知らせボード */
     .notice-board {
         background-color: #ffffff;
         color: #333;
@@ -150,7 +138,6 @@
         color: #020617;
     }
 
-    /* 新規投稿ボタン */
     .new-post-btn {
         background-color: #00E5FF;
         color: #000;
@@ -161,9 +148,7 @@
         font-size: 14px;
         transition: background 0.3s;
     }
-    .new-post-btn:hover { background-color: #6effff; }
 
-    /* お知らせリストアイテム */
     .notice-item {
         border-bottom: 1px solid #f0f0f0;
         padding: 10px 0;
@@ -186,8 +171,6 @@
     .bg-blue { background-color: #448aff; }
     .bg-green { background-color: #00c853; }
 
-    .notice-content { font-size: 15px; }
-
     .notice-actions {
         margin-top: 5px;
         text-align: right;
@@ -198,18 +181,27 @@
         text-decoration: none;
         margin-left: 10px;
     }
-    .action-link:hover { text-decoration: underline; }
     .delete-link { color: #ff5252; }
 
-    /* ログアウト */
-    .logout-link {
+    /* ログアウトボタン（学生用と統一） */
+    .logout-container {
+        margin: 30px auto 60px auto;
+    }
+    .logout-btn {
         display: inline-block;
-        margin: 30px auto;
-        color: #aaa;
+        padding: 10px 30px;
+        background-color: transparent;
+        color: #ff4444;
+        border: 1px solid #ff4444;
+        border-radius: 25px;
         text-decoration: none;
         font-size: 14px;
+        transition: 0.3s;
     }
-    .logout-link:hover { color: white; }
+    .logout-btn:hover {
+        background-color: #ff4444;
+        color: white;
+    }
 </style>
 </head>
 <body>
@@ -221,7 +213,6 @@
     </div>
 
     <div class="menu-container">
-
         <a href="<%= request.getContextPath() %>/AttManagementListServlet" class="menu-card card-green">
             <i class="fas fa-clipboard-list icon-large"></i>
             <span class="menu-label">出席状況一覧</span>
@@ -234,14 +225,13 @@
 
         <a href="<%= request.getContextPath() %>/RouteServlet?action=view" class="menu-card card-orange">
             <i class="fas fa-train icon-large"></i>
-            <span class="menu-label">路線情報(運行状況)</span>
+            <span class="menu-label">路線情報</span>
         </a>
 
         <a href="<%= request.getContextPath() %>/jsp/product_regist.jsp" class="menu-card card-purple">
             <i class="fas fa-cart-plus icon-large"></i>
             <span class="menu-label">商品登録</span>
         </a>
-
     </div>
 
     <div class="notice-board">
@@ -257,7 +247,8 @@
                         String category = (String)item.get("CATEGORY");
                         String content  = (String)item.get("Content");
                         String date     = String.valueOf(item.get("Posted_On"));
-                        int id          = (int)item.get("Notification_ID");
+                        Object rawId    = item.get("Notification_ID");
+                        int id          = (rawId != null) ? (int)rawId : 0;
 
                         String badgeClass = "bg-blue";
                         if ("重要".equals(category)) { badgeClass = "bg-red"; }
@@ -285,7 +276,11 @@
         </div>
     </div>
 
-    <a href="logout.jsp" class="logout-link">ログアウト</a>
+    <div class="logout-container">
+        <a href="<%= request.getContextPath() %>/LogoutServlet" class="logout-btn">
+            ログアウト
+        </a>
+    </div>
 
 </body>
 </html>

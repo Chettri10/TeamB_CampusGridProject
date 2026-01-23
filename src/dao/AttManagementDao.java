@@ -14,6 +14,7 @@ import java.util.Map;
 
 public class AttManagementDao {
 
+    // 接続設定（環境に合わせて変更してください）
     private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
     private final String USER = "sa";
     private final String PASS = "";
@@ -27,13 +28,14 @@ public class AttManagementDao {
     public List<Map<String, Object>> getDailyAttendanceList(Date targetDate) {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        String sql = "SELECT u.User_Name, u.User_ID, " +
-                     "a.Check_In_Time, a.Check_Out_Time, a.Status, a.Absance_Reason " +
-                     "FROM User u " +
-                     "LEFT JOIN AttManagement a " +
-                     "ON u.User_ID = a.User_ID AND a.Target_Date = ? " +
-                     "WHERE u.Role = 2 " +
-                     "ORDER BY u.User_ID ASC";
+        // 【修正】Userテーブルを "USER" に、Absance_Reason を ABSENCE_REASON に修正
+        String sql = "SELECT u.USER_NAME, u.USER_ID, " +
+                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON " +
+                     "FROM \"USER\" u " +  // ← 予約語回避のため " で囲む
+                     "LEFT JOIN ATTMANAGEMENT a " +
+                     "ON u.USER_ID = a.USER_ID AND a.TARGET_DATE = ? " +
+                     "WHERE u.ROLE = 2 " + // ← 学生(Role=2)のみ
+                     "ORDER BY u.USER_ID ASC";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -44,19 +46,21 @@ public class AttManagementDao {
 
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
-                map.put("userName", rs.getString("User_Name"));
-                map.put("userId", rs.getString("User_ID"));
+                // カラム名は基本的に大文字で指定するのが安全です
+                map.put("userName", rs.getString("USER_NAME"));
+                map.put("userId", rs.getString("USER_ID"));
 
-                java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
+                java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
 
-                java.sql.Timestamp tsOut = rs.getTimestamp("Check_Out_Time");
+                java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
 
-                String status = rs.getString("Status");
+                String status = rs.getString("STATUS");
                 map.put("status", (status != null) ? status : "未登録");
 
-                String reason = rs.getString("Absance_Reason");
+                // 【修正】スペルを合わせました
+                String reason = rs.getString("ABSENCE_REASON");
                 map.put("reason", (reason != null) ? reason : "");
 
                 list.add(map);
@@ -71,12 +75,13 @@ public class AttManagementDao {
     public Map<String, Object> getAttendanceDetail(String userId, Date targetDate) {
         Map<String, Object> map = new HashMap<>();
 
-        String sql = "SELECT u.User_Name, u.User_ID, " +
-                     "a.Check_In_Time, a.Check_Out_Time, a.Status, a.Absance_Reason " +
-                     "FROM User u " +
-                     "LEFT JOIN AttManagement a " +
-                     "ON u.User_ID = a.User_ID AND a.Target_Date = ? " +
-                     "WHERE u.User_ID = ?";
+        // 【修正】ここも同様に修正
+        String sql = "SELECT u.USER_NAME, u.USER_ID, " +
+                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON " +
+                     "FROM \"USER\" u " +
+                     "LEFT JOIN ATTMANAGEMENT a " +
+                     "ON u.USER_ID = a.USER_ID AND a.TARGET_DATE = ? " +
+                     "WHERE u.USER_ID = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -88,19 +93,19 @@ public class AttManagementDao {
             SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
             if (rs.next()) {
-                map.put("userId", rs.getString("User_ID"));
-                map.put("userName", rs.getString("User_Name"));
+                map.put("userId", rs.getString("USER_ID"));
+                map.put("userName", rs.getString("USER_NAME"));
 
-                java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
+                java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "");
 
-                java.sql.Timestamp tsOut = rs.getTimestamp("Check_Out_Time");
+                java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "");
 
-                String status = rs.getString("Status");
+                String status = rs.getString("STATUS");
                 map.put("status", (status != null) ? status : "未登録");
 
-                String reason = rs.getString("Absance_Reason");
+                String reason = rs.getString("ABSENCE_REASON");
                 map.put("reason", (reason != null) ? reason : "");
             }
         } catch (Exception e) {
@@ -109,13 +114,14 @@ public class AttManagementDao {
         return map;
     }
 
-    // --- 3. 保存処理 (新規・更新対応 / 備考欄対応済み) ---
+    // --- 3. 保存処理 (新規・更新対応) ---
     public void saveAttendance(String userId, Date targetDate, String status,
                                String checkInStr, String checkOutStr, String reason) {
 
-        String sql = "MERGE INTO AttManagement " +
-                     "(User_ID, Target_Date, Status, Check_In_Time, Check_Out_Time, Absance_Reason) " +
-                     "KEY(User_ID, Target_Date) " +
+        // H2のMERGE文を使用
+        String sql = "MERGE INTO ATTMANAGEMENT " +
+                     "(USER_ID, TARGET_DATE, STATUS, CHECK_IN_TIME, CHECK_OUT_TIME, ABSENCE_REASON) " +
+                     "KEY(USER_ID, TARGET_DATE) " +
                      "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection();
@@ -137,26 +143,25 @@ public class AttManagementDao {
         }
     }
 
-    // --- 4. 修正版：特定の学生の「過去1年間」の出席履歴を取得 ---
+    // --- 4. 履歴取得 ---
     public List<Map<String, Object>> getStudentHistory(String userId) {
         List<Map<String, Object>> list = new ArrayList<>();
 
-        // 現在日時から「1年前」の日付を計算
         Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.YEAR, -1); // 現在から1年引く
+        cal.add(Calendar.YEAR, -1);
         Date oneYearAgo = new Date(cal.getTimeInMillis());
 
-        // Target_Date >= ? を追加して、1年前以降のデータに絞り込む
-        String sql = "SELECT Target_Date, Check_In_Time, Check_Out_Time, Status, Absance_Reason " +
-                     "FROM AttManagement " +
-                     "WHERE User_ID = ? AND Target_Date >= ? " +
-                     "ORDER BY Target_Date DESC";
+        // 【修正】スペル修正
+        String sql = "SELECT TARGET_DATE, CHECK_IN_TIME, CHECK_OUT_TIME, STATUS, ABSENCE_REASON " +
+                     "FROM ATTMANAGEMENT " +
+                     "WHERE USER_ID = ? AND TARGET_DATE >= ? " +
+                     "ORDER BY TARGET_DATE DESC";
 
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, userId);
-            pstmt.setDate(2, oneYearAgo); // 2つ目の?に1年前の日付をセット
+            pstmt.setDate(2, oneYearAgo);
 
             ResultSet rs = pstmt.executeQuery();
             SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
@@ -164,18 +169,18 @@ public class AttManagementDao {
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
 
-                map.put("date", rs.getDate("Target_Date"));
+                map.put("date", rs.getDate("TARGET_DATE"));
 
-                java.sql.Timestamp tsIn = rs.getTimestamp("Check_In_Time");
+                java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
 
-                java.sql.Timestamp tsOut = rs.getTimestamp("Check_Out_Time");
+                java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
 
-                String status = rs.getString("Status");
+                String status = rs.getString("STATUS");
                 map.put("status", (status != null) ? status : "未登録");
 
-                String reason = rs.getString("Absance_Reason");
+                String reason = rs.getString("ABSENCE_REASON");
                 map.put("reason", (reason != null) ? reason : "");
 
                 list.add(map);
@@ -186,16 +191,17 @@ public class AttManagementDao {
         return list;
     }
 
-    // --- 5. 学生の名前を取得する (ヘッダー表示用) ---
+    // --- 5. 学生の名前を取得 ---
     public String getUserName(String userId) {
         String name = "";
-        String sql = "SELECT User_Name FROM User WHERE User_ID = ?";
+        // 【修正】Userテーブルを "USER" に
+        String sql = "SELECT USER_NAME FROM \"USER\" WHERE USER_ID = ?";
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                name = rs.getString("User_Name");
+                name = rs.getString("USER_NAME");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -203,10 +209,11 @@ public class AttManagementDao {
         return name;
     }
 
-    // --- 6. 時刻変換ヘルパーメソッド ---
+    // --- 6. 時刻変換ヘルパー ---
     private java.sql.Timestamp convertToTimestamp(Date date, String timeStr) {
         if (timeStr == null || timeStr.isEmpty() || timeStr.equals("--:--")) return null;
         try {
+            // 秒まで指定してTimestampに変換
             String dateTimeStr = date.toString() + " " + timeStr + ":00";
             return java.sql.Timestamp.valueOf(dateTimeStr);
         } catch (Exception e) {
