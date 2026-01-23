@@ -61,7 +61,7 @@ body {
     width: 100%;
     height: 50px;
     margin-top: 35px;
-    background-color: #a5d4ff;
+    background-color:#00ffff;
     color: black;
     font-size: 20px;
     font-weight: bold;
