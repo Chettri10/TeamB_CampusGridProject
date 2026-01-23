@@ -17,6 +17,7 @@
         --status-green: #00c853;
         --status-red: #ff1744;
         --status-orange: #ff9100;
+        --status-purple: #d500f9;
     }
 
     body {
@@ -30,7 +31,6 @@
     h1 { margin-bottom: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     h2 { color: var(--accent-cyan); margin-bottom: 30px; font-weight: normal; }
 
-    /* テーブルデザイン */
     table {
         width: 85%;
         margin: 0 auto;
@@ -57,7 +57,7 @@
     }
     tbody tr:hover { background-color: #f0f8ff; }
 
-    /* ステータスバッジ */
+    /* ステータスバッジのスタイル */
     .status-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -69,10 +69,9 @@
     .badge-出席 { background-color: #e8f5e9; color: var(--status-green); border: 1px solid var(--status-green); }
     .badge-遅刻 { background-color: #ffebee; color: var(--status-red); border: 1px solid var(--status-red); }
     .badge-早退 { background-color: #fff3e0; color: var(--status-orange); border: 1px solid var(--status-orange); }
-    .badge-欠席 { background-color: #fce4ec; color: #880e4f; border: 1px solid #880e4f; }
+    .badge-欠席 { background-color: #fce4ec; color: var(--status-purple); border: 1px solid var(--status-purple); }
     .badge-未登録 { background-color: #f5f5f5; color: #999; border: 1px solid #ccc; }
 
-    /* 編集ボタン */
     .btn-edit {
         background-color: var(--accent-cyan);
         color: #021024;
@@ -90,7 +89,6 @@
         transform: translateY(-1px);
     }
 
-    /* 戻るボタン */
     .btn-back {
         display: inline-block;
         margin-top: 30px;
@@ -124,29 +122,48 @@
                 <th>退室時刻</th>
                 <th>状況</th>
                 <th>備考</th>
-                <th>操作</th> </tr>
+                <th>操作</th>
+            </tr>
         </thead>
         <tbody>
         <%
             List<Map<String, Object>> list = (List<Map<String, Object>>) request.getAttribute("historyList");
             if (list != null && !list.isEmpty()) {
                 for (Map<String, Object> data : list) {
-                    String status = (String)data.get("status");
-                    // 編集ボタン用にIDと日付を取得
+                    String checkIn = (String) data.get("checkInTime");
+                    String checkOut = (String) data.get("checkOutTime");
+                    String dbStatus = (String) data.get("status");
+
+                    // --- 出席状況の動的判定 ---
+                    String displayStatus = (dbStatus != null) ? dbStatus : "未登録";
+
+                    if (checkIn != null && !checkIn.equals("--:--")) {
+                        // 9:00を基準に判定
+                        if (checkIn.compareTo("09:00") > 0) {
+                            displayStatus = "遅刻";
+                        } else {
+                            displayStatus = "出席";
+                        }
+                    }
+
+                    // 18:00を基準に早退判定
+                    if (checkOut != null && !checkOut.equals("--:--") && checkOut.compareTo("18:00") < 0) {
+                        displayStatus = "早退";
+                    }
+
                     String sId = (String) request.getAttribute("studentId");
                     Date targetDate = (Date) data.get("date");
         %>
             <tr>
                 <td style="font-weight: bold;"><%= targetDate %></td>
-
-                <td style="font-family: monospace; font-size: 1.1em;"><%= data.get("checkInTime") %></td>
-                <td style="font-family: monospace; font-size: 1.1em;"><%= data.get("checkOutTime") %></td>
+                <td style="font-family: monospace; font-size: 1.1em;"><%= checkIn %></td>
+                <td style="font-family: monospace; font-size: 1.1em;"><%= checkOut %></td>
 
                 <td>
-                    <span class="status-badge badge-<%= status %>"><%= status %></span>
+                    <span class="status-badge badge-<%= displayStatus %>"><%= displayStatus %></span>
                 </td>
 
-                <td style="text-align: left;"><%= data.get("reason") %></td>
+                <td style="text-align: left;"><%= (data.get("reason") != null) ? data.get("reason") : "" %></td>
 
                 <td>
                     <a href="AttManagementEditServlet?userId=<%= sId %>&targetDate=<%= targetDate %>" class="btn-edit">編集</a>
