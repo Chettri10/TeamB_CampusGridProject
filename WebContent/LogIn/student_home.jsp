@@ -5,9 +5,10 @@
     String username = (String) session.getAttribute("userName");
     String userId = (String) session.getAttribute("userId");
 
+    // 未ログイン時のリダイレクトを有効化
     if (username == null || userId == null) {
-        // response.sendRedirect("login.jsp");
-        // return;
+        response.sendRedirect("LogIn/login.jsp");
+        return;
     }
 
     NoticeDao dao = new NoticeDao();
@@ -20,7 +21,7 @@
 <title>CAMPUS GRID - Top</title>
 <meta name="viewport" content="width=430, initial-scale=1.0">
 <style>
-/* 全体 */
+/* --- 既存のスタイル --- */
 body {
     background-color: #000033;
     color: white;
@@ -29,7 +30,6 @@ body {
     padding: 0;
     text-align: center;
 }
-/* ヘッダー */
 .header {
     margin-top: 40px;
     margin-bottom: 25px;
@@ -48,20 +48,17 @@ body {
     color: #cccccc;
     margin-top: 4px;
 }
-/* 上段の2つボタン */
 .menu-row {
     display: flex;
     justify-content: center;
     gap: 25px;
     margin-top: 40px;
 }
-/* 下段1つボタン */
 .menu-center {
     display: flex;
     justify-content: center;
     margin-top: 25px;
 }
-/* ボタン共通 */
 .menu-item {
     width: 200px;
     height: 130px;
@@ -77,19 +74,12 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.4);
     transition: transform 0.2s;
 }
-.menu-item:active {
-    transform: scale(0.95);
-}
-/* アイコン */
-.icon {
-    font-size: 2.7em;
-    margin-bottom: 8px;
-}
-/* 色 */
+.menu-item:active { transform: scale(0.95); }
+.icon { font-size: 2.7em; margin-bottom: 8px; }
 .green  { background-color: #37c74b; }
 .blue   { background-color: #4aaaff; }
 .orange { background-color: #ff8c32; }
-/* お知らせ */
+
 .notification-box {
     background-color: white;
     color: black;
@@ -97,12 +87,29 @@ body {
     border-radius: 10px;
     width: 80%;
     max-width: 450px;
-    margin: 40px auto 50px auto;
+    margin: 40px auto 30px auto; /* 下の余白を少し調整 */
     text-align: left;
 }
-.notification-header {
-    font-weight: bold;
-    margin-bottom: 6px;
+.notification-header { font-weight: bold; margin-bottom: 6px; }
+
+/* --- 追加：ログアウトボタンのスタイル --- */
+.logout-container {
+    margin-bottom: 60px; /* 画面最下部との余白 */
+}
+.logout-btn {
+    display: inline-block;
+    padding: 10px 30px;
+    background-color: transparent;
+    color: #ff4444; /* 赤色 */
+    border: 1px solid #ff4444;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 0.9em;
+    transition: 0.3s;
+}
+.logout-btn:hover {
+    background-color: #ff4444;
+    color: white;
 }
 </style>
 </head>
@@ -157,6 +164,12 @@ body {
             }
         %>
     </ul>
+</div>
+
+<div class="logout-container">
+    <a href="<%= request.getContextPath() %>/LogoutServlet" class="logout-btn">
+        ログアウト
+    </a>
 </div>
 
 </body>
