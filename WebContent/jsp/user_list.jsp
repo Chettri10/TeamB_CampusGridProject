@@ -15,8 +15,32 @@
         flex-direction: column;
         align-items: center;
         padding: 20px;
+        position: relative; /* 戻るボタンの配置のため */
+        min-height: 100vh;
     }
-    h1 { margin-bottom: 30px; text-align: center; }
+
+    h1 { margin-bottom: 30px; margin-top: 10px; text-align: center; }
+
+    /* 戻るボタンのスタイル */
+    .header-nav {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+    }
+    .back-btn {
+        color: #00ffff;
+        font-size: 18px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        background-color: rgba(21, 31, 66, 0.8);
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: opacity 0.3s;
+    }
+    .back-btn:hover { opacity: 0.8; color: white; }
 
     .user-list {
         width: 100%;
@@ -53,13 +77,37 @@
 </head>
 <body>
 
+    <%
+        String myId = (String)request.getAttribute("myId");
+        List<String[]> list = (List<String[]>)request.getAttribute("userList");
+
+        // ▼▼▼ ホームへ戻るためのURL決定ロジック ▼▼▼
+        String homeUrl = "";
+
+        // request.getContextPath() は "/ProjectName" のようなルートパスを取得します
+        // これにより、リンク切れを防ぎます。
+
+        // 【条件分岐】IDが "T" で始まるなら先生、それ以外は学生と判定しています。
+        // ※必要に応じて条件式を変更してください (例: userRole変数がsessionにある場合など)
+        if (myId != null && myId.startsWith("T")) {
+            // 先生の場合
+            homeUrl = request.getContextPath() + "/LogIn/teacher_home.jsp";
+        } else {
+            // 学生の場合 (デフォルト)
+            homeUrl = request.getContextPath() + "/LogIn/student_home.jsp";
+        }
+    %>
+
+    <div class="header-nav">
+        <a href="<%= homeUrl %>" class="back-btn">
+            <i class="fas fa-arrow-left"></i> ホーム
+        </a>
+    </div>
+
     <h1>チャット相手を選択</h1>
 
     <div class="user-list">
         <%
-            String myId = (String)request.getAttribute("myId");
-            List<String[]> list = (List<String[]>)request.getAttribute("userList");
-
             if(list != null && !list.isEmpty()) {
                 for(String[] user : list) {
                     String userId = user[0];

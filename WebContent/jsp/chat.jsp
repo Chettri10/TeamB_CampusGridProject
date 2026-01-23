@@ -18,6 +18,32 @@
         flex-direction: column;
         align-items: center;
         min-height: 100vh;
+        position: relative; /* 戻るボタンの配置基準 */
+    }
+
+    /* 戻るボタンのスタイル (追加) */
+    .header-nav {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+    }
+    .back-btn {
+        color: #00ffff;
+        font-size: 18px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        transition: opacity 0.3s;
+        background-color: rgba(21, 31, 66, 0.8); /* 背景を少し暗くして視認性アップ */
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+    .back-btn:hover {
+        opacity: 0.8;
+        color: #fff;
     }
 
     /* タイトル */
@@ -27,6 +53,7 @@
         font-weight: bold;
         margin-bottom: 40px;
         line-height: 1.4;
+        margin-top: 10px;
     }
 
     /* チャットエリア（スクロール可能部分） */
@@ -171,6 +198,12 @@
 </style>
 </head>
 <body>
+
+    <div class="header-nav">
+        <a href="UserListServlet?myId=<%= request.getAttribute("myId") %>" class="back-btn">
+            <i class="fas fa-arrow-left"></i> 一覧へ
+        </a>
+    </div>
 
     <h1>キャンパス グリッド チャット</h1>
 

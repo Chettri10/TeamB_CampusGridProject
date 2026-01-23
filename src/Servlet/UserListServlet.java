@@ -21,22 +21,22 @@ public class UserListServlet extends HttpServlet {
         // 文字化け対策
         request.setCharacterEncoding("UTF-8");
 
-        // 本来はログインセッションから取得しますが、ここでは仮で "U00001" を自分とします
+        // 自分のIDを取得（テスト用にデフォルト値を設定しつつ、パラメータがあればそれを使用）
         String myId = "U00001";
-
-        // URLパラメータで ?myId=xxx と指定があればそれを使う
         if(request.getParameter("myId") != null) {
             myId = request.getParameter("myId");
         }
 
         ChatDao dao = new ChatDao();
 
-        // 1. 自分が保護者ならエラーメッセージを表示
+        // 1. 保護者チェックなどが必要な場合はコメントアウトを解除して実装
+        /*
         if(dao.isParent(myId)) {
             response.setContentType("text/html; charset=UTF-8");
             response.getWriter().write("<h3>保護者アカウントではチャット機能を利用できません。</h3>");
             return;
         }
+        */
 
         // 2. チャット可能なユーザーリストを取得
         List<String[]> userList = dao.getChattableUsers(myId);
@@ -45,7 +45,11 @@ public class UserListServlet extends HttpServlet {
         request.setAttribute("userList", userList);
 
         // 3. ユーザー選択画面へ移動
-        // 【重要】先頭に / を付けることで、確実に WebContent 直下のファイルを探しに行きます
-        request.getRequestDispatcher("/user_list.jsp").forward(request, response);
+        // 【重要】ファイルが「WebContent/jsp/user_list.jsp」にある場合のパス指定です
+        request.getRequestDispatcher("/jsp/user_list.jsp").forward(request, response);
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
     }
 }
