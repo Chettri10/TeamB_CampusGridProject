@@ -95,7 +95,7 @@
     <h1>就活状況の入力</h1>
     <h1>登録が完了しました！</h1>
 
-    <a href="<%= request.getContextPath() %>jsp/syukatu.jsp">戻る</a>
+    <a href="<%= request.getContextPath() %>/jsp/syukatu.jsp">戻る</a>
 
 </div>
 
