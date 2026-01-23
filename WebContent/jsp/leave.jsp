@@ -33,7 +33,7 @@
         margin-bottom: 15px;
     }
     .qr-btn {
-        background-color: #aeeaff;
+        background-color: #00ffff;
         padding: 12px 20px;
         border-radius: 12px;
         color: black;
@@ -62,7 +62,7 @@
     }
     .submit-btn {
         width: 90%;
-        background-color: #aee0ff;
+        background-color: #00ffff;
         color: black;
         border: none;
         padding: 15px;
