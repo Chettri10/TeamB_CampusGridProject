@@ -8,8 +8,8 @@
 <meta charset="UTF-8">
 <title>提出画像・遅延証明書一覧</title>
 <style>
-    body { font-family: "Helvetica Neue", Arial, sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
-    h2 { color: #333; margin-bottom: 30px; }
+    body { font-family: "Helvetica Neue", Arial, sans-serif; background-color:#151f42; padding: 20px; text-align: center; }
+    h2 { color: white; margin-bottom: 30px; }
 
     .gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
 
@@ -46,7 +46,7 @@
 
     button {
         padding: 12px 30px; font-size: 16px; margin-top: 30px; cursor: pointer;
-        background-color: #28a745; color: white; border: none; border-radius: 5px;
+        background-color: #00ffff; color: black; border: none; border-radius: 5px;
     }
 </style>
 </head>
@@ -96,7 +96,7 @@
                 }
             } else {
         %>
-            <p style="color:#888; font-size:18px; margin-top:50px;">現在、アップロードされた写真はありません。</p>
+            <p style="color:white; font-size:18px; margin-top:50px;">現在、アップロードされた写真はありません。</p>
         <%
             }
         %>
