@@ -17,45 +17,88 @@ import dao.AttManagementDao;
 public class AttManagementEditServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // --- 編集画面を表示する (GET) ---
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // 1. 先生チェック（セッション確認）
         HttpSession session = request.getSession();
-        String loginId = (String) session.getAttribute("userId"); // ★teacher_home.jspと統一
-
+        String loginId = (String) session.getAttribute("userId");
         if (loginId == null || !loginId.startsWith("T")) {
-            // ログインしていない、または先生でないならログイン画面へ
             response.sendRedirect("LogIn/login.jsp");
             return;
         }
 
-        // 2. 文字コード指定
         request.setCharacterEncoding("UTF-8");
-
-        // 3. パラメータ取得（編集対象の学生IDと日付）
         String targetUserId = request.getParameter("userId");
         String dateStr = request.getParameter("targetDate");
 
-        // パラメータが足りない場合は一覧へ戻す
         if (targetUserId == null || dateStr == null) {
             response.sendRedirect("AttManagementListServlet");
             return;
         }
 
-        // 4. データ取得
         try {
             Date targetDate = Date.valueOf(dateStr);
             AttManagementDao dao = new AttManagementDao();
             Map<String, Object> data = dao.getAttendanceDetail(targetUserId, targetDate);
-
-            // 5. JSPへデータを渡す
             request.setAttribute("attData", data);
             request.setAttribute("targetDate", targetDate);
-
-            // 編集画面へフォワード
             request.getRequestDispatcher("jsp/attendance_edit.jsp").forward(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect("AttManagementListServlet");
+        }
+    }
+
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        HttpSession session = request.getSession();
+        String loginId = (String) session.getAttribute("userId");
+        if (loginId == null || !loginId.startsWith("T")) {
+            response.sendRedirect("LogIn/login.jsp");
+            return;
+        }
+
+        request.setCharacterEncoding("UTF-8");
+
+        String targetUserId = request.getParameter("userId");
+        String dateStr = request.getParameter("targetDate");
+        String status = request.getParameter("status"); // 画面で選んだ「公欠」
+        String checkInTime = request.getParameter("checkInTime");
+        String checkOutTime = request.getParameter("checkOutTime");
+        String reason = request.getParameter("reason");
+
+        try {
+            Date targetDate = Date.valueOf(dateStr);
+
+            // --- ★修正：公欠の時は「出席」にされないよう、時間を空(null)で確定させる ---
+            String passCheckIn = null;
+            String passCheckOut = null;
+
+            if ("公欠".equals(status) || "欠席".equals(status)) {
+                // 公欠・欠席なら、画面の入力が何であれ時刻は保存しない
+                passCheckIn = null;
+                passCheckOut = null;
+            } else {
+                // それ以外（出席・遅刻・早退など）の場合
+                if ("出席".equals(status)) {
+                    if (isEmpty(checkInTime)) checkInTime = "09:00";
+                    if (isEmpty(checkOutTime)) checkOutTime = "18:00";
+                }
+
+                if (checkInTime != null && checkInTime.matches("\\d{2}:\\d{2}")) {
+                    passCheckIn = checkInTime;
+                }
+                if (checkOutTime != null && checkOutTime.matches("\\d{2}:\\d{2}")) {
+                    passCheckOut = checkOutTime;
+                }
+            }
+
+            AttManagementDao dao = new AttManagementDao();
+            // DBへ保存。ここでは「公欠」という文字と「時刻null」が送られる
+            dao.saveAttendance(targetUserId, targetDate, status, passCheckIn, passCheckOut, reason);
+
+            // 保存後はリスト画面へ
+            response.sendRedirect("AttManagementListServlet?targetDate=" + dateStr);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,45 +106,7 @@ public class AttManagementEditServlet extends HttpServlet {
         }
     }
 
-    // --- 編集内容を保存する (POST) ---
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-
-        // 1. 先生チェック（セッション確認）
-        HttpSession session = request.getSession();
-        String loginId = (String) session.getAttribute("userId");
-
-        if (loginId == null || !loginId.startsWith("T")) {
-            response.sendRedirect("LogIn/login.jsp");
-            return;
-        }
-
-        // 2. 文字コード指定
-        request.setCharacterEncoding("UTF-8");
-
-        // 3. フォームデータの取得
-        String targetUserId = request.getParameter("userId");
-        String dateStr = request.getParameter("targetDate");
-        String status = request.getParameter("status");
-        String checkInTime = request.getParameter("checkInTime");
-        String checkOutTime = request.getParameter("checkOutTime");
-        String reason = request.getParameter("reason");
-
-        System.out.println("■更新処理実行: 学生ID=" + targetUserId + ", 日付=" + dateStr);
-
-        // 4. 保存処理
-        try {
-            Date targetDate = Date.valueOf(dateStr);
-            AttManagementDao dao = new AttManagementDao();
-            dao.saveAttendance(targetUserId, targetDate, status, checkInTime, checkOutTime, reason);
-
-            // 5. 保存後は一覧画面（その日付）に戻る
-            response.sendRedirect("AttManagementListServlet?targetDate=" + dateStr);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            // エラー時は一覧へ戻す（簡易処理）
-            response.sendRedirect("AttManagementListServlet");
-        }
+    private boolean isEmpty(String str) {
+        return str == null || str.trim().isEmpty() || str.equals("--:--");
     }
 }

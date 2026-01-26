@@ -33,34 +33,43 @@ public class StudentHistoryServlet extends HttpServlet {
         List<Map<String, Object>> historyList = dao.getStudentHistory(userId);
         String userName = dao.getUserName(userId);
 
-        // --- ★履歴データ一件ずつに対して判定とDB更新を行う ---
+        // --- ★履歴データ一件ずつに対して判定を行う ---
         if (historyList != null) {
             for (Map<String, Object> data : historyList) {
                 Date targetDate = (Date) data.get("date");
                 String checkIn = (String) data.get("checkInTime");
                 String checkOut = (String) data.get("checkOutTime");
-                String dbStatus = (String) data.get("status");
+
+                // DBのステータスを取得（null対策と空白除去を徹底）
+                String dbStatusRaw = (String) data.get("status");
+                String dbStatus = (dbStatusRaw != null) ? dbStatusRaw.trim() : "未登録";
                 String reason = (String) data.get("reason");
 
-                // --- 【判定ロジックの修正】フラグ管理に変更 ---
-                String correctedStatus;
-                boolean isLate = false;
-                boolean isEarly = false;
+                // 初期値は現在のDBの値を維持
+                String correctedStatus = dbStatus;
 
-                if (checkIn != null && !checkIn.equals("--:--") && !checkIn.isEmpty()) {
-                    // 遅刻フラグの判定
-                    if (checkIn.compareTo("09:00") > 0) {
-                        isLate = true;
+                // --- 【判定ロジック：公欠・欠席を聖域化する】 ---
+
+                // A. 【最優先】公欠・欠席なら、時刻が何であれ判定を即終了（時刻比較を物理的に遮断）
+                if ("公欠".equals(dbStatus) || "欠席".equals(dbStatus)) {
+                    correctedStatus = dbStatus;
+                }
+                // B. 時刻が不完全（空文字、--:--、null）な場合
+                else if (checkIn == null || checkIn.equals("--:--") || checkIn.trim().isEmpty() ||
+                         checkOut == null || checkOut.equals("--:--") || checkOut.trim().isEmpty()) {
+
+                    // 備考（理由）があれば欠席とするが、そうでなければ今のステータスを守る
+                    if (reason != null && !reason.trim().isEmpty()) {
+                        correctedStatus = "欠席";
+                    } else {
+                        correctedStatus = dbStatus;
                     }
+                }
+                // C. 【出席/遅刻/早退の判定】時刻が「両方揃っている」場合のみ計算
+                else {
+                    boolean isLate = checkIn.compareTo("09:00") > 0;
+                    boolean isEarly = checkOut.compareTo("18:00") < 0;
 
-                    // 早退フラグの判定
-                    if (checkOut != null && !checkOut.equals("--:--") && !checkOut.isEmpty()) {
-                        if (checkOut.compareTo("18:00") < 0) {
-                            isEarly = true;
-                        }
-                    }
-
-                    // フラグの組み合わせでステータスを確定
                     if (isLate && isEarly) {
                         correctedStatus = "早退・遅刻";
                     } else if (isLate) {
@@ -70,18 +79,16 @@ public class StudentHistoryServlet extends HttpServlet {
                     } else {
                         correctedStatus = "出席";
                     }
-                } else {
-                    // 打刻なしの場合（欠席または未登録）
-                    correctedStatus = (reason != null && !reason.isEmpty()) ? "欠席" : "未登録";
                 }
 
-                // 【DB更新】現在のDBの値と計算結果が違えば、DBを書き換える
-                // これにより履歴画面を開いた瞬間に整合性がチェックされます
+                // --- 3. 【重要】計算結果がDBと異なる場合のみ更新 ---
                 if (!correctedStatus.equals(dbStatus)) {
                     try {
+                        // DBを正しい判定結果で更新
                         dao.updateStatus(userId, targetDate, correctedStatus);
-                        // リスト内の表示用ステータスも最新に更新
+                        // 画面表示用のMapデータも更新
                         data.put("status", correctedStatus);
+                        System.out.println("DEBUG: [" + targetDate + "] " + dbStatus + " -> " + correctedStatus + " に更新しました");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

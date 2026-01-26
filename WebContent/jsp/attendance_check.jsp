@@ -20,6 +20,7 @@
         --status-red: #ff1744;
         --status-orange: #ff9100;
         --status-purple: #d500f9;
+        --status-blue: #00b0ff; /* 公欠用の青色を追加 */
     }
 
     body {
@@ -76,6 +77,7 @@
     .text-red { color: var(--status-red); }
     .text-orange { color: var(--status-orange); }
     .text-purple { color: var(--status-purple); }
+    .text-blue { color: var(--status-blue); } /* 公欠テキスト用 */
     .text-gray { color: #666; }
 
     table { width: 90%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
@@ -86,6 +88,24 @@
     .time-text { font-family: 'Courier New', monospace; font-weight: bold; }
     .link-student { color: #052c48; font-weight: bold; text-decoration: none; }
     .home-link { text-decoration: none; color: var(--accent-cyan); display: inline-block; margin-top: 40px; }
+
+    .btn-edit {
+        background-color: var(--accent-cyan);
+        color: var(--bg-main);
+        padding: 6px 15px;
+        text-decoration: none;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+    .btn-edit:hover {
+        background-color: var(--accent-hover);
+        box-shadow: 0 0 10px var(--accent-cyan);
+        transform: scale(1.05);
+    }
+    .text-disabled { color: #ccc; font-size: 0.85em; }
 </style>
 </head>
 <body>
@@ -117,8 +137,8 @@
             <span class="count-number text-orange"><%= request.getAttribute("countEarly") %>名</span>
         </div>
         <div class="status-card card-absent">
-            <span class="status-label">欠席</span>
-            <span class="count-number text-purple"><%= request.getAttribute("countAbsent") %>名</span>
+            <span class="status-label">欠席/公欠</span>
+            <span class="count-number text-purple"><%= (int)request.getAttribute("countAbsent") %>名</span>
         </div>
         <div class="status-card card-unregistered">
             <span class="status-label">未登録</span>
@@ -129,46 +149,70 @@
     <table>
         <thead>
             <tr>
-                <th width="15%">学籍番号</th>
-                <th width="25%">氏名</th>
+                <th width="12%">学籍番号</th>
+                <th width="20%">氏名</th>
                 <th width="12%">出席時間</th>
                 <th width="12%">退室時間</th>
-                <th width="18%">状態</th>
-                <th width="18%">備考</th>
+                <th width="15%">状態</th>
+                <th width="15%">備考</th>
+                <th width="14%">未登録編集</th>
             </tr>
         </thead>
         <tbody>
         <%
+            Object displayDateObj = request.getAttribute("displayDate");
+            Object todayObj = request.getAttribute("today");
+            String displayDateStr = (displayDateObj != null) ? displayDateObj.toString() : "";
+            String todayStr = (todayObj != null) ? todayObj.toString() : "";
+            boolean isToday = displayDateStr.equals(todayStr);
+
             List<Map<String, Object>> list = (List<Map<String, Object>>) request.getAttribute("attendanceList");
             if (list != null && !list.isEmpty()) {
                 for (Map<String, Object> data : list) {
-                    // Servlet側で確定したステータスを取得
                     String statusText = (String) data.get("status");
                     String checkIn = (String) data.get("checkInTime");
                     String checkOut = (String) data.get("checkOutTime");
                     String certPath = (String) data.get("certificatePath");
 
-                    // 表示用CSSクラスの決定
+                    // 色分け判定の修正
                     String statusClass = "text-gray";
                     if ("出席".equals(statusText)) statusClass = "text-green";
                     else if ("遅刻".equals(statusText) || "早退・遅刻".equals(statusText)) statusClass = "text-red";
                     else if ("早退".equals(statusText)) statusClass = "text-orange";
                     else if ("欠席".equals(statusText)) statusClass = "text-purple";
+                    else if ("公欠".equals(statusText)) statusClass = "text-blue"; // 公欠は青色
+
+                    // ★ 編集可能判定: 「今日」or「未登録」or「公欠」
+                    boolean canEdit = isToday || "未登録".equals(statusText) || "公欠".equals(statusText);
         %>
             <tr>
                 <td><a href="StudentHistoryServlet?userId=<%= data.get("userId") %>" class="link-student"><%= data.get("userId") %></a></td>
                 <td><a href="StudentHistoryServlet?userId=<%= data.get("userId") %>" class="link-student"><%= data.get("userName") %></a></td>
-                <td class="time-text"><%= checkIn %></td>
-                <td class="time-text"><%= checkOut %></td>
+                <td class="time-text"><%= (checkIn != null) ? checkIn : "" %></td>
+                <td class="time-text"><%= (checkOut != null) ? checkOut : "" %></td>
                 <td><span class="<%= statusClass %>" style="font-weight: bold;"><%= statusText %></span></td>
                 <td>
                     <% if (certPath != null && !certPath.trim().isEmpty()) { %>
                         <span style="color: #333; font-weight: bold;">(あり)</span>
                     <% } %>
+                    <%-- 備考（理由）も表示したい場合はここに data.get("reason") を追加 --%>
+                </td>
+                <td>
+                    <% if (canEdit) { %>
+                        <a href="AttManagementEditServlet?userId=<%= data.get("userId") %>&targetDate=<%= displayDateStr %>" class="btn-edit">編集</a>
+                    <% } else { %>
+                        <span class="text-disabled">編集不可</span>
+                    <% } %>
                 </td>
             </tr>
         <%
                 }
+            } else {
+        %>
+            <tr>
+                <td colspan="7">データがありません。</td>
+            </tr>
+        <%
             }
         %>
         </tbody>

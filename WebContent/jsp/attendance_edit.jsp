@@ -122,6 +122,23 @@
         transform: translateY(-2px);
     }
 </style>
+<script>
+    // 公欠や欠席が選ばれたら、時刻入力をクリアして無効化する補助機能
+    function toggleTimeInputs() {
+        const status = document.getElementById("statusSelect").value;
+        const timeInputs = document.querySelectorAll('input[type="time"]');
+        if (status === "欠席" || status === "公欠") {
+            timeInputs.forEach(input => {
+                input.value = "";
+                input.style.opacity = "0.5";
+            });
+        } else {
+            timeInputs.forEach(input => {
+                input.style.opacity = "1";
+            });
+        }
+    }
+</script>
 </head>
 <body>
 
@@ -129,7 +146,16 @@
 
     <%
         Map<String, Object> data = (Map<String, Object>) request.getAttribute("attData");
-        String currentStatus = (String) data.get("status");
+        String currentStatus = (data != null && data.get("status") != null) ? (String) data.get("status") : "未登録";
+
+        // 時刻データから HH:mm 部分だけを抽出（yyyy-MM-dd HH:mm:ss.s 対策）
+        String checkIn = (String) data.get("checkInTime");
+        if (checkIn != null && checkIn.contains(" ")) checkIn = checkIn.split(" ")[1].substring(0, 5);
+        if (checkIn == null || checkIn.equals("--:--")) checkIn = "";
+
+        String checkOut = (String) data.get("checkOutTime");
+        if (checkOut != null && checkOut.contains(" ")) checkOut = checkOut.split(" ")[1].substring(0, 5);
+        if (checkOut == null || checkOut.equals("--:--")) checkOut = "";
     %>
 
     <div class="edit-container">
@@ -152,26 +178,29 @@
 
             <div class="form-group">
                 <label>状況</label>
-                <select name="status">
+                <select name="status" id="statusSelect" onchange="toggleTimeInputs()">
                     <option value="出席" <%= "出席".equals(currentStatus) ? "selected" : "" %>>出席</option>
                     <option value="遅刻" <%= "遅刻".equals(currentStatus) ? "selected" : "" %>>遅刻</option>
                     <option value="早退" <%= "早退".equals(currentStatus) ? "selected" : "" %>>早退</option>
+                    <option value="欠席" <%= "欠席".equals(currentStatus) ? "selected" : "" %>>欠席</option>
+                    <option value="公欠" <%= "公欠".equals(currentStatus) ? "selected" : "" %>>公欠</option>
+                    <option value="未登録" <%= "未登録".equals(currentStatus) ? "selected" : "" %>>未登録</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label>出席時刻</label>
-                <input type="time" name="checkInTime" value="<%= data.get("checkInTime") %>">
+                <input type="time" name="checkInTime" value="<%= checkIn %>">
             </div>
 
             <div class="form-group">
                 <label>退室時刻</label>
-                <input type="time" name="checkOutTime" value="<%= data.get("checkOutTime") %>">
+                <input type="time" name="checkOutTime" value="<%= checkOut %>">
             </div>
 
             <div class="form-group">
-                <label>備考 (遅刻理由など)</label>
-                <textarea name="reason" placeholder="理由があれば記入してください"><%= data.get("reason") %></textarea>
+                <label>備考 (理由など)</label>
+                <textarea name="reason" placeholder="公欠の理由などを記入してください"><%= data.get("reason") != null ? data.get("reason") : "" %></textarea>
             </div>
 
             <div class="btn-group">

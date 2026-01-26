@@ -81,56 +81,68 @@ public class AttManagementListServlet extends HttpServlet {
                 boolean isLate = false;
                 boolean isEarly = false;
 
-                // 判定用文字列の正規化と5文字(HH:mm)抽出
-                // DBに yyyy-MM-dd HH:mm:ss.s で入っている場合でも、確実に時刻部分の5文字を比較する
-                if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equals("--:--")) {
+                // 打刻があるかチェック
+                boolean hasCheckIn = (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equals("--:--"));
+
+                if (hasCheckIn) {
                     String timePart = checkIn.contains(" ") ? checkIn.split(" ")[1] : checkIn;
                     if (timePart.length() >= 5) {
                         if (timePart.substring(0, 5).compareTo("09:00") > 0) isLate = true;
                     }
-                }
 
-                if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equals("--:--")) {
-                    String timePart = checkOut.contains(" ") ? checkOut.split(" ")[1] : checkOut;
-                    if (timePart.length() >= 5) {
-                        if (timePart.substring(0, 5).compareTo("18:00") < 0) isEarly = true;
+                    if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equals("--:--")) {
+                        String timePartOut = checkOut.contains(" ") ? checkOut.split(" ")[1] : checkOut;
+                        if (timePartOut.length() >= 5) {
+                            if (timePartOut.substring(0, 5).compareTo("18:00") < 0) isEarly = true;
+                        }
                     }
                 }
 
                 // --- B. ステータス文字列の確定 ---
                 String correctedStatus;
-                if (isLate && isEarly) {
-                    correctedStatus = "早退・遅刻";
-                } else if (isLate) {
-                    correctedStatus = "遅刻";
-                } else if (isEarly) {
-                    correctedStatus = "早退";
-                } else if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equals("--:--")) {
-                    correctedStatus = "出席";
+
+                if (hasCheckIn) {
+                    if (isLate && isEarly) correctedStatus = "早退・遅刻";
+                    else if (isLate) correctedStatus = "遅刻";
+                    else if (isEarly) correctedStatus = "早退";
+                    else correctedStatus = "出席";
                 } else {
-                    correctedStatus = (reason != null && !reason.trim().isEmpty()) ? "欠席" : "未登録";
+                    if (dbStatus != null && (dbStatus.equals("公欠") || dbStatus.equals("欠席") || dbStatus.equals("出席"))) {
+                        correctedStatus = dbStatus;
+                    } else if (reason != null && !reason.trim().isEmpty()) {
+                        correctedStatus = "欠席";
+                    } else {
+                        correctedStatus = "未登録";
+                    }
                 }
 
-                // --- C. DB同期 (現在のDB値と判定結果が違うなら更新) ---
+                // --- C. DB同期 ---
                 if (!correctedStatus.equals(dbStatus)) {
                     try {
+                        // ★修正：DAOでDBを更新
                         dao.updateStatus(userId, targetDate, correctedStatus);
-                        data.put("status", correctedStatus); // 表示用データも最新化
+
+                        // ★重要：画面表示用データ(data)も最新化する
+                        data.put("status", correctedStatus);
+
+                        // もし時刻が空だったのに「出席/公欠」になったなら、表示上も補完する
+                        if (!hasCheckIn && ("出席".equals(correctedStatus) || "公欠".equals(correctedStatus))) {
+                            data.put("checkInTime", "09:00");
+                            data.put("checkOutTime", "18:00");
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
 
                 // --- D. 集計 ---
-                // 「早退・遅刻」を早退数または遅刻数のどちらにカウントするかは運用次第ですが、
-                // ここでは早退カウントに含める形を維持しています。
                 if ("出席".equals(correctedStatus)) {
                     countPresent++;
                 } else if ("遅刻".equals(correctedStatus)) {
                     countLate++;
                 } else if ("早退".equals(correctedStatus) || "早退・遅刻".equals(correctedStatus)) {
                     countEarly++;
-                } else if ("欠席".equals(correctedStatus)) {
+                } else if ("欠席".equals(correctedStatus) || "公欠".equals(correctedStatus)) {
                     countAbsent++;
                 } else {
                     countUnregistered++;

@@ -5,6 +5,7 @@ import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,7 +27,7 @@ public class AttManagementDao {
     }
 
     /**
-     * 一覧取得 (CERTIFICATE_PATHを追加)
+     * 一覧取得
      */
     public List<Map<String, Object>> getDailyAttendanceList(Date targetDate) {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -48,10 +49,10 @@ public class AttManagementDao {
                 map.put("userName", rs.getString("USER_NAME"));
                 map.put("userId", rs.getString("USER_ID"));
 
-                java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
+                Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
 
-                java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
+                Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
 
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
@@ -64,65 +65,61 @@ public class AttManagementDao {
     }
 
     /**
-     * ステータス自動補正用 (早退・遅刻などのステータス同期用)
+     * ステータス更新（クイック更新用）
+     * ★修正：公欠・欠席時は時間を null にして自動判定を回避する
      */
     public void updateStatus(String userId, Date targetDate, String newStatus) throws Exception {
-        // 時刻データは既存のものを維持し、ステータス文字列のみを更新・挿入
-        String sql = "MERGE INTO ATTMANAGEMENT (USER_ID, TARGET_DATE, STATUS) " +
-                     "KEY(USER_ID, TARGET_DATE) VALUES (?, ?, ?)";
+        Timestamp targetIn = null;
+        Timestamp targetOut = null;
+
+        // --- ★ここを修正：公欠・欠席は時間を入れない ---
+        if ("出席".equals(newStatus)) {
+            targetIn = convertToTimestamp(targetDate, "09:00");
+            targetOut = convertToTimestamp(targetDate, "18:00");
+        } else if ("遅刻".equals(newStatus)) {
+            targetIn = convertToTimestamp(targetDate, "09:10");
+            targetOut = convertToTimestamp(targetDate, "18:00");
+        } else if ("早退".equals(newStatus)) {
+            targetIn = convertToTimestamp(targetDate, "09:00");
+            targetOut = convertToTimestamp(targetDate, "15:00");
+        } else if ("公欠".equals(newStatus) || "欠席".equals(newStatus)) {
+            targetIn = null; // 時間を null にすることで Servlet 側の自動判定をスキップさせる
+            targetOut = null;
+        }
+
+        String sql = "MERGE INTO ATTMANAGEMENT (USER_ID, TARGET_DATE, STATUS, CHECK_IN_TIME, CHECK_OUT_TIME) " +
+                     "KEY(USER_ID, TARGET_DATE) VALUES (?, ?, ?, ?, ?)";
+
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             pstmt.setDate(2, targetDate);
             pstmt.setString(3, newStatus);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                System.out.println("[DAO] UPDATE STATUS: " + userId + " -> " + newStatus);
-            }
+            pstmt.setTimestamp(4, targetIn);
+            pstmt.setTimestamp(5, targetOut);
+            pstmt.executeUpdate();
         } catch (Exception e) {
-            System.err.println("[DAO] ERROR: updateStatus 失敗 - " + e.getMessage());
+            e.printStackTrace();
             throw e;
         }
     }
 
     /**
-     * 詳細取得 (CERTIFICATE_PATHを追加)
-     */
-    public Map<String, Object> getAttendanceDetail(String userId, Date targetDate) {
-        Map<String, Object> map = new HashMap<>();
-        String sql = "SELECT u.USER_NAME, u.USER_ID, " +
-                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON, a.CERTIFICATE_PATH " +
-                     "FROM \"USER\" u " +
-                     "LEFT JOIN ATTMANAGEMENT a " +
-                     "ON u.USER_ID = a.USER_ID AND a.TARGET_DATE = ? " +
-                     "WHERE u.USER_ID = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setDate(1, targetDate);
-            pstmt.setString(2, userId);
-            ResultSet rs = pstmt.executeQuery();
-            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-            if (rs.next()) {
-                map.put("userId", rs.getString("USER_ID"));
-                map.put("userName", rs.getString("USER_NAME"));
-                java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
-                map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "");
-                java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
-                map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "");
-                map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
-                map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
-                map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
-            }
-        } catch (Exception e) { e.printStackTrace(); }
-        return map;
-    }
-
-    /**
      * 保存処理 (手動保存用)
+     * ★修正：公欠・欠席時は入力された時間を無視して null で保存
      */
     public void saveAttendance(String userId, Date targetDate, String status,
                                String checkInStr, String checkOutStr, String reason) {
+
+        // --- ★ここを修正：公欠・欠席なら時刻を強制クリア ---
+        if ("公欠".equals(status) || "欠席".equals(status)) {
+            checkInStr = null;
+            checkOutStr = null;
+        } else if ("出席".equals(status)) {
+            if (isTimeEmpty(checkInStr)) checkInStr = "09:00";
+            if (isTimeEmpty(checkOutStr)) checkOutStr = "18:00";
+        }
+
         String sql = "MERGE INTO ATTMANAGEMENT " +
                      "(USER_ID, TARGET_DATE, STATUS, CHECK_IN_TIME, CHECK_OUT_TIME, ABSENCE_REASON) " +
                      "KEY(USER_ID, TARGET_DATE) " +
@@ -136,24 +133,56 @@ public class AttManagementDao {
             pstmt.setTimestamp(5, convertToTimestamp(targetDate, checkOutStr));
             pstmt.setString(6, reason);
             pstmt.executeUpdate();
-            System.out.println("[DAO] SAVE DATA: " + userId + " [" + status + "]");
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    /**
-     * 履歴取得 (CERTIFICATE_PATHを追加)
-     */
+    private boolean isTimeEmpty(String timeStr) {
+        return timeStr == null || timeStr.trim().isEmpty() || timeStr.equals("--:--");
+    }
+
+    private Timestamp convertToTimestamp(Date date, String timeStr) {
+        if (isTimeEmpty(timeStr)) return null;
+        try {
+            return Timestamp.valueOf(date.toString() + " " + timeStr + ":00");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // --- 取得系メソッド (変更なし) ---
+    public Map<String, Object> getAttendanceDetail(String userId, Date targetDate) {
+        Map<String, Object> map = new HashMap<>();
+        String sql = "SELECT u.USER_NAME, u.USER_ID, a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON, a.CERTIFICATE_PATH " +
+                     "FROM \"USER\" u LEFT JOIN ATTMANAGEMENT a ON u.USER_ID = a.USER_ID AND a.TARGET_DATE = ? " +
+                     "WHERE u.USER_ID = ?";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDate(1, targetDate);
+            pstmt.setString(2, userId);
+            ResultSet rs = pstmt.executeQuery();
+            SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+            if (rs.next()) {
+                map.put("userId", rs.getString("USER_ID"));
+                map.put("userName", rs.getString("USER_NAME"));
+                Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
+                map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "");
+                Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
+                map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "");
+                map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
+                map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
+                map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return map;
+    }
+
     public List<Map<String, Object>> getStudentHistory(String userId) {
         List<Map<String, Object>> list = new ArrayList<>();
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.YEAR, -1);
         Date oneYearAgo = new Date(cal.getTimeInMillis());
         String sql = "SELECT TARGET_DATE, CHECK_IN_TIME, CHECK_OUT_TIME, STATUS, ABSENCE_REASON, CERTIFICATE_PATH " +
-                     "FROM ATTMANAGEMENT " +
-                     "WHERE USER_ID = ? AND TARGET_DATE >= ? " +
-                     "ORDER BY TARGET_DATE DESC";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                     "FROM ATTMANAGEMENT WHERE USER_ID = ? AND TARGET_DATE >= ? ORDER BY TARGET_DATE DESC";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             pstmt.setDate(2, oneYearAgo);
             ResultSet rs = pstmt.executeQuery();
@@ -161,9 +190,9 @@ public class AttManagementDao {
             while (rs.next()) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("date", rs.getDate("TARGET_DATE"));
-                java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
+                Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
-                java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
+                Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
                 map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
@@ -174,29 +203,14 @@ public class AttManagementDao {
         return list;
     }
 
-    /**
-     * ユーザー名取得
-     */
     public String getUserName(String userId) {
         String name = "";
         String sql = "SELECT USER_NAME FROM \"USER\" WHERE USER_ID = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) name = rs.getString("USER_NAME");
         } catch (Exception e) { e.printStackTrace(); }
         return name;
-    }
-
-    /**
-     * ヘルパー: 時刻文字列をTimestampに変換
-     */
-    private java.sql.Timestamp convertToTimestamp(Date date, String timeStr) {
-        if (timeStr == null || timeStr.trim().isEmpty() || timeStr.equals("--:--")) return null;
-        try {
-            // "yyyy-mm-dd hh:mm:ss" 形式にする
-            return java.sql.Timestamp.valueOf(date.toString() + " " + timeStr + ":00");
-        } catch (Exception e) { return null; }
     }
 }
