@@ -66,9 +66,11 @@
         font-weight: bold;
         min-width: 60px;
     }
+    /* 色分け用クラス（早退・遅刻は赤系に統一） */
     .badge-出席 { background-color: #e8f5e9; color: var(--status-green); border: 1px solid var(--status-green); }
     .badge-遅刻 { background-color: #ffebee; color: var(--status-red); border: 1px solid var(--status-red); }
     .badge-早退 { background-color: #fff3e0; color: var(--status-orange); border: 1px solid var(--status-orange); }
+    .badge-早退遅刻 { background-color: #ffebee; color: var(--status-red); border: 1px solid var(--status-red); }
     .badge-欠席 { background-color: #fce4ec; color: var(--status-purple); border: 1px solid var(--status-purple); }
     .badge-未登録 { background-color: #f5f5f5; color: #999; border: 1px solid #ccc; }
 
@@ -130,37 +132,25 @@
             List<Map<String, Object>> list = (List<Map<String, Object>>) request.getAttribute("historyList");
             if (list != null && !list.isEmpty()) {
                 for (Map<String, Object> data : list) {
+                    // Servletの計算結果をそのまま取得
+                    String displayStatus = (String) data.get("status");
+                    if (displayStatus == null) displayStatus = "未登録";
+
                     String checkIn = (String) data.get("checkInTime");
                     String checkOut = (String) data.get("checkOutTime");
-                    String dbStatus = (String) data.get("status");
-
-                    // --- 出席状況の動的判定 ---
-                    String displayStatus = (dbStatus != null) ? dbStatus : "未登録";
-
-                    if (checkIn != null && !checkIn.equals("--:--")) {
-                        // 9:00を基準に判定
-                        if (checkIn.compareTo("09:00") > 0) {
-                            displayStatus = "遅刻";
-                        } else {
-                            displayStatus = "出席";
-                        }
-                    }
-
-                    // 18:00を基準に早退判定
-                    if (checkOut != null && !checkOut.equals("--:--") && checkOut.compareTo("18:00") < 0) {
-                        displayStatus = "早退";
-                    }
-
-                    String sId = (String) request.getAttribute("studentId");
                     Date targetDate = (Date) data.get("date");
+                    String sId = (String) request.getAttribute("studentId");
+
+                    // 「早退・遅刻」から記号を消してCSSクラス名（badge-早退遅刻）に合わせる
+                    String badgeClass = displayStatus.replace("・", "");
         %>
             <tr>
                 <td style="font-weight: bold;"><%= targetDate %></td>
-                <td style="font-family: monospace; font-size: 1.1em;"><%= checkIn %></td>
-                <td style="font-family: monospace; font-size: 1.1em;"><%= checkOut %></td>
+                <td style="font-family: monospace; font-size: 1.1em;"><%= (checkIn != null) ? checkIn : "--:--" %></td>
+                <td style="font-family: monospace; font-size: 1.1em;"><%= (checkOut != null) ? checkOut : "--:--" %></td>
 
                 <td>
-                    <span class="status-badge badge-<%= displayStatus %>"><%= displayStatus %></span>
+                    <span class="status-badge badge-<%= badgeClass %>"><%= displayStatus %></span>
                 </td>
 
                 <td style="text-align: left;"><%= (data.get("reason") != null) ? data.get("reason") : "" %></td>
@@ -174,7 +164,7 @@
             } else {
         %>
             <tr>
-                <td colspan="6">データがありません。</td>
+                <td colspan="6">履歴データが見つかりませんでした。</td>
             </tr>
         <%
             }

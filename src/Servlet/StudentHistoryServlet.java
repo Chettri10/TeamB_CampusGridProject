@@ -33,42 +33,54 @@ public class StudentHistoryServlet extends HttpServlet {
         List<Map<String, Object>> historyList = dao.getStudentHistory(userId);
         String userName = dao.getUserName(userId);
 
-        // --- ★追加: 履歴データ一件ずつに対して判定とDB更新を行う ---
+        // --- ★履歴データ一件ずつに対して判定とDB更新を行う ---
         if (historyList != null) {
             for (Map<String, Object> data : historyList) {
-                // historyList内の各日のデータを取り出す
                 Date targetDate = (Date) data.get("date");
                 String checkIn = (String) data.get("checkInTime");
                 String checkOut = (String) data.get("checkOutTime");
                 String dbStatus = (String) data.get("status");
                 String reason = (String) data.get("reason");
 
-                // 【判定ロジック】一覧画面と同じルールを適用
-                String correctedStatus = (dbStatus != null) ? dbStatus : "未登録";
+                // --- 【判定ロジックの修正】フラグ管理に変更 ---
+                String correctedStatus;
+                boolean isLate = false;
+                boolean isEarly = false;
 
                 if (checkIn != null && !checkIn.equals("--:--") && !checkIn.isEmpty()) {
-                    // 入室判定
+                    // 遅刻フラグの判定
                     if (checkIn.compareTo("09:00") > 0) {
+                        isLate = true;
+                    }
+
+                    // 早退フラグの判定
+                    if (checkOut != null && !checkOut.equals("--:--") && !checkOut.isEmpty()) {
+                        if (checkOut.compareTo("18:00") < 0) {
+                            isEarly = true;
+                        }
+                    }
+
+                    // フラグの組み合わせでステータスを確定
+                    if (isLate && isEarly) {
+                        correctedStatus = "早退・遅刻";
+                    } else if (isLate) {
                         correctedStatus = "遅刻";
+                    } else if (isEarly) {
+                        correctedStatus = "早退";
                     } else {
                         correctedStatus = "出席";
                     }
-                    // 退室判定 (早退を優先)
-                    if (checkOut != null && !checkOut.equals("--:--") && !checkOut.isEmpty()) {
-                        if (checkOut.compareTo("18:00") < 0) {
-                            correctedStatus = "早退";
-                        }
-                    }
                 } else {
-                    // 打刻なし
+                    // 打刻なしの場合（欠席または未登録）
                     correctedStatus = (reason != null && !reason.isEmpty()) ? "欠席" : "未登録";
                 }
 
                 // 【DB更新】現在のDBの値と計算結果が違えば、DBを書き換える
+                // これにより履歴画面を開いた瞬間に整合性がチェックされます
                 if (!correctedStatus.equals(dbStatus)) {
                     try {
                         dao.updateStatus(userId, targetDate, correctedStatus);
-                        // リスト内の表示用ステータスも書き換えておく
+                        // リスト内の表示用ステータスも最新に更新
                         data.put("status", correctedStatus);
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -76,14 +88,13 @@ public class StudentHistoryServlet extends HttpServlet {
                 }
             }
         }
-        // -----------------------------------------------------
 
         // 3. JSPにデータを渡す
         request.setAttribute("historyList", historyList);
         request.setAttribute("studentName", userName);
         request.setAttribute("studentId", userId);
 
-        // 4. 新しいJSPへフォワード
+        // 4. JSPへフォワード
         request.getRequestDispatcher("jsp/student_history.jsp").forward(request, response);
     }
 }

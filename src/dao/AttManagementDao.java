@@ -25,10 +25,11 @@ public class AttManagementDao {
         return conn;
     }
 
-    // --- 1. 一覧取得 (CERTIFICATE_PATHを追加) ---
+    /**
+     * 一覧取得 (CERTIFICATE_PATHを追加)
+     */
     public List<Map<String, Object>> getDailyAttendanceList(Date targetDate) {
         List<Map<String, Object>> list = new ArrayList<>();
-        // SQLに a.CERTIFICATE_PATH を追加
         String sql = "SELECT u.USER_NAME, u.USER_ID, " +
                      "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON, a.CERTIFICATE_PATH " +
                      "FROM \"USER\" u " +
@@ -46,13 +47,15 @@ public class AttManagementDao {
                 Map<String, Object> map = new HashMap<>();
                 map.put("userName", rs.getString("USER_NAME"));
                 map.put("userId", rs.getString("USER_ID"));
+
                 java.sql.Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
+
                 java.sql.Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
+
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
                 map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
-                // Mapに証明書パスを格納
                 map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
                 list.add(map);
             }
@@ -60,8 +63,11 @@ public class AttManagementDao {
         return list;
     }
 
-    // --- 2. ステータス自動補正用 ---
+    /**
+     * ステータス自動補正用 (早退・遅刻などのステータス同期用)
+     */
     public void updateStatus(String userId, Date targetDate, String newStatus) throws Exception {
+        // 時刻データは既存のものを維持し、ステータス文字列のみを更新・挿入
         String sql = "MERGE INTO ATTMANAGEMENT (USER_ID, TARGET_DATE, STATUS) " +
                      "KEY(USER_ID, TARGET_DATE) VALUES (?, ?, ?)";
         try (Connection conn = getConnection();
@@ -69,9 +75,10 @@ public class AttManagementDao {
             pstmt.setString(1, userId);
             pstmt.setDate(2, targetDate);
             pstmt.setString(3, newStatus);
+
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                System.out.println("[DAO] SUCCESS: " + userId + " を " + newStatus + " に更新しました。");
+                System.out.println("[DAO] UPDATE STATUS: " + userId + " -> " + newStatus);
             }
         } catch (Exception e) {
             System.err.println("[DAO] ERROR: updateStatus 失敗 - " + e.getMessage());
@@ -79,7 +86,9 @@ public class AttManagementDao {
         }
     }
 
-    // --- 3. 詳細取得 (CERTIFICATE_PATHを追加) ---
+    /**
+     * 詳細取得 (CERTIFICATE_PATHを追加)
+     */
     public Map<String, Object> getAttendanceDetail(String userId, Date targetDate) {
         Map<String, Object> map = new HashMap<>();
         String sql = "SELECT u.USER_NAME, u.USER_ID, " +
@@ -109,7 +118,9 @@ public class AttManagementDao {
         return map;
     }
 
-    // --- 4. 保存処理 ---
+    /**
+     * 保存処理 (手動保存用)
+     */
     public void saveAttendance(String userId, Date targetDate, String status,
                                String checkInStr, String checkOutStr, String reason) {
         String sql = "MERGE INTO ATTMANAGEMENT " +
@@ -125,11 +136,13 @@ public class AttManagementDao {
             pstmt.setTimestamp(5, convertToTimestamp(targetDate, checkOutStr));
             pstmt.setString(6, reason);
             pstmt.executeUpdate();
-            System.out.println("[DAO] SAVE: " + userId + " のデータを保存しました。");
+            System.out.println("[DAO] SAVE DATA: " + userId + " [" + status + "]");
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // --- 5. 履歴取得 (CERTIFICATE_PATHを追加) ---
+    /**
+     * 履歴取得 (CERTIFICATE_PATHを追加)
+     */
     public List<Map<String, Object>> getStudentHistory(String userId) {
         List<Map<String, Object>> list = new ArrayList<>();
         Calendar cal = Calendar.getInstance();
@@ -161,7 +174,9 @@ public class AttManagementDao {
         return list;
     }
 
-    // --- 6. ユーザー名取得 ---
+    /**
+     * ユーザー名取得
+     */
     public String getUserName(String userId) {
         String name = "";
         String sql = "SELECT USER_NAME FROM \"USER\" WHERE USER_ID = ?";
@@ -174,10 +189,13 @@ public class AttManagementDao {
         return name;
     }
 
-    // --- 7. ヘルパー ---
+    /**
+     * ヘルパー: 時刻文字列をTimestampに変換
+     */
     private java.sql.Timestamp convertToTimestamp(Date date, String timeStr) {
-        if (timeStr == null || timeStr.isEmpty() || timeStr.equals("--:--")) return null;
+        if (timeStr == null || timeStr.trim().isEmpty() || timeStr.equals("--:--")) return null;
         try {
+            // "yyyy-mm-dd hh:mm:ss" 形式にする
             return java.sql.Timestamp.valueOf(date.toString() + " " + timeStr + ":00");
         } catch (Exception e) { return null; }
     }
