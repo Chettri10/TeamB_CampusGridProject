@@ -21,16 +21,16 @@ public class AttManagementDao {
     private Connection getConnection() throws Exception {
         Class.forName("org.h2.Driver");
         Connection conn = DriverManager.getConnection(URL, USER, PASS);
-        // ★重要: 自動コミットを確実にオンにする
         conn.setAutoCommit(true);
         return conn;
     }
 
-    // --- 1. 一覧取得 ---
+    // --- 1. 一覧取得 (CERTIFICATE_PATHを追加) ---
     public List<Map<String, Object>> getDailyAttendanceList(Date targetDate) {
         List<Map<String, Object>> list = new ArrayList<>();
+        // SQLに a.CERTIFICATE_PATH を追加
         String sql = "SELECT u.USER_NAME, u.USER_ID, " +
-                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON " +
+                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON, a.CERTIFICATE_PATH " +
                      "FROM \"USER\" u " +
                      "LEFT JOIN ATTMANAGEMENT a " +
                      "ON u.USER_ID = a.USER_ID AND a.TARGET_DATE = ? " +
@@ -52,27 +52,24 @@ public class AttManagementDao {
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
                 map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
+                // Mapに証明書パスを格納
+                map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
                 list.add(map);
             }
         } catch (Exception e) { e.printStackTrace(); }
         return list;
     }
 
-    // --- 2. ステータス自動補正用 (不整合があればここを叩く) ---
+    // --- 2. ステータス自動補正用 ---
     public void updateStatus(String userId, Date targetDate, String newStatus) throws Exception {
         String sql = "MERGE INTO ATTMANAGEMENT (USER_ID, TARGET_DATE, STATUS) " +
                      "KEY(USER_ID, TARGET_DATE) VALUES (?, ?, ?)";
-
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setString(1, userId);
             pstmt.setDate(2, targetDate);
             pstmt.setString(3, newStatus);
-
             int rows = pstmt.executeUpdate();
-
-            // コンソールで実行を確認するためのログ
             if (rows > 0) {
                 System.out.println("[DAO] SUCCESS: " + userId + " を " + newStatus + " に更新しました。");
             }
@@ -82,16 +79,15 @@ public class AttManagementDao {
         }
     }
 
-    // --- 3. 詳細取得 ---
+    // --- 3. 詳細取得 (CERTIFICATE_PATHを追加) ---
     public Map<String, Object> getAttendanceDetail(String userId, Date targetDate) {
         Map<String, Object> map = new HashMap<>();
         String sql = "SELECT u.USER_NAME, u.USER_ID, " +
-                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON " +
+                     "a.CHECK_IN_TIME, a.CHECK_OUT_TIME, a.STATUS, a.ABSENCE_REASON, a.CERTIFICATE_PATH " +
                      "FROM \"USER\" u " +
                      "LEFT JOIN ATTMANAGEMENT a " +
                      "ON u.USER_ID = a.USER_ID AND a.TARGET_DATE = ? " +
                      "WHERE u.USER_ID = ?";
-
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setDate(1, targetDate);
@@ -107,6 +103,7 @@ public class AttManagementDao {
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "");
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
                 map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
+                map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
             }
         } catch (Exception e) { e.printStackTrace(); }
         return map;
@@ -132,13 +129,13 @@ public class AttManagementDao {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // --- 5. 履歴取得 ---
+    // --- 5. 履歴取得 (CERTIFICATE_PATHを追加) ---
     public List<Map<String, Object>> getStudentHistory(String userId) {
         List<Map<String, Object>> list = new ArrayList<>();
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.YEAR, -1);
         Date oneYearAgo = new Date(cal.getTimeInMillis());
-        String sql = "SELECT TARGET_DATE, CHECK_IN_TIME, CHECK_OUT_TIME, STATUS, ABSENCE_REASON " +
+        String sql = "SELECT TARGET_DATE, CHECK_IN_TIME, CHECK_OUT_TIME, STATUS, ABSENCE_REASON, CERTIFICATE_PATH " +
                      "FROM ATTMANAGEMENT " +
                      "WHERE USER_ID = ? AND TARGET_DATE >= ? " +
                      "ORDER BY TARGET_DATE DESC";
@@ -157,6 +154,7 @@ public class AttManagementDao {
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
                 map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
+                map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
                 list.add(map);
             }
         } catch (Exception e) { e.printStackTrace(); }

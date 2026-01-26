@@ -78,7 +78,7 @@
     .text-purple { color: var(--status-purple); }
     .text-gray { color: #666; }
 
-    table { width: 85%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
+    table { width: 90%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
     thead { background-color: var(--table-header); color: #fff; }
     th { padding: 15px; border-bottom: 2px solid var(--accent-cyan); }
     td { border-bottom: 1px solid #eee; padding: 15px; color: #333; text-align: center; }
@@ -130,15 +130,14 @@
         <thead>
             <tr>
                 <th width="15%">学籍番号</th>
-                <th width="30%">氏名</th>
-                <th width="15%">出席時間</th>
-                <th width="15%">退室時間</th>
-                <th width="25%">状態</th>
-            </tr>
+                <th width="25%">氏名</th>
+                <th width="12%">出席時間</th>
+                <th width="12%">退室時間</th>
+                <th width="18%">状態</th>
+                <th width="18%">備考</th> </tr>
         </thead>
         <tbody>
         <%
-            // 再集計用のカウンター
             int cPresent = 0, cLate = 0, cEarly = 0, cAbsent = 0, cUnreg = 0;
 
             List<Map<String, Object>> list = (List<Map<String, Object>>) request.getAttribute("attendanceList");
@@ -147,9 +146,10 @@
                     String checkIn = (String) data.get("checkInTime");
                     String checkOut = (String) data.get("checkOutTime");
                     String dbStatus = (String) data.get("status");
+                    String certPath = (String) data.get("certificatePath"); // 追加
                     String statusText = (dbStatus != null) ? dbStatus : "未登録";
 
-                    // --- 時間による自動判定 ---
+                    // --- 自動判定ロジック ---
                     if (checkIn != null && !checkIn.equals("--:--")) {
                         if (checkIn.compareTo("09:00") > 0) {
                             statusText = "遅刻";
@@ -157,12 +157,11 @@
                             statusText = "出席";
                         }
                     }
-                    // 早退判定（出席・遅刻に関わらず18:00前なら早退を優先表示する場合）
                     if (checkOut != null && !checkOut.equals("--:--") && checkOut.compareTo("18:00") < 0) {
                         statusText = "早退";
                     }
 
-                    // --- カウント処理 ---
+                    // --- カウント ---
                     if ("出席".equals(statusText)) cPresent++;
                     else if ("遅刻".equals(statusText)) cLate++;
                     else if ("早退".equals(statusText)) cEarly++;
@@ -181,6 +180,12 @@
                 <td class="time-text"><%= checkIn %></td>
                 <td class="time-text"><%= checkOut %></td>
                 <td><span class="<%= statusClass %>" style="font-weight: bold;"><%= statusText %></span></td>
+                <td>
+                    <%-- 証明書パスが存在する場合のみ表示 --%>
+                    <% if (certPath != null && !certPath.trim().isEmpty()) { %>
+                        <span style="color: #333;">(あり)</span>
+                    <% } %>
+                </td>
             </tr>
         <%
                 }

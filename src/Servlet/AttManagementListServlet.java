@@ -61,12 +61,13 @@ public class AttManagementListServlet extends HttpServlet {
         List<Map<String, Object>> list = null;
 
         try {
+            // DAO側で CERTIFICATE_PATH を含めて取得するように修正済みであることを前提とします
             list = dao.getDailyAttendanceList(targetDate);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // --- 4. 【重要】判定・DB更新・集計処理 ---
+        // --- 4. 判定・DB更新・集計処理 ---
         int countPresent = 0;
         int countLate = 0;
         int countEarly = 0;
@@ -81,17 +82,15 @@ public class AttManagementListServlet extends HttpServlet {
                 String dbStatus = (String) data.get("status");
                 String reason = (String) data.get("reason");
 
-                // --- A. 正しい状態の判定 (計算上のステータスを出す) ---
+                // --- A. 正しい状態の判定 ---
                 String correctedStatus = (dbStatus != null) ? dbStatus : "未登録";
 
                 if (checkIn != null && !checkIn.equals("--:--") && !checkIn.isEmpty()) {
-                    // 入室時刻で判定
                     if (checkIn.compareTo("09:00") > 0) {
                         correctedStatus = "遅刻";
                     } else {
                         correctedStatus = "出席";
                     }
-                    // 退室時刻で判定 (早退を優先)
                     if (checkOut != null && !checkOut.equals("--:--") && !checkOut.isEmpty()) {
                         if (checkOut.compareTo("18:00") < 0) {
                             correctedStatus = "早退";
@@ -101,19 +100,17 @@ public class AttManagementListServlet extends HttpServlet {
                     correctedStatus = (reason != null && !reason.isEmpty()) ? "欠席" : "未登録";
                 }
 
-                // --- B. DBの値を書き換える (不整合があれば同期) ---
+                // --- B. DBの値を書き換える (ステータスに不整合がある場合のみ) ---
                 if (!correctedStatus.equals(dbStatus)) {
                     try {
-                        // ここでDBの中身を「早退」などに書き換えます
                         dao.updateStatus(userId, targetDate, correctedStatus);
-                        // 表示用データも上書き
                         data.put("status", correctedStatus);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
 
-                // --- C. カウント処理 (確定したcorrectedStatusで数える) ---
+                // --- C. カウント処理 ---
                 if (correctedStatus.equals("出席")) {
                     countPresent++;
                 } else if (correctedStatus.equals("遅刻")) {
@@ -128,7 +125,7 @@ public class AttManagementListServlet extends HttpServlet {
             }
         }
 
-        // 集計結果セット
+        // --- 5. リクエストスコープへのセット ---
         request.setAttribute("countPresent", countPresent);
         request.setAttribute("countLate", countLate);
         request.setAttribute("countEarly", countEarly);
