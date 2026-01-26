@@ -10,6 +10,18 @@
     input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
     button { width: 100%; padding: 10px; background-color: #00ffff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
     .error { color: #ff453a; font-size: 14px; }
+
+    /* 追加: リンクのスタイル */
+    .forgot-link {
+        display: block;
+        margin-top: 15px;
+        font-size: 14px;
+        color: #00ffff;
+        text-decoration: none;
+    }
+    .forgot-link:hover {
+        text-decoration: underline;
+    }
 </style>
 </head>
 <body>
@@ -22,10 +34,12 @@
         <% } %>
 
         <form action="<%= request.getContextPath() %>/LoginServlet" method="post">
-            <input type="text" name="userId" placeholder="ユーザーID (例: G00001)" required>
+            <input type="text" name="userId" placeholder="ユーザーID (例: S00001)" required>
             <input type="password" name="password" placeholder="パスワード" required>
             <button type="submit">ログイン</button>
         </form>
+
+        <a href="forgot_password.jsp" class="forgot-link">パスワードを忘れましたか？</a>
 
         <p style="font-size:12px; color:#aaa; margin-top:20px;">
             S...学生 / T...先生 / P...保護者

@@ -272,4 +272,34 @@ public class UserDao extends DAO {
             return false;
         }
     }
+ // --- パスワードリセット用追加メソッド ---
+
+    // IDとメールアドレスが一致するか確認し、一致すればパスワードを更新する
+    public boolean resetPassword(String userId, String email, String newPassword) {
+        // まずユーザーが存在し、メールが一致するか確認
+        String checkSql = "SELECT User_ID FROM User WHERE User_ID = ? AND Email = ?";
+        String updateSql = "UPDATE User SET Password = ? WHERE User_ID = ?";
+
+        try (Connection conn = getConnection()) {
+            // 1. チェック
+            try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
+                ps.setString(1, userId);
+                ps.setString(2, email);
+                ResultSet rs = ps.executeQuery();
+                if (!rs.next()) {
+                    return false; // ユーザーが見つからないかメールが違う
+                }
+            }
+
+            // 2. 更新
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setString(1, newPassword);
+                ps.setString(2, userId);
+                return ps.executeUpdate() > 0;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
