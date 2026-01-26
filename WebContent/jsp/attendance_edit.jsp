@@ -156,7 +156,6 @@
                     <option value="出席" <%= "出席".equals(currentStatus) ? "selected" : "" %>>出席</option>
                     <option value="遅刻" <%= "遅刻".equals(currentStatus) ? "selected" : "" %>>遅刻</option>
                     <option value="早退" <%= "早退".equals(currentStatus) ? "selected" : "" %>>早退</option>
-                    <option value="未登録" <%= "未登録".equals(currentStatus) ? "selected" : "" %>>未登録</option>
                 </select>
             </div>
 
