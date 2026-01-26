@@ -8,7 +8,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ChatDao {
 
@@ -64,7 +66,7 @@ public class ChatDao {
         }
     }
 
-    // ★追加：メッセージ削除機能
+    // メッセージ削除機能
     public void deleteMessage(String chatId) {
         String sql = "DELETE FROM Chat WHERE Chat_ID = ?";
         try (Connection conn = getConnection();
@@ -90,13 +92,12 @@ public class ChatDao {
         }
     }
 
-    // ★修正：履歴取得（Chat_IDも取得するように変更）
+    // 履歴取得
     public List<String[]> getHistory(String senderId, String receiverId) {
         List<String[]> list = new ArrayList<>();
         String roomId = getRoomId(senderId, receiverId);
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd HH:mm");
 
-        // Chat_ID を追加で取得
         String sql = "SELECT Chat_ID, User_ID, Message, Send_Date_Time, Is_Read FROM Chat WHERE Chat_Room_ID = ? ORDER BY Send_Date_Time ASC";
 
         try (Connection conn = getConnection();
@@ -112,7 +113,7 @@ public class ChatDao {
                     rs.getString("Message"),            // [1]
                     (ts != null) ? sdf.format(ts) : "", // [2]
                     isRead ? "1" : "0",                 // [3]
-                    String.valueOf(rs.getInt("Chat_ID"))// [4] ★チャットID追加
+                    String.valueOf(rs.getInt("Chat_ID"))// [4]
                 };
                 list.add(data);
             }
@@ -122,11 +123,10 @@ public class ChatDao {
         return list;
     }
 
-    // ★★★ここを修正しました（SかTで始まるユーザーのみ取得）★★★
+    // チャット可能なユーザー取得
     public List<String[]> getChattableUsers(String myId) {
         List<String[]> userList = new ArrayList<>();
 
-        // IDが 'S' (学生) または 'T' (教員) で始まり、かつ自分ではないユーザーを取得
         String sql = "SELECT User_ID, User_Name FROM User "
                    + "WHERE (User_ID LIKE 'S%' OR User_ID LIKE 'T%') "
                    + "AND User_ID != ?";
@@ -164,7 +164,7 @@ public class ChatDao {
         return (id1.compareTo(id2) < 0) ? "ROOM_" + id1 + "_" + id2 : "ROOM_" + id2 + "_" + id1;
     }
 
-    // ★追加：IDからユーザー名を取得するメソッド
+    // IDからユーザー名を取得するメソッド
     public String getUserName(String userId) {
         String name = "";
         String sql = "SELECT User_Name FROM User WHERE User_ID = ?";
@@ -178,11 +178,10 @@ public class ChatDao {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        // 名前が取れなかったらIDを返す
         return name.isEmpty() ? userId : name;
     }
 
-    // ★追加：メッセージ編集機能
+    // メッセージ編集機能
     public void editMessage(String chatId, String newMessage) {
         String sql = "UPDATE Chat SET Message = ? WHERE Chat_ID = ?";
         try (Connection conn = getConnection();
@@ -193,5 +192,38 @@ public class ChatDao {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // ★★★ 修正：保護者ホーム画面通知用メソッド ★★★
+    // 以前のコードは RECEIVER_ID を見ていましたが、DBにその値がないため
+    // Chat_Room_ID を使って「自分宛て」を探すように修正しました。
+    public List<Map<String, String>> getReceivedMessages(String myId) {
+        List<Map<String, String>> list = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd HH:mm");
+
+        // ロジック:
+        // 1. Chat_Room_ID に自分のIDが含まれている (例: ROOM_P0003_S00003)
+        // 2. かつ、送信者(User_ID) が自分ではない (= 相手からのメッセージ)
+        String sql = "SELECT * FROM CHAT WHERE Chat_Room_ID LIKE ? AND User_ID != ? ORDER BY Send_Date_Time DESC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, "%" + myId + "%"); // 自分のIDを含むルーム
+            pstmt.setString(2, myId);             // 送信者が自分でない
+
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Map<String, String> map = new HashMap<>();
+                map.put("sender", rs.getString("User_ID"));   // 送り主 (User_IDカラム)
+                map.put("message", rs.getString("Message"));  // 内容
+                Timestamp ts = rs.getTimestamp("Send_Date_Time"); // 日時 (Send_Date_Timeカラム)
+                map.put("time", (ts != null) ? sdf.format(ts) : "");
+                list.add(map);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

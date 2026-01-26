@@ -21,7 +21,7 @@ public class UserDao extends DAO {
                       String routeConfirmation, String email, String phoneNumber,
                       String studentNumber, Date dateOfBirth, String address, String parentId) throws Exception {
         String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Last_LogIn, SubjectIn_Charge, Add_Product, Route_Confirmation, Email, Phone_Number, Student_Number, Date_Of_Birth, Address, Parent_ID) "
-                   + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, userId);
             ps.setString(2, userName);
@@ -112,7 +112,7 @@ public class UserDao extends DAO {
         return m;
     }
 
-    // --- ★ここから下：登録画面用のメソッド ---
+    // --- ★登録画面用のメソッド ---
 
     // 1. RegisterServletで使用するメソッド（ID, 名前, PW, Email）
     public boolean registerUser(String userId, String userName, String password, String email) {
@@ -135,7 +135,7 @@ public class UserDao extends DAO {
         }
     }
 
-    // 2. 詳細情報（誕生日・住所・路線情報・【追加】お子様のID）を含めて登録したい場合用
+    // 2. 詳細情報（誕生日・住所・路線情報・お子様のID）を含めて登録したい場合用
     public boolean registerUserFull(String userId, String userName, String password, int role,
                                     String email, String phone, String dobString, String address,
                                     String routeInfo, String childId) { // ←引数childIdを追加
@@ -164,7 +164,7 @@ public class UserDao extends DAO {
             pstmt.setString(8, address);
             pstmt.setString(9, routeInfo); // 路線情報をRoute_Confirmationカラムに保存
 
-            // ★追加: お子様のIDを Parent_ID カラムにセット
+            // お子様のIDを Parent_ID カラムにセット
             if (childId != null && !childId.isEmpty()) {
                 pstmt.setString(10, childId);
             } else {
@@ -177,5 +177,41 @@ public class UserDao extends DAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // --- ★★★ ここから下が追加したメソッドです ★★★ ---
+
+    // 3. 学生IDから保護者IDを取得する
+    public String getParentId(String studentId) {
+        String parentId = null;
+        String sql = "SELECT Parent_ID FROM User WHERE User_ID = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, studentId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                parentId = rs.getString("Parent_ID");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return parentId;
+    }
+
+    // 4. 保護者IDから子供（学生）IDを取得する
+    public String getChildId(String parentId) {
+        String childId = null;
+        String sql = "SELECT User_ID FROM User WHERE Parent_ID = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, parentId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                childId = rs.getString("User_ID");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return childId;
     }
 }

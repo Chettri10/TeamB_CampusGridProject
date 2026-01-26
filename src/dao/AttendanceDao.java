@@ -42,7 +42,7 @@ public class AttendanceDao {
         return false;
     }
 
-    // 登校登録
+    // 登校登録（画像パス対応）
     public boolean registerCheckIn(String userId, String status, String reason, String imagePath) {
         String sql = "INSERT INTO ATTMANAGEMENT (User_ID, Target_Date, Check_In_Time, Status, Absence_Reason, CERTIFICATE_PATH) VALUES (?, CURRENT_DATE, ?, ?, ?, ?)";
 
@@ -56,6 +56,7 @@ public class AttendanceDao {
             pstmt.setString(5, imagePath);
 
             int rows = pstmt.executeUpdate();
+            System.out.println("DAO登校登録: 完了 (件数=" + rows + ")");
             return rows > 0;
 
         } catch (Exception e) {
@@ -65,7 +66,7 @@ public class AttendanceDao {
         }
     }
 
-    // 下校登録
+    // 下校登録（ステータス合体機能 ＆ 画像パス対応）
     public boolean registerCheckOut(String userId, String status, String reason, String imagePath) {
         String statusLogic = "CASE WHEN Status LIKE '%遅刻%' AND ? <> '' THEN '遅刻・早退' "
                            + "WHEN ? <> '' THEN ? ELSE Status END";
@@ -90,6 +91,7 @@ public class AttendanceDao {
             pstmt.setString(9, userId);
 
             int rows = pstmt.executeUpdate();
+            System.out.println("DAO下校登録: 完了 (件数=" + rows + ")");
             return rows > 0;
 
         } catch (Exception e) {
@@ -99,11 +101,9 @@ public class AttendanceDao {
         }
     }
 
-    // ★★★ 修正箇所：保護者画面用にデータを取得・整形するメソッド ★★★
+    // 学生IDを指定して、その学生の出席記録を全て取得するメソッド（保護者画面用）
     public List<Map<String, Object>> getAttendanceByStudentId(String studentId) {
         List<Map<String, Object>> list = new ArrayList<>();
-
-        // 日付の新しい順に取得
         String sql = "SELECT * FROM ATTMANAGEMENT WHERE User_ID = ? ORDER BY Target_Date DESC";
 
         try (Connection conn = getConnection();
@@ -114,33 +114,11 @@ public class AttendanceDao {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Map<String, Object> map = new HashMap<>();
-
-                    // --- JSP (attendance_parent.jsp) が期待するキー名に合わせて格納 ---
-
-                    // 1. 日付 (JSPキー: date)
-                    map.put("date", rs.getDate("Target_Date"));
-
-                    // 2. ステータス (JSPキー: status)
-                    map.put("status", rs.getString("Status"));
-
-                    // 3. 打刻時間 (JSPキー: check_in_time)
-                    Timestamp inTime = rs.getTimestamp("Check_In_Time");
-                    if (inTime != null) {
-                        // "yyyy-MM-dd HH:mm:ss" から 時間部分だけを切り出す
-                        String timeStr = inTime.toString();
-                        if (timeStr.length() >= 19) {
-                            map.put("check_in_time", timeStr.substring(11, 16)); // 09:00 のように分まで表示
-                        } else {
-                            map.put("check_in_time", timeStr);
-                        }
-                    } else {
-                        map.put("check_in_time", "--:--");
-                    }
-
-                    // 4. 科目 (JSPキー: subject)
-                    // ※DBに科目がないため、仮でハイフンを入れるか、時間割ロジックがあればここで結合します
-                    map.put("subject", "ー");
-
+                    map.put("Target_Date", rs.getDate("Target_Date"));
+                    map.put("Status", rs.getString("Status"));
+                    map.put("Check_In_Time", rs.getTimestamp("Check_In_Time"));
+                    map.put("Check_Out_Time", rs.getTimestamp("Check_Out_Time"));
+                    map.put("Absence_Reason", rs.getString("Absence_Reason"));
                     list.add(map);
                 }
             }
@@ -151,31 +129,105 @@ public class AttendanceDao {
         return list;
     }
 
-    // デバッグ用
-    public void printAllData() {
-        // (元のコードと同じなので省略しても良いですが、念のため残しておきます)
-        // ... (前のコードと同じ内容) ...
+    // ★★★ 追加：その学生の「遅刻・欠席・早退」の合計回数をカウントする ★★★
+    public int countBadStatus(String studentId) {
+        int count = 0;
+        // ステータスに「遅刻」「早退」「欠席」のいずれかが含まれているものをカウント
+        String sql = "SELECT COUNT(*) FROM ATTMANAGEMENT " +
+                     "WHERE User_ID = ? AND (Status LIKE '%欠席%' OR Status LIKE '%遅刻%' OR Status LIKE '%早退%')";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, studentId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            System.out.println("DAOエラー(countBadStatus): " + e.getMessage());
+            e.printStackTrace();
+        }
+        return count;
     }
 
-    // 画像付きレコード取得用
+    // デバッグ用：データベースの中身をコンソールに表示
+    public void printAllData() {
+        String sql = "SELECT * FROM ATTMANAGEMENT ORDER BY Target_Date DESC, Check_In_Time DESC";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            System.out.println("===================================================================================");
+            System.out.println("【現在のデータベース保存状況】");
+            System.out.println("ID      | 日付        | 登校      | 下校      | 状態         | 理由            | 画像");
+            System.out.println("-----------------------------------------------------------------------------------");
+
+            while (rs.next()) {
+                String id = rs.getString("User_ID");
+                String date = rs.getDate("Target_Date").toString();
+
+                Timestamp inTs = rs.getTimestamp("Check_In_Time");
+                String inTime = (inTs != null) ? inTs.toString().substring(11, 19) : "--:--:--";
+
+                Timestamp outTs = rs.getTimestamp("Check_Out_Time");
+                String outTime = (outTs != null) ? outTs.toString().substring(11, 19) : "--:--:--";
+
+                String stat = rs.getString("Status");
+                String reas = rs.getString("Absence_Reason");
+                if(reas == null) reas = "";
+
+                String img = rs.getString("CERTIFICATE_PATH");
+                if(img == null) img = "(なし)";
+                else img = "(あり)";
+
+                System.out.println(id + " | " + date + " | " + inTime + " | " + outTime + " | " + stat + " | " + reas + " | " + img);
+            }
+            System.out.println("===================================================================================");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // USERテーブルと結合して「ユーザー名」も一緒に取得するメソッド
     public List<Map<String, String>> getRecordsWithImages() {
-         // (元のコードと同じなので省略しても良いですが、念のため残しておきます)
         List<Map<String, String>> list = new ArrayList<>();
-        String sql = "SELECT A.*, U.USER_NAME FROM ATTMANAGEMENT A LEFT JOIN USER U ON A.User_ID = U.USER_ID WHERE A.CERTIFICATE_PATH IS NOT NULL AND A.CERTIFICATE_PATH <> '' ORDER BY A.Target_Date DESC, A.Check_In_Time DESC";
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql); ResultSet rs = pstmt.executeQuery()) {
+
+        String sql = "SELECT A.*, U.USER_NAME " +
+                     "FROM ATTMANAGEMENT A " +
+                     "LEFT JOIN USER U ON A.User_ID = U.USER_ID " +
+                     "WHERE A.CERTIFICATE_PATH IS NOT NULL AND A.CERTIFICATE_PATH <> '' " +
+                     "ORDER BY A.Target_Date DESC, A.Check_In_Time DESC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
             while (rs.next()) {
                 Map<String, String> map = new HashMap<>();
                 map.put("id", rs.getString("User_ID"));
+
                 String name = rs.getString("USER_NAME");
                 if (name == null) name = "未登録ユーザー";
                 map.put("userName", name);
-                map.put("datetime", rs.getDate("Target_Date") + " " + (rs.getTimestamp("Check_In_Time")!=null?rs.getTimestamp("Check_In_Time").toString().substring(11,16):"--:--"));
+
+                String date = rs.getDate("Target_Date").toString();
+                Timestamp inTs = rs.getTimestamp("Check_In_Time");
+                String time = (inTs != null) ? inTs.toString().substring(11, 16) : "--:--";
+                map.put("datetime", date + " " + time);
+
                 map.put("status", rs.getString("Status"));
                 map.put("reason", rs.getString("Absence_Reason"));
                 map.put("image", rs.getString("CERTIFICATE_PATH"));
+
                 list.add(map);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            System.out.println("DAO画像取得エラー: " + e.getMessage());
+            e.printStackTrace();
+        }
         return list;
     }
 }
