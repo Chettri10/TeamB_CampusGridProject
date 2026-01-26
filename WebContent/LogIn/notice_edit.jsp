@@ -35,8 +35,8 @@
     .container { max-width:400px; margin:0 auto; background:#fff; color:#333; padding:20px; border-radius:12px; }
     h2 { text-align:center; color:#00E5FF; }
     label { font-weight:bold; margin-top:10px; display:block; }
-    select, textarea { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
-    .btn { display:block; width:100%; padding:12px; margin-top:20px; background:#00E5FF; color:#000; border-radius:8px; text-align:center; font-weight:600; text-decoration:none; }
+    select, textarea { width:90%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
+    .btn { display:block; width:90%; padding:12px; margin-top:20px; background:#00E5FF; color:#000; border-radius:8px; text-align:center; font-weight:600; text-decoration:none; }
 </style>
 </head>
 
