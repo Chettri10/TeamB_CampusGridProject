@@ -17,22 +17,31 @@ public class ClassListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // 1. 画面からクリックされたクラス名を受け取る (例: "1-A")
+        request.setCharacterEncoding("UTF-8");
+
+        // クラス名と検索キーワードを受け取る
         String className = request.getParameter("className");
+        String keyword = request.getParameter("keyword"); // 検索窓の入力値
 
         if (className == null || className.isEmpty()) {
-            className = "1-1"; // デフォルト
+            className = "1-1";
         }
 
-        // 2. DAOを使ってそのクラスの学生リストを取得
         UserDao dao = new UserDao();
-        List<Map<String, Object>> studentList = dao.getStudentsByClass(className);
+        List<Map<String, Object>> studentList;
 
-        // 3. JSPにデータを渡す
+        // キーワードがあるなら検索、なければ全件表示
+        if (keyword != null && !keyword.isEmpty()) {
+            studentList = dao.searchStudentsInClass(className, keyword);
+        } else {
+            studentList = dao.getStudentsByClass(className);
+        }
+
         request.setAttribute("selectedClass", className);
         request.setAttribute("studentList", studentList);
+        // 検索ワードを画面に残すためにセット
+        request.setAttribute("searchKeyword", keyword);
 
-        // 4. 表示画面へ移動
         request.getRequestDispatcher("/LogIn/class_list.jsp").forward(request, response);
     }
 }

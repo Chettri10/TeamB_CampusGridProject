@@ -217,7 +217,7 @@ public class UserDao extends DAO {
         return childId;
     }
 
-    // --- ★★★ クラス管理機能用メソッド（ここから下が追加機能です） ★★★ ---
+    // --- ★★★ クラス管理機能用メソッド ★★★ ---
 
     // 5. 指定したクラスの学生一覧を取得
     public List<Map<String, Object>> getStudentsByClass(String className) {
@@ -272,26 +272,23 @@ public class UserDao extends DAO {
             return false;
         }
     }
- // --- パスワードリセット用追加メソッド ---
 
-    // IDとメールアドレスが一致するか確認し、一致すればパスワードを更新する
+    // --- パスワードリセット用追加メソッド ---
+
     public boolean resetPassword(String userId, String email, String newPassword) {
-        // まずユーザーが存在し、メールが一致するか確認
         String checkSql = "SELECT User_ID FROM User WHERE User_ID = ? AND Email = ?";
         String updateSql = "UPDATE User SET Password = ? WHERE User_ID = ?";
 
         try (Connection conn = getConnection()) {
-            // 1. チェック
             try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
                 ps.setString(1, userId);
                 ps.setString(2, email);
                 ResultSet rs = ps.executeQuery();
                 if (!rs.next()) {
-                    return false; // ユーザーが見つからないかメールが違う
+                    return false;
                 }
             }
 
-            // 2. 更新
             try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setString(1, newPassword);
                 ps.setString(2, userId);
@@ -301,5 +298,49 @@ public class UserDao extends DAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // --- ★★★ 編集・検索機能用メソッド（ここから下を追加しました） ★★★ ---
+
+    // 8. 学生情報の更新（名前とクラスを変更）
+    public boolean updateStudentInfo(String userId, String newName, String newClass) {
+        String sql = "UPDATE User SET User_Name = ?, CLASS_NAME = ? WHERE User_ID = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newName);
+            ps.setString(2, newClass);
+            ps.setString(3, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 9. 名前検索（クラス内検索）
+    public List<Map<String, Object>> searchStudentsInClass(String className, String keyword) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        // 名前(User_Name)にあいまい検索(LIKE)をかけます
+        String sql = "SELECT * FROM User WHERE CLASS_NAME = ? AND User_ID LIKE 'S%' AND User_Name LIKE ? ORDER BY User_ID ASC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, className);
+            ps.setString(2, "%" + keyword + "%"); // %で囲むと「～を含む」検索になります
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Map<String, Object> map = new LinkedHashMap<>();
+                map.put("id", rs.getString("User_ID"));
+                map.put("name", rs.getString("User_Name"));
+                map.put("className", rs.getString("CLASS_NAME"));
+                list.add(map);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }
