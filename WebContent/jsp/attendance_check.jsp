@@ -78,7 +78,7 @@
     .text-purple { color: var(--status-purple); }
     .text-gray { color: #666; }
 
-    table { width: 85%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
+    table { width: 90%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
     thead { background-color: var(--table-header); color: #fff; }
     th { padding: 15px; border-bottom: 2px solid var(--accent-cyan); }
     td { border-bottom: 1px solid #eee; padding: 15px; color: #333; text-align: center; }
@@ -106,23 +106,23 @@
     <div class="dashboard">
         <div class="status-card card-present">
             <span class="status-label">出席</span>
-            <span id="disp-present" class="count-number text-green">0名</span>
+            <span class="count-number text-green"><%= request.getAttribute("countPresent") %>名</span>
         </div>
         <div class="status-card card-late">
             <span class="status-label">遅刻</span>
-            <span id="disp-late" class="count-number text-red">0名</span>
+            <span class="count-number text-red"><%= request.getAttribute("countLate") %>名</span>
         </div>
         <div class="status-card card-early">
             <span class="status-label">早退</span>
-            <span id="disp-early" class="count-number text-orange">0名</span>
+            <span class="count-number text-orange"><%= request.getAttribute("countEarly") %>名</span>
         </div>
         <div class="status-card card-absent">
             <span class="status-label">欠席</span>
-            <span id="disp-absent" class="count-number text-purple">0名</span>
+            <span class="count-number text-purple"><%= request.getAttribute("countAbsent") %>名</span>
         </div>
         <div class="status-card card-unregistered">
             <span class="status-label">未登録</span>
-            <span id="disp-unregistered" class="count-number text-gray">0名</span>
+            <span class="count-number text-gray"><%= request.getAttribute("countUnregistered") %>名</span>
         </div>
     </div>
 
@@ -130,48 +130,28 @@
         <thead>
             <tr>
                 <th width="15%">学籍番号</th>
-                <th width="30%">氏名</th>
-                <th width="15%">出席時間</th>
-                <th width="15%">退室時間</th>
-                <th width="25%">状態</th>
+                <th width="25%">氏名</th>
+                <th width="12%">出席時間</th>
+                <th width="12%">退室時間</th>
+                <th width="18%">状態</th>
+                <th width="18%">備考</th>
             </tr>
         </thead>
         <tbody>
         <%
-            // 再集計用のカウンター
-            int cPresent = 0, cLate = 0, cEarly = 0, cAbsent = 0, cUnreg = 0;
-
             List<Map<String, Object>> list = (List<Map<String, Object>>) request.getAttribute("attendanceList");
             if (list != null && !list.isEmpty()) {
                 for (Map<String, Object> data : list) {
+                    // Servlet側で確定したステータスを取得
+                    String statusText = (String) data.get("status");
                     String checkIn = (String) data.get("checkInTime");
                     String checkOut = (String) data.get("checkOutTime");
-                    String dbStatus = (String) data.get("status");
-                    String statusText = (dbStatus != null) ? dbStatus : "未登録";
+                    String certPath = (String) data.get("certificatePath");
 
-                    // --- 時間による自動判定 ---
-                    if (checkIn != null && !checkIn.equals("--:--")) {
-                        if (checkIn.compareTo("09:00") > 0) {
-                            statusText = "遅刻";
-                        } else {
-                            statusText = "出席";
-                        }
-                    }
-                    // 早退判定（出席・遅刻に関わらず18:00前なら早退を優先表示する場合）
-                    if (checkOut != null && !checkOut.equals("--:--") && checkOut.compareTo("18:00") < 0) {
-                        statusText = "早退";
-                    }
-
-                    // --- カウント処理 ---
-                    if ("出席".equals(statusText)) cPresent++;
-                    else if ("遅刻".equals(statusText)) cLate++;
-                    else if ("早退".equals(statusText)) cEarly++;
-                    else if ("欠席".equals(statusText)) cAbsent++;
-                    else cUnreg++;
-
+                    // 表示用CSSクラスの決定
                     String statusClass = "text-gray";
                     if ("出席".equals(statusText)) statusClass = "text-green";
-                    else if ("遅刻".equals(statusText)) statusClass = "text-red";
+                    else if ("遅刻".equals(statusText) || "早退・遅刻".equals(statusText)) statusClass = "text-red";
                     else if ("早退".equals(statusText)) statusClass = "text-orange";
                     else if ("欠席".equals(statusText)) statusClass = "text-purple";
         %>
@@ -181,6 +161,11 @@
                 <td class="time-text"><%= checkIn %></td>
                 <td class="time-text"><%= checkOut %></td>
                 <td><span class="<%= statusClass %>" style="font-weight: bold;"><%= statusText %></span></td>
+                <td>
+                    <% if (certPath != null && !certPath.trim().isEmpty()) { %>
+                        <span style="color: #333; font-weight: bold;">(あり)</span>
+                    <% } %>
+                </td>
             </tr>
         <%
                 }
@@ -190,14 +175,6 @@
     </table>
 
     <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="home-link">ホームへ戻る</a>
-
-    <script>
-        document.getElementById('disp-present').innerText = '<%= cPresent %>名';
-        document.getElementById('disp-late').innerText = '<%= cLate %>名';
-        document.getElementById('disp-early').innerText = '<%= cEarly %>名';
-        document.getElementById('disp-absent').innerText = '<%= cAbsent %>名';
-        document.getElementById('disp-unregistered').innerText = '<%= cUnreg %>名';
-    </script>
 
 </body>
 </html>

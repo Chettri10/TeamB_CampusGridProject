@@ -22,7 +22,7 @@ public class AttManagementListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // --- 1. 先生チェック ---
+        // --- 1. ログインチェック ---
         HttpSession session = request.getSession();
         String loginId = (String) session.getAttribute("userId");
 
@@ -47,7 +47,7 @@ public class AttManagementListServlet extends HttpServlet {
             }
         }
 
-        // 前日・翌日の計算
+        // 前後日の計算
         Calendar cal = Calendar.getInstance();
         cal.setTime(targetDate);
         cal.add(Calendar.DAY_OF_MONTH, -1);
@@ -56,7 +56,7 @@ public class AttManagementListServlet extends HttpServlet {
         cal.add(Calendar.DAY_OF_MONTH, 1);
         Date nextDate = new Date(cal.getTimeInMillis());
 
-        // --- 3. DAOを使ってデータを取得 ---
+        // --- 3. データの取得 ---
         AttManagementDao dao = new AttManagementDao();
         List<Map<String, Object>> list = null;
 
@@ -66,12 +66,8 @@ public class AttManagementListServlet extends HttpServlet {
             e.printStackTrace();
         }
 
-        // --- 4. 【重要】判定・DB更新・集計処理 ---
-        int countPresent = 0;
-        int countLate = 0;
-        int countEarly = 0;
-        int countAbsent = 0;
-        int countUnregistered = 0;
+        // --- 4. 判定・同期・集計 ---
+        int countPresent = 0, countLate = 0, countEarly = 0, countAbsent = 0, countUnregistered = 0;
 
         if (list != null) {
             for (Map<String, Object> data : list) {
@@ -81,46 +77,60 @@ public class AttManagementListServlet extends HttpServlet {
                 String dbStatus = (String) data.get("status");
                 String reason = (String) data.get("reason");
 
-                // --- A. 正しい状態の判定 (計算上のステータスを出す) ---
-                String correctedStatus = (dbStatus != null) ? dbStatus : "未登録";
+                // --- A. 状態判定フラグ ---
+                boolean isLate = false;
+                boolean isEarly = false;
 
-                if (checkIn != null && !checkIn.equals("--:--") && !checkIn.isEmpty()) {
-                    // 入室時刻で判定
-                    if (checkIn.compareTo("09:00") > 0) {
-                        correctedStatus = "遅刻";
-                    } else {
-                        correctedStatus = "出席";
+                // 判定用文字列の正規化と5文字(HH:mm)抽出
+                // DBに yyyy-MM-dd HH:mm:ss.s で入っている場合でも、確実に時刻部分の5文字を比較する
+                if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equals("--:--")) {
+                    String timePart = checkIn.contains(" ") ? checkIn.split(" ")[1] : checkIn;
+                    if (timePart.length() >= 5) {
+                        if (timePart.substring(0, 5).compareTo("09:00") > 0) isLate = true;
                     }
-                    // 退室時刻で判定 (早退を優先)
-                    if (checkOut != null && !checkOut.equals("--:--") && !checkOut.isEmpty()) {
-                        if (checkOut.compareTo("18:00") < 0) {
-                            correctedStatus = "早退";
-                        }
-                    }
-                } else {
-                    correctedStatus = (reason != null && !reason.isEmpty()) ? "欠席" : "未登録";
                 }
 
-                // --- B. DBの値を書き換える (不整合があれば同期) ---
+                if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equals("--:--")) {
+                    String timePart = checkOut.contains(" ") ? checkOut.split(" ")[1] : checkOut;
+                    if (timePart.length() >= 5) {
+                        if (timePart.substring(0, 5).compareTo("18:00") < 0) isEarly = true;
+                    }
+                }
+
+                // --- B. ステータス文字列の確定 ---
+                String correctedStatus;
+                if (isLate && isEarly) {
+                    correctedStatus = "早退・遅刻";
+                } else if (isLate) {
+                    correctedStatus = "遅刻";
+                } else if (isEarly) {
+                    correctedStatus = "早退";
+                } else if (checkIn != null && !checkIn.trim().isEmpty() && !checkIn.equals("--:--")) {
+                    correctedStatus = "出席";
+                } else {
+                    correctedStatus = (reason != null && !reason.trim().isEmpty()) ? "欠席" : "未登録";
+                }
+
+                // --- C. DB同期 (現在のDB値と判定結果が違うなら更新) ---
                 if (!correctedStatus.equals(dbStatus)) {
                     try {
-                        // ここでDBの中身を「早退」などに書き換えます
                         dao.updateStatus(userId, targetDate, correctedStatus);
-                        // 表示用データも上書き
-                        data.put("status", correctedStatus);
+                        data.put("status", correctedStatus); // 表示用データも最新化
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
 
-                // --- C. カウント処理 (確定したcorrectedStatusで数える) ---
-                if (correctedStatus.equals("出席")) {
+                // --- D. 集計 ---
+                // 「早退・遅刻」を早退数または遅刻数のどちらにカウントするかは運用次第ですが、
+                // ここでは早退カウントに含める形を維持しています。
+                if ("出席".equals(correctedStatus)) {
                     countPresent++;
-                } else if (correctedStatus.equals("遅刻")) {
+                } else if ("遅刻".equals(correctedStatus)) {
                     countLate++;
-                } else if (correctedStatus.equals("早退")) {
+                } else if ("早退".equals(correctedStatus) || "早退・遅刻".equals(correctedStatus)) {
                     countEarly++;
-                } else if (correctedStatus.equals("欠席")) {
+                } else if ("欠席".equals(correctedStatus)) {
                     countAbsent++;
                 } else {
                     countUnregistered++;
@@ -128,13 +138,12 @@ public class AttManagementListServlet extends HttpServlet {
             }
         }
 
-        // 集計結果セット
+        // --- 5. セットして遷移 ---
         request.setAttribute("countPresent", countPresent);
         request.setAttribute("countLate", countLate);
         request.setAttribute("countEarly", countEarly);
         request.setAttribute("countAbsent", countAbsent);
         request.setAttribute("countUnregistered", countUnregistered);
-
         request.setAttribute("attendanceList", list);
         request.setAttribute("displayDate", targetDate);
         request.setAttribute("prevDate", prevDate);
