@@ -56,6 +56,8 @@
             text-decoration: none;
             background-color: #00E5FF;
             color: #000;
+            width:350px;
+            margin: 30px auto 0 auto;
         }
     </style>
 </head>
