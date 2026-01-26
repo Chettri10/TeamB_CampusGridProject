@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -35,9 +37,7 @@ public class AttendanceServlet extends HttpServlet {
         try {
             System.out.println("=== AttendanceServlet 開始 ===");
 
-            // ---------------------------------------------------------
             // 1. QRデータ読み取り
-            // ---------------------------------------------------------
             String qrData = req.getParameter("qrData");
             String reason = req.getParameter("reason");
 
@@ -49,14 +49,10 @@ public class AttendanceServlet extends HttpServlet {
             String[] parts = qrData.split(",");
             String userId = parts[0];
 
-            // ---------------------------------------------------------
             // 2. 画像保存
-            // ---------------------------------------------------------
             String imagePath = "";
             Part filePart = null;
-            try {
-                filePart = req.getPart("certificateImage");
-            } catch (Exception e) {}
+            try { filePart = req.getPart("certificateImage"); } catch (Exception e) {}
 
             if (filePart != null && filePart.getSize() > 0) {
                 String uploadPath = getServletContext().getRealPath("") + File.separator + "uploads";
@@ -69,9 +65,7 @@ public class AttendanceServlet extends HttpServlet {
                 System.out.println("【画像保存成功】User: " + userId + " Path: " + imagePath);
             }
 
-            // ---------------------------------------------------------
             // 3. 有効期限チェック
-            // ---------------------------------------------------------
             long qrTime = 0;
             try { qrTime = Long.parseLong(parts[1]); } catch(Exception e){}
             long timeLimit = (reason != null && !reason.isEmpty()) ? 300000 : 10000;
@@ -81,9 +75,7 @@ public class AttendanceServlet extends HttpServlet {
                 return;
             }
 
-            // ---------------------------------------------------------
             // 4. DB登録処理
-            // ---------------------------------------------------------
             AttendanceDao dao = new AttendanceDao();
             boolean hasCheckedIn = dao.hasCheckedInToday(userId);
             Calendar cal = Calendar.getInstance();
@@ -118,28 +110,51 @@ public class AttendanceServlet extends HttpServlet {
             }
 
             // ---------------------------------------------------------
-            // ★変更箇所：テスト用通知ロジック (1回以上で通知)
+            // ★変更箇所：3回ごとの通知ロジック (3, 6, 9回目...)
             // ---------------------------------------------------------
             if (result) {
                 if (status.contains("遅刻") || status.contains("早退") || status.contains("欠席")) {
                     try {
-                        // 1. 回数を数える
                         int count = dao.countBadStatus(userId);
-                        System.out.println("User: " + userId + " BadStatusCount: " + count);
+                        System.out.println("User: " + userId + " Count: " + count);
 
-                        // ★テスト用設定： 1回以上なら通知 (count >= 1)
-                        if (count >= 1) {
+                        // ★条件変更： カウントが0より大きく、かつ「3の倍数」の時だけ通知する
+                        if (count > 0 && count % 3 == 0) {
+
                             UserDao userDao = new UserDao();
                             String parentId = userDao.getParentId(userId);
 
                             if (parentId != null && !parentId.isEmpty()) {
-                                ChatDao chatDao = new ChatDao();
-                                String message = "【自動通知】\n" +
-                                                 "学生(" + userId + ")の遅刻・早退・欠席が合計 " + count + " 回になりました。\n" +
-                                                 "ご確認をお願いいたします。";
+                                // 名前取得
+                                String studentName = "学生";
+                                Map<String, Object> userMap = userDao.findById(userId);
+                                if (userMap != null && userMap.get("User_Name") != null) {
+                                    studentName = (String) userMap.get("User_Name");
+                                }
 
-                                chatDao.sendMessage(userId, parentId, message);
-                                System.out.println("★保護者へ通知を送信しました。To: " + parentId);
+                                // 詳細履歴取得
+                                List<Map<String, String>> details = dao.getBadAttendanceRecords(userId);
+
+                                // メッセージ作成
+                                StringBuilder sb = new StringBuilder();
+                                sb.append("【自動通知】\n");
+                                sb.append(studentName).append(" さん (ID:").append(userId).append(")\n");
+                                sb.append("遅刻・早退・欠席が累計 ").append(count).append(" 回になりました。\n\n");
+                                sb.append("＜内訳＞\n");
+
+                                for (Map<String, String> rec : details) {
+                                    sb.append("・").append(rec.get("date")).append(" : ");
+                                    sb.append(rec.get("status"));
+                                    if (!rec.get("reason").equals("理由なし")) {
+                                        sb.append(" (").append(rec.get("reason")).append(")");
+                                    }
+                                    sb.append("\n");
+                                }
+                                sb.append("\nご確認をお願いいたします。");
+
+                                ChatDao chatDao = new ChatDao();
+                                chatDao.sendMessage(userId, parentId, sb.toString());
+                                System.out.println("★保護者へ詳細通知を送信しました。To: " + parentId);
                             }
                         }
                     } catch (Exception e) {

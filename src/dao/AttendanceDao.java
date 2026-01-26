@@ -45,7 +45,6 @@ public class AttendanceDao {
     // 登校登録（画像パス対応）
     public boolean registerCheckIn(String userId, String status, String reason, String imagePath) {
         String sql = "INSERT INTO ATTMANAGEMENT (User_ID, Target_Date, Check_In_Time, Status, Absence_Reason, CERTIFICATE_PATH) VALUES (?, CURRENT_DATE, ?, ?, ?, ?)";
-
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -129,7 +128,7 @@ public class AttendanceDao {
         return list;
     }
 
-    // ★★★ 追加：その学生の「遅刻・欠席・早退」の合計回数をカウントする ★★★
+    // その学生の「遅刻・欠席・早退」の合計回数をカウントする
     public int countBadStatus(String studentId) {
         int count = 0;
         // ステータスに「遅刻」「早退」「欠席」のいずれかが含まれているものをカウント
@@ -150,6 +149,35 @@ public class AttendanceDao {
             e.printStackTrace();
         }
         return count;
+    }
+
+    // ★★★ 追加：通知メッセージ用に、遅刻・欠席・早退の詳細リストを取得する ★★★
+    public List<Map<String, String>> getBadAttendanceRecords(String studentId) {
+        List<Map<String, String>> list = new ArrayList<>();
+        // 新しい順に取得
+        String sql = "SELECT Target_Date, Status, Absence_Reason FROM ATTMANAGEMENT " +
+                     "WHERE User_ID = ? AND (Status LIKE '%欠席%' OR Status LIKE '%遅刻%' OR Status LIKE '%早退%') " +
+                     "ORDER BY Target_Date DESC";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, studentId);
+            ResultSet rs = pstmt.executeQuery();
+
+            while (rs.next()) {
+                Map<String, String> map = new HashMap<>();
+                map.put("date", rs.getDate("Target_Date").toString());
+                map.put("status", rs.getString("Status"));
+                String reason = rs.getString("Absence_Reason");
+                map.put("reason", (reason != null && !reason.isEmpty()) ? reason : "理由なし");
+                list.add(map);
+            }
+        } catch (Exception e) {
+            System.out.println("DAOエラー(getBadAttendanceRecords): " + e.getMessage());
+            e.printStackTrace();
+        }
+        return list;
     }
 
     // デバッグ用：データベースの中身をコンソールに表示
