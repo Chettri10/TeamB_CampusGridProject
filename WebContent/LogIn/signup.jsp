@@ -54,7 +54,6 @@
 
     button {
         width: 100%; padding: 12px; background-color: #00ffff;
-
         border: none; border-radius: 5px; cursor: pointer;
         font-weight: bold; font-size: 16px; margin-top: 30px;
         transition: background 0.3s;
@@ -104,8 +103,9 @@
             <input type="text" name="userName" class="normal-input" placeholder="例: 佐藤 太郎" required>
 
             <div class="label-text">メールアドレス</div>
-            <input type="email" name="email" class="normal-input" placeholder="example@mail.com" required>
+            <input type="email" name="email" id="emailInput" class="normal-input" placeholder="example@campus-grid.ac.jp" list="email-domains" required oninput="suggestDomains()">
 
+            <datalist id="email-domains"></datalist>
             <div class="label-text">電話番号</div>
             <input type="tel" name="phone" class="normal-input" placeholder="090-1234-5678" required>
 
@@ -150,43 +150,71 @@
     </div>
 
     <script>
+        // ★ @を押した瞬間にドメイン候補を出す機能
+        function suggestDomains() {
+            const input = document.getElementById("emailInput");
+            const datalist = document.getElementById("email-domains");
+            const val = input.value;
+
+            // 候補にしたいドメインリスト
+            const domains = [
+                "campus-grid.ac.jp",
+                "gmail.com",
+                "yahoo.co.jp",
+                "icloud.com",
+                "outlook.jp",
+                "docomo.ne.jp",
+                "softbank.ne.jp",
+                "ezweb.ne.jp"
+            ];
+
+            // 入力値に「@」が含まれているかチェック
+            if (val.includes("@")) {
+                const parts = val.split("@");
+                const prefix = parts[0]; // @より前の部分（例: taro）
+
+                // リストを一度クリア
+                datalist.innerHTML = "";
+
+                // @より前が入力されている場合のみ候補を作成
+                if (prefix) {
+                    domains.forEach(domain => {
+                        const option = document.createElement("option");
+                        // 「入力した文字」 + 「@」 + 「ドメイン」 を候補にする
+                        option.value = prefix + "@" + domain;
+                        datalist.appendChild(option);
+                    });
+                }
+            } else {
+                // @がないときはリストを出さない
+                datalist.innerHTML = "";
+            }
+        }
+
         // 役割が変更されたときの処理
         function changeRole(roleChar) {
-            // 1. IDの頭文字を変える
             document.getElementById('id-prefix').innerText = roleChar;
-
-            // 各要素の取得
             const routeContainer = document.getElementById('route-container');
             const routeInput = document.getElementById('route-input');
-
             const childIdContainer = document.getElementById('child-id-container');
             const childIdInput = document.getElementById('child-id-input');
 
-            // 2. 役割ごとの表示・非表示設定
             if (roleChar === 'S') {
-                // 学生: 路線を表示(必須)、子供IDは非表示
                 routeContainer.classList.remove('hidden');
                 routeInput.required = true;
-
                 childIdContainer.classList.add('hidden');
                 childIdInput.required = false;
                 childIdInput.value = "";
-
             } else if (roleChar === 'P') {
-                // 保護者: 路線は非表示、子供IDを表示(必須)
                 routeContainer.classList.add('hidden');
                 routeInput.required = false;
                 routeInput.value = "";
-
                 childIdContainer.classList.remove('hidden');
                 childIdInput.required = true;
-
             } else {
-                // 先生(T): 両方非表示
                 routeContainer.classList.add('hidden');
                 routeInput.required = false;
                 routeInput.value = "";
-
                 childIdContainer.classList.add('hidden');
                 childIdInput.required = false;
                 childIdInput.value = "";

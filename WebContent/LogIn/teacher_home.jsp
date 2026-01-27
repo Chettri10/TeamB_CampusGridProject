@@ -72,7 +72,7 @@
         gap: 30px;
         margin: 40px auto;
         flex-wrap: wrap;
-        max-width: 550px;
+        max-width: 600px; /* ボタンが増えたので少し幅を広げました */
     }
 
     /* ボタン共通スタイル */
@@ -109,6 +109,9 @@
     .card-blue   { background: linear-gradient(135deg, #1e90ff, #0000cd); }
     .card-orange { background: linear-gradient(135deg, #ff8c00, #ff4500); }
     .card-purple { background: linear-gradient(135deg, #d946ef, #a21caf); }
+
+    /* ★追加: クラス名簿用の新しい色（赤系） */
+    .card-red    { background: linear-gradient(135deg, #ef4444, #b91c1c); }
 
     /* お知らせボード */
     .notice-board {
@@ -231,6 +234,11 @@
         <a href="<%= request.getContextPath() %>/jsp/product_regist.jsp" class="menu-card card-purple">
             <i class="fas fa-cart-plus icon-large"></i>
             <span class="menu-label">商品登録</span>
+        </a>
+
+        <a href="<%= request.getContextPath() %>/ClassListServlet?className=1-1" class="menu-card card-red">
+            <i class="fas fa-users icon-large"></i>
+            <span class="menu-label">クラス名簿</span>
         </a>
     </div>
 
