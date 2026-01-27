@@ -140,13 +140,7 @@ if (error != null) {
             </div>
         </div>
 
-        <%-- 4. エントリー ID (テキスト入力) --%>
-        <div class="form-group">
-            <label for="entryId" class="label">エントリー ID</label>
-            <div class="input-control">
-                <input type="text" id="entryId" name="entryId" placeholder="エントリー ID">
-            </div>
-        </div>
+
 
         <%-- 5. 備考 (テキストエリア) --%>
         <div class="form-group">
