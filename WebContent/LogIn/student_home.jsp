@@ -57,6 +57,7 @@ body {
 .menu-center {
     display: flex;
     justify-content: center;
+    gap: 25px;
     margin-top: 25px;
 }
 .menu-item {
@@ -131,12 +132,18 @@ body {
         <div class="icon">💬</div>
         教員・学生 チャット
     </a>
+
+
 </div>
 
 <div class="menu-center">
     <a class="menu-item orange" href="<%= request.getContextPath() %>/jsp/cart.jsp">
         <div class="icon">🛒</div>
         商品登録
+    </a>
+    <a class="menu-item green" href="<%= request.getContextPath() %>/jsp/syukatu.jsp">
+        <div class="icon">📖</div>
+        就活情報登録
     </a>
 </div>
 
