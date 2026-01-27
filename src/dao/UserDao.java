@@ -343,4 +343,27 @@ public class UserDao extends DAO {
         }
         return list;
     }
+ // ---------------------------------------------------------
+    // ★★★ パスワード変更用メソッド（既存ユーザー用） ★★★
+    // ---------------------------------------------------------
+    public boolean updatePasswordIfMatch(String userId, String email, String newPassword) {
+        // IDとメールアドレスが両方一致するユーザーのパスワードを更新する
+        String sql = "UPDATE User SET Password = ? WHERE User_ID = ? AND Email = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newPassword); // 新しいパスワード
+            ps.setString(2, userId);      // 条件: ID
+            ps.setString(3, email);       // 条件: メールアドレス
+
+            // 更新された行数が1以上なら成功（一致するユーザーがいた）
+            int count = ps.executeUpdate();
+            return count > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
