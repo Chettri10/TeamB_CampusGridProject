@@ -105,7 +105,7 @@ if (error != null) {
 %>
     <h1>就活状況の入力</h1>
      <%-- フォームの開始。アクション先は後続のServletを想定 --%>
-    <form action="<%= request.getContextPath() %>/JobSearchRegisterServlet" method="POST">
+    <form action="<%= request.getContextPath() %>/JobSearchServlet" method="POST">
 
         <%-- 1. 会社名 (テキスト入力) --%>
         <div class="form-group">
