@@ -44,7 +44,7 @@
                 <i class="fas fa-key"></i> パスワードを変更する<br>(忘れた方もこちら)
             </a>
 
-            <a href="signup.jsp" class="sub-link">アカウントをお持ちでない方は新規登録</a>
+            <a href="signup.jsp" class="sub-link">新規登録</a>
         </div>
     </div>
 </body>
