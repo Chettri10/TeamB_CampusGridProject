@@ -217,7 +217,7 @@ public class UserDao extends DAO {
         return childId;
     }
 
-    // --- ★★★ クラス管理機能用メソッド ★★★ ---
+    // --- ★★★ クラス管理機能用メソッド（学生操作） ★★★ ---
 
     // 5. 指定したクラスの学生一覧を取得
     public List<Map<String, Object>> getStudentsByClass(String className) {
@@ -273,7 +273,7 @@ public class UserDao extends DAO {
         }
     }
 
-    // --- パスワードリセット用追加メソッド ---
+    // --- パスワードリセット用メソッド ---
 
     public boolean resetPassword(String userId, String email, String newPassword) {
         String checkSql = "SELECT User_ID FROM User WHERE User_ID = ? AND Email = ?";
@@ -300,7 +300,23 @@ public class UserDao extends DAO {
         }
     }
 
-    // --- ★★★ 編集・検索機能用メソッド（ここから下を追加しました） ★★★ ---
+    // パスワード変更（既存ユーザー用・名前違いだが機能はresetPasswordとほぼ同じ）
+    public boolean updatePasswordIfMatch(String userId, String email, String newPassword) {
+        String sql = "UPDATE User SET Password = ? WHERE User_ID = ? AND Email = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newPassword);
+            ps.setString(2, userId);
+            ps.setString(3, email);
+            int count = ps.executeUpdate();
+            return count > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // --- ★★★ 編集・検索機能用メソッド ★★★ ---
 
     // 8. 学生情報の更新（名前とクラスを変更）
     public boolean updateStudentInfo(String userId, String newName, String newClass) {
@@ -320,17 +336,12 @@ public class UserDao extends DAO {
     // 9. 名前検索（クラス内検索）
     public List<Map<String, Object>> searchStudentsInClass(String className, String keyword) {
         List<Map<String, Object>> list = new ArrayList<>();
-        // 名前(User_Name)にあいまい検索(LIKE)をかけます
         String sql = "SELECT * FROM User WHERE CLASS_NAME = ? AND User_ID LIKE 'S%' AND User_Name LIKE ? ORDER BY User_ID ASC";
-
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setString(1, className);
-            ps.setString(2, "%" + keyword + "%"); // %で囲むと「～を含む」検索になります
-
+            ps.setString(2, "%" + keyword + "%");
             ResultSet rs = ps.executeQuery();
-
             while (rs.next()) {
                 Map<String, Object> map = new LinkedHashMap<>();
                 map.put("id", rs.getString("User_ID"));
@@ -343,24 +354,45 @@ public class UserDao extends DAO {
         }
         return list;
     }
- // ---------------------------------------------------------
-    // ★★★ パスワード変更用メソッド（既存ユーザー用） ★★★
-    // ---------------------------------------------------------
-    public boolean updatePasswordIfMatch(String userId, String email, String newPassword) {
-        // IDとメールアドレスが両方一致するユーザーのパスワードを更新する
-        String sql = "UPDATE User SET Password = ? WHERE User_ID = ? AND Email = ?";
 
+    // --- ★★★ クラス追加・管理機能（ここから下を追加） ★★★ ---
+
+    // 10. 全てのクラス名を取得（タブ表示用）
+    public List<String> getAllClasses() {
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT CLASS_NAME FROM CLASS_MST ORDER BY CLASS_NAME";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(rs.getString("CLASS_NAME"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // 11. 新しいクラスを追加
+    public boolean addClass(String className) {
+        String sql = "INSERT INTO CLASS_MST (CLASS_NAME) VALUES (?)";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, className);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
-            ps.setString(1, newPassword); // 新しいパスワード
-            ps.setString(2, userId);      // 条件: ID
-            ps.setString(3, email);       // 条件: メールアドレス
-
-            // 更新された行数が1以上なら成功（一致するユーザーがいた）
-            int count = ps.executeUpdate();
-            return count > 0;
-
+    // 12. クラスを削除
+    public boolean deleteClass(String className) {
+        String sql = "DELETE FROM CLASS_MST WHERE CLASS_NAME = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, className);
+            return ps.executeUpdate() > 0;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
