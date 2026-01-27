@@ -1,10 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.*" %>
+<%@ page import="java.text.SimpleDateFormat" %>
 <%
     // データ取得
     String childId = (String) request.getAttribute("childId");
     List<Map<String, Object>> attendanceList = (List<Map<String, Object>>) request.getAttribute("attendanceList");
     String errorMsg = (String) request.getAttribute("errorMsg");
+
+    // 時間を「09:00」のように綺麗に表示するためのフォーマット
+    SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
+    // 日付を「2026-01-27」のように表示するフォーマット
+    SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy/MM/dd");
 %>
 <!DOCTYPE html>
 <html lang="ja">
@@ -39,6 +45,7 @@
         max-width: 800px;
         margin: 0 auto;
         background-color: #fff;
+        color: #333;
         border-radius: 10px;
         padding: 20px;
         color: #333;
@@ -120,22 +127,30 @@
                 </thead>
                 <tbody>
                     <% for (Map<String, Object> record : attendanceList) {
-                        String status = (String) record.get("status");
+                        // ★修正ポイント：DAOのキー名(大文字始まり)に合わせて取得
+                        String status = (String) record.get("Status");
+                        Object dateObj = record.get("Target_Date");
+                        Object timeObj = record.get("Check_In_Time");
+
+                        // バッジの色判定
                         String badgeClass = "status-present";
-                        if ("遅刻".equals(status)) badgeClass = "status-late";
-                        else if ("欠席".equals(status)) badgeClass = "status-absent";
+                        if (status != null && status.contains("遅刻")) badgeClass = "status-late";
+                        else if (status != null && status.contains("欠席")) badgeClass = "status-absent";
+                        else if (status != null && status.contains("早退")) badgeClass = "status-late";
                     %>
                     <tr>
-                        <td><%= record.get("date") %></td>
-                        <td><span class="status-badge <%= badgeClass %>"><%= status %></span></td>
-                        <td><%= record.get("check_in_time") %></td>
+                        <td><%= dateObj != null ? dateObj.toString() : "" %></td>
+
+                        <td><span class="status-badge <%= badgeClass %>"><%= status != null ? status : "-" %></span></td>
+
+                        <td><%= timeObj != null ? sdfTime.format(timeObj) : "--:--" %></td>
                     </tr>
                     <% } %>
                 </tbody>
             </table>
         <% } else { %>
             <p style="text-align:center; padding: 20px; color: #888;">
-                出席データが見つかりません。<br>
+                <i class="fas fa-info-circle"></i> 出席データが見つかりません。<br>
                 まだ登録されていないか、学生IDの紐付けが正しくありません。
             </p>
         <% } %>
