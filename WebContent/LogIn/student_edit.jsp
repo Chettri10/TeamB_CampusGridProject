@@ -1,7 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="java.util.Map" %>
+<%@ page import="java.util.*" %>
 <%
     Map<String, Object> student = (Map<String, Object>) request.getAttribute("student");
+    // ★追加：サーブレットからクラス一覧を受け取る
+    List<String> classList = (List<String>) request.getAttribute("classList");
+
     // エラー回避
     if(student == null) { response.sendRedirect("teacher_home.jsp"); return; }
 
@@ -37,9 +40,19 @@
 
             <label>所属クラス</label>
             <select name="className">
-                <option value="1-1" <%= "1-1".equals(currentClass) ? "selected" : "" %>>1-1</option>
-                <option value="1-2" <%= "1-2".equals(currentClass) ? "selected" : "" %>>1-2</option>
-                <option value="2-1" <%= "2-1".equals(currentClass) ? "selected" : "" %>>2-1</option>
+                <%
+                // ★修正：データベースから取得したリストを使って選択肢を作る
+                if (classList != null) {
+                    for (String cName : classList) {
+                        // 現在のクラスと同じなら選択状態(selected)にする
+                        String selected = cName.equals(currentClass) ? "selected" : "";
+                %>
+                    <option value="<%= cName %>" <%= selected %>><%= cName %></option>
+                <%
+                    }
+                }
+                %>
+                <option value="" <%= currentClass.isEmpty() ? "selected" : "" %>>（クラスなし）</option>
             </select>
 
             <button type="submit">保存する</button>
