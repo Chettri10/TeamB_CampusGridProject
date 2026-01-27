@@ -83,7 +83,7 @@
     table { width: 90%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
     thead { background-color: var(--table-header); color: #fff; }
     th { padding: 15px; border-bottom: 2px solid var(--accent-cyan); }
-    td { border-bottom: 1px solid #eee; padding: 15px; color: #333; text-align: center; }
+    td { border-bottom: 1px solid #eee; padding: 15px; color: #333; text-align: center; vertical-align: middle; }
 
     .time-text { font-family: 'Courier New', monospace; font-weight: bold; }
     .link-student { color: #052c48; font-weight: bold; text-decoration: none; }
@@ -150,11 +150,11 @@
         <thead>
             <tr>
                 <th width="12%">学籍番号</th>
-                <th width="20%">氏名</th>
+                <th width="18%">氏名</th>
                 <th width="12%">出席時間</th>
                 <th width="12%">退室時間</th>
                 <th width="15%">状態</th>
-                <th width="15%">備考</th>
+                <th width="17%">備考</th>
                 <th width="14%">未登録編集</th>
             </tr>
         </thead>
@@ -174,6 +174,10 @@
                     String checkOut = (String) data.get("checkOutTime");
                     String certPath = (String) data.get("certificatePath");
 
+                    // ★ 理由の取得
+                    String reason = (String) data.get("reason");
+                    if (reason == null) reason = "";
+
                     // 色分け判定の修正
                     String statusClass = "text-gray";
                     if ("出席".equals(statusText)) statusClass = "text-green";
@@ -191,11 +195,14 @@
                 <td class="time-text"><%= (checkIn != null) ? checkIn : "" %></td>
                 <td class="time-text"><%= (checkOut != null) ? checkOut : "" %></td>
                 <td><span class="<%= statusClass %>" style="font-weight: bold;"><%= statusText %></span></td>
-                <td>
+
+                <td style="text-align: left; font-size: 0.9em;">
                     <% if (certPath != null && !certPath.trim().isEmpty()) { %>
-                        <span style="color: #333; font-weight: bold;">(あり)</span>
+                        <div style="color: var(--accent-cyan); font-weight: bold; font-size: 0.8em; margin-bottom: 2px;">
+                            <i class="fas fa-file-alt"></i> [証明書あり]
+                        </div>
                     <% } %>
-                    <%-- 備考（理由）も表示したい場合はここに data.get("reason") を追加 --%>
+                    <%= reason %>
                 </td>
                 <td>
                     <% if (canEdit) { %>

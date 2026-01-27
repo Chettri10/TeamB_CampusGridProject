@@ -62,7 +62,7 @@ public class AttManagementEditServlet extends HttpServlet {
 
         String targetUserId = request.getParameter("userId");
         String dateStr = request.getParameter("targetDate");
-        String status = request.getParameter("status"); // 画面で選んだ「公欠」
+        String status = request.getParameter("status"); // 画面で選んだステータス
         String checkInTime = request.getParameter("checkInTime");
         String checkOutTime = request.getParameter("checkOutTime");
         String reason = request.getParameter("reason");
@@ -70,7 +70,7 @@ public class AttManagementEditServlet extends HttpServlet {
         try {
             Date targetDate = Date.valueOf(dateStr);
 
-            // --- ★修正：公欠の時は「出席」にされないよう、時間を空(null)で確定させる ---
+            // 公欠の時は「出席」にされないよう、時間を空(null)で確定させる
             String passCheckIn = null;
             String passCheckOut = null;
 
@@ -80,9 +80,25 @@ public class AttManagementEditServlet extends HttpServlet {
                 passCheckOut = null;
             } else {
                 // それ以外（出席・遅刻・早退など）の場合
+
                 if ("出席".equals(status)) {
                     if (isEmpty(checkInTime)) checkInTime = "09:00";
                     if (isEmpty(checkOutTime)) checkOutTime = "18:00";
+                }
+                else if ("遅刻".equals(status)) {
+                    // ★修正：9:20までは出席扱いなので、遅刻にするなら「09:20より後」の時間が必要
+                    // 入力が空、または「09:20以下」なら、強制的に「09:30」に設定
+                    if (isEmpty(checkInTime) || checkInTime.compareTo("09:20") <= 0) {
+                        checkInTime = "09:30";
+                    }
+                    if (isEmpty(checkOutTime)) checkOutTime = "18:00";
+                }
+                else if ("早退".equals(status)) {
+                    if (isEmpty(checkInTime)) checkInTime = "09:00";
+                    // 早退なのに定時(18:00)以降になっている場合は「15:00」に設定
+                    if (isEmpty(checkOutTime) || checkOutTime.compareTo("18:00") >= 0) {
+                        checkOutTime = "15:00";
+                    }
                 }
 
                 if (checkInTime != null && checkInTime.matches("\\d{2}:\\d{2}")) {
@@ -94,7 +110,7 @@ public class AttManagementEditServlet extends HttpServlet {
             }
 
             AttManagementDao dao = new AttManagementDao();
-            // DBへ保存。ここでは「公欠」という文字と「時刻null」が送られる
+            // DBへ保存
             dao.saveAttendance(targetUserId, targetDate, status, passCheckIn, passCheckOut, reason);
 
             // 保存後はリスト画面へ

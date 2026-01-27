@@ -26,9 +26,7 @@ public class AttManagementDao {
         return conn;
     }
 
-    /**
-     * 一覧取得
-     */
+    // --- 一覧取得 (変更なし) ---
     public List<Map<String, Object>> getDailyAttendanceList(Date targetDate) {
         List<Map<String, Object>> list = new ArrayList<>();
         String sql = "SELECT u.USER_NAME, u.USER_ID, " +
@@ -48,13 +46,10 @@ public class AttManagementDao {
                 Map<String, Object> map = new HashMap<>();
                 map.put("userName", rs.getString("USER_NAME"));
                 map.put("userId", rs.getString("USER_ID"));
-
                 Timestamp tsIn = rs.getTimestamp("CHECK_IN_TIME");
                 map.put("checkInTime", (tsIn != null) ? timeFormat.format(tsIn) : "--:--");
-
                 Timestamp tsOut = rs.getTimestamp("CHECK_OUT_TIME");
                 map.put("checkOutTime", (tsOut != null) ? timeFormat.format(tsOut) : "--:--");
-
                 map.put("status", (rs.getString("STATUS") != null) ? rs.getString("STATUS") : "未登録");
                 map.put("reason", (rs.getString("ABSENCE_REASON") != null) ? rs.getString("ABSENCE_REASON") : "");
                 map.put("certificatePath", rs.getString("CERTIFICATE_PATH"));
@@ -65,25 +60,45 @@ public class AttManagementDao {
     }
 
     /**
-     * ステータス更新（クイック更新用）
-     * ★修正：公欠・欠席時は時間を null にして自動判定を回避する
+     * ★追加：ステータスの文字だけを更新するメソッド（時間を消さないため）
+     */
+    public void updateStatusOnly(String userId, Date targetDate, String newStatus) throws Exception {
+        String sql = "MERGE INTO ATTMANAGEMENT (USER_ID, TARGET_DATE, STATUS) " +
+                     "KEY(USER_ID, TARGET_DATE) VALUES (?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setDate(2, targetDate);
+            pstmt.setString(3, newStatus);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * ステータス更新（クイック更新用・時間が再設定される）
      */
     public void updateStatus(String userId, Date targetDate, String newStatus) throws Exception {
         Timestamp targetIn = null;
         Timestamp targetOut = null;
 
-        // --- ★ここを修正：公欠・欠席は時間を入れない ---
         if ("出席".equals(newStatus)) {
             targetIn = convertToTimestamp(targetDate, "09:00");
             targetOut = convertToTimestamp(targetDate, "18:00");
         } else if ("遅刻".equals(newStatus)) {
-            targetIn = convertToTimestamp(targetDate, "09:10");
+            targetIn = convertToTimestamp(targetDate, "09:30");
             targetOut = convertToTimestamp(targetDate, "18:00");
         } else if ("早退".equals(newStatus)) {
             targetIn = convertToTimestamp(targetDate, "09:00");
             targetOut = convertToTimestamp(targetDate, "15:00");
+        } else if ("早退・遅刻".equals(newStatus)) {
+            // ★追加：「早退・遅刻」のデフォルト時間も設定しておく（万が一のため）
+            targetIn = convertToTimestamp(targetDate, "09:30");
+            targetOut = convertToTimestamp(targetDate, "15:00");
         } else if ("公欠".equals(newStatus) || "欠席".equals(newStatus)) {
-            targetIn = null; // 時間を null にすることで Servlet 側の自動判定をスキップさせる
+            targetIn = null;
             targetOut = null;
         }
 
@@ -104,14 +119,9 @@ public class AttManagementDao {
         }
     }
 
-    /**
-     * 保存処理 (手動保存用)
-     * ★修正：公欠・欠席時は入力された時間を無視して null で保存
-     */
+    // --- 保存処理 (変更なし) ---
     public void saveAttendance(String userId, Date targetDate, String status,
                                String checkInStr, String checkOutStr, String reason) {
-
-        // --- ★ここを修正：公欠・欠席なら時刻を強制クリア ---
         if ("公欠".equals(status) || "欠席".equals(status)) {
             checkInStr = null;
             checkOutStr = null;

@@ -75,7 +75,7 @@ public class AttManagementListServlet extends HttpServlet {
                 String checkIn = (String) data.get("checkInTime");
                 String checkOut = (String) data.get("checkOutTime");
                 String dbStatus = (String) data.get("status");
-                String reason = (String) data.get("reason");
+                String reason = (String) data.get("reason"); // ★理由はここで取得され、dataマップに残ります
 
                 // --- A. 状態判定フラグ ---
                 boolean isLate = false;
@@ -86,14 +86,16 @@ public class AttManagementListServlet extends HttpServlet {
 
                 if (hasCheckIn) {
                     String timePart = checkIn.contains(" ") ? checkIn.split(" ")[1] : checkIn;
+                    // 9:20以降なら遅刻
                     if (timePart.length() >= 5) {
-                        if (timePart.substring(0, 5).compareTo("09:00") > 0) isLate = true;
+                        if (timePart.substring(0, 5).compareTo("09:20") >= 0) isLate = true;
                     }
 
                     if (checkOut != null && !checkOut.trim().isEmpty() && !checkOut.equals("--:--")) {
                         String timePartOut = checkOut.contains(" ") ? checkOut.split(" ")[1] : checkOut;
                         if (timePartOut.length() >= 5) {
-                            if (timePartOut.substring(0, 5).compareTo("18:00") < 0) isEarly = true;
+                            // 16:50 より前なら早退
+                            if (timePartOut.substring(0, 5).compareTo("16:50") < 0) isEarly = true;
                         }
                     }
                 }
@@ -107,7 +109,8 @@ public class AttManagementListServlet extends HttpServlet {
                     else if (isEarly) correctedStatus = "早退";
                     else correctedStatus = "出席";
                 } else {
-                    if (dbStatus != null && (dbStatus.equals("公欠") || dbStatus.equals("欠席") || dbStatus.equals("出席"))) {
+                    // 打刻がない場合
+                    if (dbStatus != null && (dbStatus.equals("公欠") || dbStatus.equals("欠席") || dbStatus.equals("出席") || dbStatus.equals("遅刻") || dbStatus.equals("早退"))) {
                         correctedStatus = dbStatus;
                     } else if (reason != null && !reason.trim().isEmpty()) {
                         correctedStatus = "欠席";
@@ -119,10 +122,17 @@ public class AttManagementListServlet extends HttpServlet {
                 // --- C. DB同期 ---
                 if (!correctedStatus.equals(dbStatus)) {
                     try {
-                        // ★修正：DAOでDBを更新
-                        dao.updateStatus(userId, targetDate, correctedStatus);
+                        if (hasCheckIn) {
+                            // ★修正：すでに時間が入っている場合は、ステータスの文字だけを直す（時間は消さない！）
+                            // ※DAOに updateStatusOnly メソッドが必要です
+                            dao.updateStatusOnly(userId, targetDate, correctedStatus);
+                        } else {
+                            // 時間が入っていない場合は、今まで通り時間も自動補完する
+                            dao.updateStatus(userId, targetDate, correctedStatus);
+                        }
 
-                        // ★重要：画面表示用データ(data)も最新化する
+                        // ★重要：画面表示用データ(data)のステータスだけを更新する
+                        // （reason など他のデータはそのまま残るので消えません）
                         data.put("status", correctedStatus);
 
                         // もし時刻が空だったのに「出席/公欠」になったなら、表示上も補完する
