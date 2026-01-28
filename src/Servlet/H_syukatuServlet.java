@@ -64,10 +64,10 @@ public class H_syukatuServlet extends HttpServlet {
 							// ★修正: キー名が重複していたため "userId" と "name" に分離
 							map.put("userId", rs.getString("USER_ID"));
 							map.put("name", rs.getString("USER_NAME"));
-
 							map.put("company", rs.getString("COMPANY"));
 							map.put("progress", rs.getString("PROGRESSSTATUS"));
 							map.put("date", rs.getString("CREATED_DATE"));
+							req.setAttribute("USER_NAME", rs.getString("USER_NAME"));
 
 							list.add(map);
 						}

@@ -104,7 +104,7 @@ String role = (String) session.getAttribute("role");
 
         <%-- 1. 学生情報 --%>
         <div class="round-box">
-        <h3><%= request.getAttribute("Username") %></h3>
+        <h3><%= request.getAttribute("USER_NAME") %></h3>
         <div class="user-id"><%= request.getAttribute("UserId") %></div>
          </div>
 
