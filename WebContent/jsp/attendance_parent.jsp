@@ -7,9 +7,8 @@
     List<Map<String, Object>> attendanceList = (List<Map<String, Object>>) request.getAttribute("attendanceList");
     String errorMsg = (String) request.getAttribute("errorMsg");
 
-    // 時間を「09:00」のように綺麗に表示するためのフォーマット
+    // 時間フォーマット
     SimpleDateFormat sdfTime = new SimpleDateFormat("HH:mm");
-    // 日付を「2026-01-27」のように表示するフォーマット
     SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy/MM/dd");
 %>
 <!DOCTYPE html>
@@ -42,25 +41,27 @@
     }
 
     .container {
-        max-width: 800px;
+        max-width: 900px; /* 理由欄が増えたので少し幅を広げました */
         margin: 0 auto;
         background-color: #fff;
         color: #333;
         border-radius: 10px;
         padding: 20px;
-        color: #333;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
+        table-layout: fixed; /* 列幅を固定してレイアウト崩れを防ぐ */
     }
 
     th, td {
         padding: 12px;
         text-align: left;
         border-bottom: 1px solid #ddd;
+        vertical-align: middle;
+        word-wrap: break-word; /* 長い文章は折り返す */
     }
 
     th {
@@ -80,8 +81,9 @@
     .status-present { background-color: #00c853; } /* 出席：緑 */
     .status-late { background-color: #ffb300; }    /* 遅刻：黄 */
     .status-absent { background-color: #ff5252; }  /* 欠席：赤 */
+    .status-early { background-color: #ff9800; }   /* 早退：オレンジ */
+    .status-none { background-color: #9e9e9e; }    /* 未登録：グレー */
 
-    /* 戻るボタンのデザイン */
     .back-btn {
         display: inline-block;
         margin-top: 30px;
@@ -120,38 +122,41 @@
             <table>
                 <thead>
                     <tr>
-                        <th>日付</th>
-                        <th>ステータス</th>
-                        <th>打刻時間</th>
-                    </tr>
+                        <th style="width: 20%;">日付</th>
+                        <th style="width: 15%;">ステータス</th>
+                        <th style="width: 15%;">打刻時間</th>
+                        <th style="width: 50%;">理由</th> </tr>
                 </thead>
                 <tbody>
                     <% for (Map<String, Object> record : attendanceList) {
-                        // ★修正ポイント：DAOのキー名(大文字始まり)に合わせて取得
                         String status = (String) record.get("Status");
                         Object dateObj = record.get("Target_Date");
                         Object timeObj = record.get("Check_In_Time");
 
+                        // ★追加：理由データを取得
+                        String reason = (String) record.get("Absence_Reason");
+                        if (reason == null) reason = ""; // nullなら空文字にする
+
                         // バッジの色判定
                         String badgeClass = "status-present";
-                        if (status != null && status.contains("遅刻")) badgeClass = "status-late";
-                        else if (status != null && status.contains("欠席")) badgeClass = "status-absent";
-                        else if (status != null && status.contains("早退")) badgeClass = "status-late";
+                        if (status == null || status.equals("未登録")) badgeClass = "status-none";
+                        else if (status.contains("遅刻")) badgeClass = "status-late";
+                        else if (status.contains("欠席")) badgeClass = "status-absent";
+                        else if (status.contains("早退") || status.contains("早退")) badgeClass = "status-early";
                     %>
                     <tr>
                         <td><%= dateObj != null ? dateObj.toString() : "" %></td>
-
-                        <td><span class="status-badge <%= badgeClass %>"><%= status != null ? status : "-" %></span></td>
-
+                        <td><span class="status-badge <%= badgeClass %>"><%= status != null ? status : "未登録" %></span></td>
                         <td><%= timeObj != null ? sdfTime.format(timeObj) : "--:--" %></td>
+
+                        <td style="color: #555;"><%= reason %></td>
                     </tr>
                     <% } %>
                 </tbody>
             </table>
         <% } else { %>
             <p style="text-align:center; padding: 20px; color: #888;">
-                <i class="fas fa-info-circle"></i> 出席データが見つかりません。<br>
-                まだ登録されていないか、学生IDの紐付けが正しくありません。
+                <i class="fas fa-info-circle"></i> 出席データが見つかりません。
             </p>
         <% } %>
     </div>
