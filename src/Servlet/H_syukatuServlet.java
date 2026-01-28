@@ -38,7 +38,7 @@ public class H_syukatuServlet extends HttpServlet {
 		String userID = (String) session.getAttribute("userId");
 
 		UserDao Dao = new UserDao();
-		String stuID = Dao.getChildId(userID);
+		String stuID = Dao.getParentId(userID);
 
 		String Sql =
 			    "SELECT *, CAST(CREATED_AT AS DATE) AS created_date " +
