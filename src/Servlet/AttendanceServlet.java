@@ -37,7 +37,6 @@ public class AttendanceServlet extends HttpServlet {
         try {
             System.out.println("=== AttendanceServlet 開始 ===");
 
-            // 1. QRデータ読み取り
             String qrData = req.getParameter("qrData");
             String reason = req.getParameter("reason");
 
@@ -49,7 +48,6 @@ public class AttendanceServlet extends HttpServlet {
             String[] parts = qrData.split(",");
             String userId = parts[0];
 
-            // 2. 画像保存
             String imagePath = "";
             Part filePart = null;
             try { filePart = req.getPart("certificateImage"); } catch (Exception e) {}
@@ -62,10 +60,8 @@ public class AttendanceServlet extends HttpServlet {
                 String fileName = userId + "_" + System.currentTimeMillis() + "_" + getFileName(filePart);
                 filePart.write(uploadPath + File.separator + fileName);
                 imagePath = "uploads/" + fileName;
-                System.out.println("【画像保存成功】User: " + userId + " Path: " + imagePath);
             }
 
-            // 3. 有効期限チェック
             long qrTime = 0;
             try { qrTime = Long.parseLong(parts[1]); } catch(Exception e){}
             long timeLimit = (reason != null && !reason.isEmpty()) ? 300000 : 10000;
@@ -75,7 +71,6 @@ public class AttendanceServlet extends HttpServlet {
                 return;
             }
 
-            // 4. DB登録処理
             AttendanceDao dao = new AttendanceDao();
             boolean hasCheckedIn = dao.hasCheckedInToday(userId);
             Calendar cal = Calendar.getInstance();
@@ -87,7 +82,6 @@ public class AttendanceServlet extends HttpServlet {
             String finalReason = (reason != null) ? reason : "";
 
             if (!hasCheckedIn) {
-                // 登校
                 boolean isLate = (hour > 9) || (hour == 9 && minute >= 20);
                 if (isLate && finalReason.isEmpty()) {
                     out.write("REQUIRE_REASON:LATE");
@@ -98,7 +92,6 @@ public class AttendanceServlet extends HttpServlet {
                 if(result) out.write("SUCCESS:" + userId + " さんの出席(" + status + ")完了");
 
             } else {
-                // 下校
                 boolean isEarly = (hour < 15) || (hour == 15 && minute < 10);
                 if (isEarly && finalReason.isEmpty()) {
                     out.write("REQUIRE_REASON:EARLY");
@@ -109,33 +102,31 @@ public class AttendanceServlet extends HttpServlet {
                 if(result) out.write("SUCCESS:" + userId + " さんの下校完了");
             }
 
-            // ---------------------------------------------------------
-            // ★変更箇所：3回ごとの通知ロジック (3, 6, 9回目...)
-            // ---------------------------------------------------------
+            // --- 通知機能 ---
             if (result) {
                 if (status.contains("遅刻") || status.contains("早退") || status.contains("欠席")) {
                     try {
                         int count = dao.countBadStatus(userId);
-                        System.out.println("User: " + userId + " Count: " + count);
 
-                        // ★条件変更： カウントが0より大きく、かつ「3の倍数」の時だけ通知する
                         if (count > 0 && count % 3 == 0) {
-
                             UserDao userDao = new UserDao();
-                            String parentId = userDao.getParentId(userId);
+
+                            // ★重要修正：学生IDから「その学生を登録した保護者」を探す
+                            String parentId = userDao.getParentIdByStudentId(userId);
+
+                            // もし見つからなければ、従来の getRelatedId も試す（念のため）
+                            if (parentId == null) {
+                                parentId = userDao.getRelatedId(userId);
+                            }
 
                             if (parentId != null && !parentId.isEmpty()) {
-                                // 名前取得
                                 String studentName = "学生";
                                 Map<String, Object> userMap = userDao.findById(userId);
                                 if (userMap != null && userMap.get("User_Name") != null) {
                                     studentName = (String) userMap.get("User_Name");
                                 }
 
-                                // 詳細履歴取得
                                 List<Map<String, String>> details = dao.getBadAttendanceRecords(userId);
-
-                                // メッセージ作成
                                 StringBuilder sb = new StringBuilder();
                                 sb.append("【自動通知】\n");
                                 sb.append(studentName).append(" さん (ID:").append(userId).append(")\n");
@@ -143,8 +134,7 @@ public class AttendanceServlet extends HttpServlet {
                                 sb.append("＜内訳＞\n");
 
                                 for (Map<String, String> rec : details) {
-                                    sb.append("・").append(rec.get("date")).append(" : ");
-                                    sb.append(rec.get("status"));
+                                    sb.append("・").append(rec.get("date")).append(" : ").append(rec.get("status"));
                                     if (!rec.get("reason").equals("理由なし")) {
                                         sb.append(" (").append(rec.get("reason")).append(")");
                                     }
@@ -159,17 +149,12 @@ public class AttendanceServlet extends HttpServlet {
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
-                        System.out.println("通知送信エラー: " + e.getMessage());
                     }
                 }
             }
-            // ---------------------------------------------------------
 
-            if (!result) {
-                out.write("ERROR:データベース保存失敗");
-            } else {
-                dao.printAllData();
-            }
+            if (!result) out.write("ERROR:データベース保存失敗");
+            else dao.printAllData();
 
         } catch (Exception e) {
             e.printStackTrace();

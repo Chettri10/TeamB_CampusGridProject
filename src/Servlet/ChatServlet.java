@@ -8,6 +8,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession; // 追加
 
 import dao.ChatDao;
 
@@ -24,6 +25,12 @@ public class ChatServlet extends HttpServlet {
         // ★追加：actionパラメータを受け取る
         String action = request.getParameter("action");
         String myId = request.getParameter("myId");
+
+        // ★追加：もしパラメータでIDが来なかったら、セッションから自分のIDを取得する（安全策）
+        if (myId == null || myId.isEmpty()) {
+            HttpSession session = request.getSession();
+            myId = (String) session.getAttribute("userId");
+        }
 
         // ★追加：「ユーザー一覧画面を表示したい」というリクエストの場合
         if ("list".equals(action)) {
@@ -55,6 +62,12 @@ public class ChatServlet extends HttpServlet {
         String targetChatId = request.getParameter("targetChatId");
         String editMessage = request.getParameter("editMessage");
 
+        // ★念のためセッションバックアップ
+        if (myId == null || myId.isEmpty()) {
+            HttpSession session = request.getSession();
+            myId = (String) session.getAttribute("userId");
+        }
+
         ChatDao dao = new ChatDao();
 
         // 削除・編集・送信などのロジック（既存のコードのまま）
@@ -81,6 +94,12 @@ public class ChatServlet extends HttpServlet {
         // 既存のチャット画面表示ロジック
         String myId = request.getParameter("myId");
         String targetId = request.getParameter("targetId");
+
+        // ★パラメータがない場合のセッション補完
+        HttpSession session = request.getSession();
+        if (myId == null || myId.isEmpty()) {
+            myId = (String) session.getAttribute("userId");
+        }
 
         // ★念のためnullチェックを追加しておくと安全です
         if (targetId == null) {

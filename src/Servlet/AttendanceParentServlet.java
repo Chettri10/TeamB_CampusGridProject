@@ -30,19 +30,27 @@ public class AttendanceParentServlet extends HttpServlet {
             return;
         }
 
-        // 2. IDの変換処理 (保護者ID -> 学生ID)
-        // 例: "P00007" -> "S00007" に変換します
-        String studentId = userId.replace("P", "S");
+        // 2. ID取得 (紐付けID = 学生ID をセッションから取得)
+        // ★修正: replace("P", "S") ではなく、Related_ID (relatedId) を使用
+        String studentId = (String) session.getAttribute("relatedId");
+
+        // もしセッションに relatedId がない場合の対策
+        if (studentId == null) {
+            studentId = ""; // 空文字にしておく（検索結果0件となる）
+        }
 
         // 3. 学生IDを使って出席データをDBから取得
         AttendanceDao dao = new AttendanceDao();
         try {
-            // 変換した studentId で検索を実行
-            List<Map<String, Object>> attendanceList = dao.getAttendanceByStudentId(studentId);
+            // studentId がある場合のみ検索
+            if (!studentId.isEmpty()) {
+                List<Map<String, Object>> attendanceList = dao.getAttendanceByStudentId(studentId);
 
-            // 画面に渡すデータ
+                // 画面に渡すデータ
+                request.setAttribute("attendanceList", attendanceList); // 出席リスト
+            }
+
             request.setAttribute("childId", studentId);       // 表示用の学生ID
-            request.setAttribute("attendanceList", attendanceList); // 出席リスト
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -50,7 +58,6 @@ public class AttendanceParentServlet extends HttpServlet {
         }
 
         // 4. 出席一覧画面へ移動
-        // 作成した /WebContent/jsp/attendance_parent.jsp へフォワード
         request.getRequestDispatcher("/jsp/attendance_parent.jsp").forward(request, response);
     }
 }
