@@ -246,7 +246,7 @@
             <span>学生の出席状況</span>
         </a>
 
-        <a href="<%= request.getContextPath() %>/JobHuntingParentServlet" class="menu-card btn-job-hunting">
+        <a href="<%= request.getContextPath() %>/H_syukatuServlet" class="menu-card btn-job-hunting">
             <i class="fas fa-briefcase"></i>
             <span>学生の就活状況</span>
         </a>
