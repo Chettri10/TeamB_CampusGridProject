@@ -9,14 +9,6 @@ List<Map<String, Object>> attendanceList =
     (List<Map<String, Object>>) request.getAttribute("syukatuList");
 %>
 <%
-String company = (String) request.getAttribute("COMPANY");
-String progress = (String) request.getAttribute("PROGRESSSTATUS");
-String date = (String) request.getAttribute("CREATED_DATE");
-String notes = (String) request.getAttribute("NOTES");
-
-
-%>
-<%
 String role = (String) session.getAttribute("role");
     if (role == null || !role.equals("parent")) {
         response.sendRedirect("error_permission.jsp");
@@ -148,11 +140,11 @@ if (attendanceList != null && !attendanceList.isEmpty()) {
     for (Map<String, Object> row : attendanceList) {
 %>
     <tr>
-        <td><%= row.get("company") %></td>
-        <td><%= row.get("progress") %></td>
-        <td><%= row.get("date") %></td>
-        <td><%= row.get("notes") %></td>
-    </tr>
+    <td><%= row.get("company")  != null ? row.get("company")  : "--" %></td>
+    <td><%= row.get("progress") != null ? row.get("progress") : "--" %></td>
+    <td><%= row.get("date")     != null ? row.get("date")     : "--" %></td>
+    <td><%= row.get("notes")    != null ? row.get("notes")    : "--" %></td>
+</tr>
 <%
     }
 } else {

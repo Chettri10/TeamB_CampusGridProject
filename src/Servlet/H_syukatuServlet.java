@@ -43,9 +43,11 @@ public class H_syukatuServlet extends HttpServlet {
 		final String USER = "sa";
 		final String PASS = "";
 
-		String Sql = "SELECT *, CAST(CREATED_AT AS DATE) AS created_date " +
-					 "FROM SYUKATU " +
-					 "WHERE USER_ID = ?";
+		String Sql ="SELECT u.USER_NAME, s.COMPANY, s.PROGRESSSTATUS, s.NOTES, "+
+			    "CAST(s.CREATED_AT AS DATE) AS CREATED_DATE "+
+			    "FROM USER u LEFT JOIN SYUKATU s "+
+			    "ON u.USER_ID = s.USER_ID "+
+			    "WHERE u.USER_ID = ?";
 
 		List<Map<String, Object>> list = new ArrayList<>();
 
