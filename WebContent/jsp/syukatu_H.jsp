@@ -9,8 +9,6 @@ List<Map<String, Object>> attendanceList =
     (List<Map<String, Object>>) request.getAttribute("syukatuList");
 %>
 <%
-String UserId = (String) request.getAttribute("USER_ID");
-String Username = (String) request.getAttribute("USER_NAME");
 String company = (String) request.getAttribute("COMPANY");
 String progress = (String) request.getAttribute("PROGRESSSTATUS");
 String date = (String) request.getAttribute("CREATED_DATE");
@@ -105,7 +103,7 @@ String role = (String) session.getAttribute("role");
         <%-- 1. 学生情報 --%>
         <div class="round-box">
         <h3><%= request.getAttribute("USER_NAME") %></h3>
-        <div class="user-id"><%= request.getAttribute("UserId") %></div>
+        <div class="user-id"><%= request.getAttribute("StudentId") %></div>
          </div>
 
 
