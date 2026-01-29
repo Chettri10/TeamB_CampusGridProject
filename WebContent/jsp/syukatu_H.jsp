@@ -12,6 +12,7 @@ List<Map<String, Object>> attendanceList =
 String company = (String) request.getAttribute("COMPANY");
 String progress = (String) request.getAttribute("PROGRESSSTATUS");
 String date = (String) request.getAttribute("CREATED_DATE");
+String notes = (String) request.getAttribute("NOTES");
 
 
 %>
@@ -45,9 +46,11 @@ String role = (String) session.getAttribute("role");
             align-items: center;
         }
         h1 {
-            font-size: 24px;
+            color: #00ffff;
+        font-size: 28px;
             text-align: center;
         }
+
         .user-id {
     font-size: 0.9em;
     color: #cccccc;
@@ -63,6 +66,7 @@ String role = (String) session.getAttribute("role");
  		   background-color: #4682b4;
  		   font-size: 18px;
  		   line-height: 1.4;
+ 		   margin-bottom: 50px;
      	}
 
      	.round-box * {
@@ -80,9 +84,28 @@ String role = (String) session.getAttribute("role");
             color: white;
 
         }
+        .back-btn {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 30px;
+        background-color: transparent;
+        color: #00ffff;
+        text-decoration: none;
+        border: 2px solid #00ffff;
+        border-radius: 50px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    .back-btn:hover {
+        background-color: #00ffff;
+        color: #020617;
+        transform: translateY(-2px);
+    }
 
 
          table.no-border {
+        display: inline-block;   /* 文字サイズに合わせる */
+        white-space: nowrap;
         border-collapse: collapse;
         border: none;
         margin: 0 auto;
@@ -92,12 +115,12 @@ String role = (String) session.getAttribute("role");
         border: none;
         padding: 15px;
     }
+
     </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>キャンパスグリッド</h1>
     <h1>就活情報確認</h1>
 
         <%-- 1. 学生情報 --%>
@@ -115,6 +138,9 @@ String role = (String) session.getAttribute("role");
         <th>会社名</th>
         <th>就活状況</th>
         <th>登録日時</th>
+        <th>備考</th>
+
+
     </tr>
 
 <%
@@ -125,26 +151,23 @@ if (attendanceList != null && !attendanceList.isEmpty()) {
         <td><%= row.get("company") %></td>
         <td><%= row.get("progress") %></td>
         <td><%= row.get("date") %></td>
+        <td><%= row.get("notes") %></td>
     </tr>
 <%
     }
 } else {
 %>
     <tr>
-        <td colspan="5">この日のデータはありません</td>
+        <td colspan="5">データの読み込みに失敗しました</td>
     </tr>
 <%
 }
 %>
 </table>
-
-
-<h2>コメント</h2>
-<div class="round-box">
-        なんか先生のお話（データが入ります）
-         </div>
-
 </div>
+<a href="<%= request.getContextPath() %>/LogIn/parent_home.jsp" class="back-btn">
+        <i class="fas fa-home"></i> メニューへ戻る
+    </a>
 
 </body>
 </html>
