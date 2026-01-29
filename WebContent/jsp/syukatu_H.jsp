@@ -104,6 +104,8 @@ String role = (String) session.getAttribute("role");
 
 
          table.no-border {
+        display: inline-block;   /* 文字サイズに合わせる */
+        white-space: nowrap;
         border-collapse: collapse;
         border: none;
         margin: 0 auto;
