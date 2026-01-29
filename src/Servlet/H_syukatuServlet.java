@@ -68,10 +68,10 @@ public class H_syukatuServlet extends HttpServlet {
 						    }
 							Map<String, Object> map = new LinkedHashMap<>();
 							// ★修正: キー名が重複していたため "userId" と "name" に分離
-							map.put("userId", rs.getString("USER_ID"));
 							map.put("company", rs.getString("COMPANY"));
 							map.put("progress", rs.getString("PROGRESSSTATUS"));
 							map.put("date", rs.getString("CREATED_DATE"));
+							map.put("notes", rs.getString("NOTES"));
 							list.add(map);
 						}
 					}
