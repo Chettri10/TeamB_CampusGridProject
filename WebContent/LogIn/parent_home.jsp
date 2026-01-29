@@ -5,10 +5,11 @@
 <%
     // --- セッション確認 ---
     String userName = (String) session.getAttribute("userName");
-    String parentId = (String) session.getAttribute("userId"); // 保護者ID
+    // 変数名を userId に統一することで、表示側のエラーを解消します
+    String userId = (String) session.getAttribute("userId");
 
     // 未ログイン時のリダイレクト
-    if (userName == null || parentId == null) {
+    if (userName == null || userId == null) {
         response.sendRedirect(request.getContextPath() + "/LogIn/login.jsp");
         return;
     }
@@ -19,9 +20,9 @@
 
     // 2. 保護者宛ての通知を取得
     List<Map<String, String>> alertList = new ArrayList<>();
-    if (parentId != null) {
+    if (userId != null) {
         ChatDao chatDao = new ChatDao();
-        alertList = chatDao.getReceivedMessages(parentId);
+        alertList = chatDao.getReceivedMessages(userId);
     }
 %>
 <!DOCTYPE html>
@@ -70,12 +71,12 @@
     .menu-container {
         display: flex;
         justify-content: center;
-        gap: 20px; /* ボタン同士の隙間 */
+        gap: 20px;
         width: 100%;
         max-width: 800px;
         margin-bottom: 40px;
         padding: 0 20px;
-        flex-wrap: wrap; /* スマホ時に縦並びにする */
+        flex-wrap: wrap;
     }
 
     .menu-card {
@@ -94,12 +95,10 @@
         transition: transform 0.2s, box-shadow 0.2s;
     }
 
-    /* 出席状況：緑系グラデーション */
     .btn-attendance {
         background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%);
     }
 
-    /* 就活状況：青系グラデーション */
     .btn-job-hunting {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     }
@@ -238,6 +237,8 @@
     <div class="header-area">
         <h1>CAMPUS GRID</h1>
         <div class="welcome-msg">こんにちは、<%= userName %> 様</div>
+        <%-- userId を使用するように変更しました --%>
+        <div class="user-id">(ID: <%= userId %>)</div>
     </div>
 
     <div class="menu-container">
