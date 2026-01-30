@@ -61,137 +61,150 @@
     button:hover { background-color: #00cccc; }
 
     .error { color: #ff453a; font-size: 14px; margin-bottom: 10px; background: rgba(255, 69, 58, 0.1); padding: 10px; border-radius: 5px;}
-    a { color: #00ffff; text-decoration: none; font-size: 14px; display: inline-block; margin-top: 15px;}
-    a:hover { text-decoration: underline; }
 
-    /* ★非表示用のクラス */
     .hidden { display: none; }
+
+    /* --- 完了画面用のスタイル --- */
+    .success-content { padding: 20px 0; }
+    .success-icon { font-size: 60px; color: #00ffff; margin-bottom: 20px; }
+    .success-msg { font-size: 18px; margin-bottom: 30px; line-height: 1.6; font-weight: bold; }
+
+    /* 教員ホームへ戻るボタンのスタイル */
+    .home-btn {
+        display: block; width: 100%; padding: 12px;
+        background-color: transparent; /* 背景透明 */
+        color: #00ffff; /* 文字色をシアンに */
+        border: 2px solid #00ffff; /* 枠線をシアンに */
+        border-radius: 5px; text-decoration: none;
+        font-weight: bold; font-size: 16px; margin-top: 10px;
+        transition: 0.3s; box-sizing: border-box;
+    }
+    .home-btn:hover { background-color: rgba(0, 255, 255, 0.1); }
+
 </style>
 </head>
 <body>
     <div class="signup-box">
-        <h2>新規アカウント登録</h2>
+        <%
+            // Servletから渡されたメッセージを取得
+            String error = (String)request.getAttribute("errorMsg");
+            String success = (String)request.getAttribute("successMsg");
+        %>
 
-        <% String error = (String)request.getAttribute("errorMsg"); %>
-        <% if(error != null) { %>
-            <p class="error"><i class="fas fa-exclamation-circle"></i> <%= error %></p>
-        <% } %>
-
-        <form action="<%= request.getContextPath() %>/SignupServlet" method="post">
-
-            <div class="role-selector">
-                <label class="role-label"><input type="radio" name="roleType" value="S" checked onclick="changeRole('S')"> 学生</label>
-                <label class="role-label"><input type="radio" name="roleType" value="T" onclick="changeRole('T')"> 先生</label>
-                <label class="role-label"><input type="radio" name="roleType" value="P" onclick="changeRole('P')"> 保護者</label>
+        <%-- 【登録成功時の画面】 --%>
+        <% if(success != null) { %>
+            <div class="success-content">
+                <i class="fas fa-check-circle success-icon"></i>
+                <h2>登録完了</h2>
+                <p class="success-msg">
+                    ユーザーの登録が完了しました。
+                </p>
+                <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="home-btn">ホームへ戻る</a>
             </div>
 
-            <div class="label-text">ユーザーID (学籍番号など)</div>
-            <div class="input-group">
-                <span id="id-prefix" class="prefix-span">S</span>
-                <input type="text" name="idSuffix" class="input-field" placeholder="00001" required maxlength="5" pattern="\d*">
-            </div>
+        <%-- 【通常時の登録フォーム】 --%>
+        <% } else { %>
 
-            <div id="child-id-container" class="hidden">
-                <div class="label-text">お子様のユーザーID (学生番号)</div>
-                <div class="input-group">
-                    <span class="prefix-span">S</span>
-                    <input type="text" id="child-id-input" name="childId" class="input-field" placeholder="お子様の番号 (例: 00001)" maxlength="5" pattern="\d*">
+            <h2>新規アカウント登録</h2>
+
+            <% if(error != null) { %>
+                <p class="error"><i class="fas fa-exclamation-circle"></i> <%= error %></p>
+            <% } %>
+
+            <form action="<%= request.getContextPath() %>/SignupServlet" method="post">
+
+                <div class="role-selector">
+                    <label class="role-label"><input type="radio" name="roleType" value="S" checked onclick="changeRole('S')"> 学生</label>
+                    <label class="role-label"><input type="radio" name="roleType" value="T" onclick="changeRole('T')"> 先生</label>
+                    <label class="role-label"><input type="radio" name="roleType" value="P" onclick="changeRole('P')"> 保護者</label>
                 </div>
-            </div>
 
-            <div class="label-text">お名前</div>
-            <input type="text" name="userName" class="normal-input" placeholder="例: 佐藤 太郎" required>
+                <div class="label-text">ユーザーID (学籍番号など)</div>
+                <div class="input-group">
+                    <span id="id-prefix" class="prefix-span">S</span>
+                    <input type="text" name="idSuffix" class="input-field" placeholder="00001" required maxlength="5" pattern="\d*">
+                </div>
 
-            <div class="label-text">メールアドレス</div>
-            <input type="email" name="email" id="emailInput" class="normal-input" placeholder="example@campus-grid.ac.jp" list="email-domains" required oninput="suggestDomains()">
+                <div id="child-id-container" class="hidden">
+                    <div class="label-text">お子様のユーザーID (学生番号)</div>
+                    <div class="input-group">
+                        <span class="prefix-span">S</span>
+                        <input type="text" id="child-id-input" name="childId" class="input-field" placeholder="お子様の番号 (例: 00001)" maxlength="5" pattern="\d*">
+                    </div>
+                </div>
 
-            <datalist id="email-domains"></datalist>
-            <div class="label-text">電話番号</div>
-            <input type="tel" name="phone" class="normal-input" placeholder="090-1234-5678" required>
+                <div class="label-text">お名前</div>
+                <input type="text" name="userName" class="normal-input" placeholder="例: 佐藤 太郎" required>
 
-            <div class="label-text">生年月日</div>
-            <input type="date" name="dob" class="normal-input" required>
+                <div class="label-text">メールアドレス</div>
+                <input type="email" name="email" id="emailInput" class="normal-input" placeholder="example@campus-grid.ac.jp" list="email-domains" required oninput="suggestDomains()">
 
-            <div class="label-text">住所</div>
-            <input type="text" name="address" class="normal-input" placeholder="東京都..." required>
+                <datalist id="email-domains"></datalist>
+                <div class="label-text">電話番号</div>
+                <input type="tel" name="phone" class="normal-input" placeholder="090-1234-5678" required>
 
-            <div id="route-container">
-                <div class="label-text">通学で利用する路線 (学生のみ)</div>
-                <select id="route-input" name="routeInfo" class="normal-input" required>
-                    <option value="">▼ 路線を選択してください</option>
-                    <option value="JR山手線">JR山手線</option>
-                    <option value="JR京浜東北線">JR京浜東北線</option>
-                    <option value="JR埼京線">JR埼京線</option>
-                    <option value="JR中央線快速電車">JR中央線快速電車</option>
-                    <option value="JR総武線各駅停車">JR総武線各駅停車</option>
-                    <option value="東京メトロ銀座線">東京メトロ銀座線</option>
-                    <option value="東京メトロ丸ノ内線">東京メトロ丸ノ内線</option>
-                    <option value="小田急小田原線">小田急小田原線</option>
-                    <option value="京王線">京王線</option>
-                    <option value="東急東横線">東急東横線</option>
-                </select>
-            </div>
+                <div class="label-text">生年月日</div>
+                <input type="date" name="dob" class="normal-input" required>
 
-            <div class="label-text">パスワード</div>
-            <div class="password-group">
-                <input type="password" id="pass1" name="password" class="pass-input" placeholder="パスワード" required>
-                <i class="fas fa-eye eye-icon" onclick="togglePassword('pass1', this)"></i>
-            </div>
+                <div class="label-text">住所</div>
+                <input type="text" name="address" class="normal-input" placeholder="東京都..." required>
 
-            <div class="password-group">
-                <input type="password" id="pass2" name="confirmPassword" class="pass-input" placeholder="パスワード (確認)" required>
-                <i class="fas fa-eye eye-icon" onclick="togglePassword('pass2', this)"></i>
-            </div>
+                <div id="route-container">
+                    <div class="label-text">通学で利用する路線 (学生のみ)</div>
+                    <select id="route-input" name="routeInfo" class="normal-input" required>
+                        <option value="">▼ 路線を選択してください</option>
+                        <option value="JR山手線">JR山手線</option>
+                        <option value="JR京浜東北線">JR京浜東北線</option>
+                        <option value="JR埼京線">JR埼京線</option>
+                        <option value="JR中央線快速電車">JR中央線快速電車</option>
+                        <option value="JR総武線各駅停車">JR総武線各駅停車</option>
+                        <option value="東京メトロ銀座線">東京メトロ銀座線</option>
+                        <option value="東京メトロ丸ノ内線">東京メトロ丸ノ内線</option>
+                        <option value="小田急小田原線">小田急小田原線</option>
+                        <option value="京王線">京王線</option>
+                        <option value="東急東横線">東急東横線</option>
+                    </select>
+                </div>
 
-            <button type="submit">登録する</button>
-        </form>
+                <div class="label-text">パスワード</div>
+                <div class="password-group">
+                    <input type="password" id="pass1" name="password" class="pass-input" placeholder="パスワード" required>
+                    <i class="fas fa-eye eye-icon" onclick="togglePassword('pass1', this)"></i>
+                </div>
 
-        <a href="login.jsp">すでにアカウントをお持ちの方はこちら</a>
+                <div class="password-group">
+                    <input type="password" id="pass2" name="confirmPassword" class="pass-input" placeholder="パスワード (確認)" required>
+                    <i class="fas fa-eye eye-icon" onclick="togglePassword('pass2', this)"></i>
+                </div>
+
+                <button type="submit">登録する</button>
+            </form>
+        <% } %>
     </div>
 
     <script>
-        // ★ @を押した瞬間にドメイン候補を出す機能
         function suggestDomains() {
             const input = document.getElementById("emailInput");
             const datalist = document.getElementById("email-domains");
             const val = input.value;
+            const domains = ["campus-grid.ac.jp", "gmail.com", "yahoo.co.jp", "icloud.com", "outlook.jp", "docomo.ne.jp", "softbank.ne.jp", "ezweb.ne.jp"];
 
-            // 候補にしたいドメインリスト
-            const domains = [
-                "campus-grid.ac.jp",
-                "gmail.com",
-                "yahoo.co.jp",
-                "icloud.com",
-                "outlook.jp",
-                "docomo.ne.jp",
-                "softbank.ne.jp",
-                "ezweb.ne.jp"
-            ];
-
-            // 入力値に「@」が含まれているかチェック
             if (val.includes("@")) {
                 const parts = val.split("@");
-                const prefix = parts[0]; // @より前の部分（例: taro）
-
-                // リストを一度クリア
+                const prefix = parts[0];
                 datalist.innerHTML = "";
-
-                // @より前が入力されている場合のみ候補を作成
                 if (prefix) {
                     domains.forEach(domain => {
                         const option = document.createElement("option");
-                        // 「入力した文字」 + 「@」 + 「ドメイン」 を候補にする
                         option.value = prefix + "@" + domain;
                         datalist.appendChild(option);
                     });
                 }
             } else {
-                // @がないときはリストを出さない
                 datalist.innerHTML = "";
             }
         }
 
-        // 役割が変更されたときの処理
         function changeRole(roleChar) {
             document.getElementById('id-prefix').innerText = roleChar;
             const routeContainer = document.getElementById('route-container');
@@ -221,7 +234,6 @@
             }
         }
 
-        // パスワード表示切替
         function togglePassword(inputId, icon) {
             const inputField = document.getElementById(inputId);
             if (inputField.type === "password") {
