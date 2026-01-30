@@ -15,11 +15,11 @@
         flex-direction: column;
         align-items: center;
         padding: 20px;
-        position: relative; /* 戻るボタンの配置のため */
+        position: relative;
         min-height: 100vh;
     }
 
-    h1 { margin-bottom: 30px; margin-top: 10px; text-align: center; }
+    h1 { margin-bottom: 20px; margin-top: 10px; text-align: center; color: #00ffff; }
 
     /* 戻るボタンのスタイル */
     .header-nav {
@@ -29,7 +29,7 @@
     }
     .back-btn {
         color: #00ffff;
-        font-size: 18px;
+        font-size: 16px;
         text-decoration: none;
         display: flex;
         align-items: center;
@@ -42,12 +42,52 @@
     }
     .back-btn:hover { opacity: 0.8; color: white; }
 
+    /* ★検索エリアのスタイル */
+    .search-container {
+        width: 100%;
+        max-width: 500px;
+        margin-bottom: 20px;
+    }
+    .search-form {
+        display: flex;
+        gap: 8px;
+    }
+    .search-input {
+        flex-grow: 1;
+        background-color: #151f42;
+        border: 1px solid #33416b;
+        border-radius: 8px;
+        padding: 12px;
+        color: white;
+        outline: none;
+    }
+    .search-input:focus { border-color: #00ffff; }
+    .search-btn {
+        background-color: #00ffff;
+        color: #020617;
+        border: none;
+        padding: 0 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .list-label {
+        width: 100%;
+        max-width: 500px;
+        font-size: 14px;
+        color: #8892b0;
+        margin-bottom: 8px;
+        padding-left: 5px;
+    }
+
     .user-list {
         width: 100%;
         max-width: 500px;
         background-color: #151f42;
         border-radius: 15px;
-        padding: 20px;
+        padding: 10px;
+        box-sizing: border-box;
     }
 
     .user-item {
@@ -80,20 +120,14 @@
     <%
         String myId = (String)request.getAttribute("myId");
         List<String[]> list = (List<String[]>)request.getAttribute("userList");
+        Boolean isSearch = (Boolean)request.getAttribute("isSearch");
+        if(isSearch == null) isSearch = false;
 
-        // ▼▼▼ ホームへ戻るためのURL決定ロジック ▼▼▼
+        // ホームへ戻るためのURL決定ロジック
         String homeUrl = "";
-
-        // request.getContextPath() は "/ProjectName" のようなルートパスを取得します
-        // これにより、リンク切れを防ぎます。
-
-        // 【条件分岐】IDが "T" で始まるなら先生、それ以外は学生と判定しています。
-        // ※必要に応じて条件式を変更してください (例: userRole変数がsessionにある場合など)
         if (myId != null && myId.startsWith("T")) {
-            // 先生の場合
             homeUrl = request.getContextPath() + "/LogIn/teacher_home.jsp";
         } else {
-            // 学生の場合 (デフォルト)
             homeUrl = request.getContextPath() + "/LogIn/student_home.jsp";
         }
     %>
@@ -104,7 +138,23 @@
         </a>
     </div>
 
-    <h1>チャット相手を選択</h1>
+    <h1>メッセージ</h1>
+
+    <div class="search-container">
+        <form action="ChatServlet" method="get" class="search-form">
+            <input type="hidden" name="action" value="list">
+            <input type="hidden" name="myId" value="<%= myId %>">
+            <input type="text" name="keyword" class="search-input"
+                   placeholder="氏名またはIDで検索..."
+                   value="<%= request.getParameter("keyword") != null ? request.getParameter("keyword") : "" %>">
+            <button type="submit" class="search-btn">検索</button>
+        </form>
+    </div>
+
+    <div class="list-label">
+        <i class="fas <%= isSearch ? "fa-search" : "fa-history" %>"></i>
+        <%= isSearch ? "検索結果" : "最近のチャット" %>
+    </div>
 
     <div class="user-list">
         <%
@@ -120,14 +170,17 @@
                     <span class="id">(<%= userId %>)</span>
                 </div>
                 <div style="margin-left: auto; color: #00ffff;">
-                    <i class="fas fa-comment-dots"></i>
+                    <i class="fas fa-chevron-right"></i>
                 </div>
             </a>
         <%
                 }
             } else {
         %>
-            <p style="text-align:center; padding:20px;">チャット可能な相手が見つかりません。</p>
+            <div style="text-align:center; padding:40px; color:#8892b0;">
+                <i class="fas fa-user-slash" style="font-size:30px; margin-bottom:10px; display:block;"></i>
+                <p><%= isSearch ? "該当するユーザーが見つかりません" : "まだチャット履歴がありません。<br>上の検索窓から相手を探しましょう！" %></p>
+            </div>
         <%
             }
         %>

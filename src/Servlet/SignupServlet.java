@@ -26,21 +26,27 @@ public class SignupServlet extends HttpServlet {
         String routeInfo = request.getParameter("routeInfo");
         String password = request.getParameter("password");
         String confirmPassword = request.getParameter("confirmPassword");
-        String relatedId = request.getParameter("childId"); // JSPのnameはchildId
+        String relatedId = request.getParameter("childId");
 
+        // パスワード一致チェック
         if (password == null || !password.equals(confirmPassword)) {
             request.setAttribute("errorMsg", "パスワードが一致しません");
             request.getRequestDispatcher("/LogIn/signup.jsp").forward(request, response);
             return;
         }
 
+        // ID生成 (例: S + 00001)
         String fullUserId = roleType + idSuffix;
-        int roleInt = 2;
+
+        // 役割を数値に変換
+        int roleInt = 2; // 学生(S)
         if ("T".equals(roleType)) roleInt = 1;
         else if ("P".equals(roleType)) roleInt = 3;
 
+        // 学生以外は路線情報を消す
         if (!"S".equals(roleType)) routeInfo = null;
 
+        // 保護者以外は子供IDを消す。保護者の場合は子供IDの形式を整える
         if (!"P".equals(roleType)) {
             relatedId = null;
         } else {
@@ -49,13 +55,16 @@ public class SignupServlet extends HttpServlet {
              }
         }
 
+        // DB登録処理
         UserDao dao = new UserDao();
         boolean isSuccess = dao.registerUserFull(
                 fullUserId, userName, password, roleInt, email, phone, dob, address, routeInfo, relatedId
         );
 
         if (isSuccess) {
-            response.sendRedirect(request.getContextPath() + "/LogIn/login.jsp");
+            // ★変更点：成功時はログイン画面に飛ばさず、JSPに戻して完了メッセージを表示する
+            request.setAttribute("successMsg", "true");
+            request.getRequestDispatcher("/LogIn/signup.jsp").forward(request, response);
         } else {
             request.setAttribute("errorMsg", "登録に失敗しました。IDが既に使用されている可能性があります。");
             request.getRequestDispatcher("/LogIn/signup.jsp").forward(request, response);
