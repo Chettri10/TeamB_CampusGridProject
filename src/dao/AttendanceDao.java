@@ -65,10 +65,14 @@ public class AttendanceDao {
         }
     }
 
-    // 下校登録（ステータス合体機能 ＆ 画像パス対応）
+    // ★★★ 下校登録（ステータス合体機能 & 画像パス対応）ここを修正 ★★★
     public boolean registerCheckOut(String userId, String status, String reason, String imagePath) {
-        String statusLogic = "CASE WHEN Status LIKE '%遅刻%' AND ? <> '' THEN '遅刻・早退' "
-                           + "WHEN ? <> '' THEN ? ELSE Status END";
+
+        // 「遅刻」していて、今回「早退」などで更新する場合、「遅刻・早退」にする
+        String statusLogic = "CASE "
+                           + "WHEN Status LIKE '%遅刻%' AND ? <> '' THEN '遅刻・早退' "
+                           + "WHEN ? <> '' THEN ? "
+                           + "ELSE Status END";
 
         String sql = "UPDATE ATTMANAGEMENT SET Check_Out_Time = ?, "
                    + "Status = " + statusLogic + ", "
@@ -80,13 +84,21 @@ public class AttendanceDao {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-            pstmt.setString(2, status);
-            pstmt.setString(3, status);
-            pstmt.setString(4, status);
+
+            // Status Logic用
+            pstmt.setString(2, status); // 遅刻チェック用
+            pstmt.setString(3, status); // 通常更新チェック用
+            pstmt.setString(4, status); // 通常更新値
+
+            // Reason Logic用
             pstmt.setString(5, reason);
             pstmt.setString(6, reason);
+
+            // Image Path Logic用
             pstmt.setString(7, imagePath);
             pstmt.setString(8, imagePath);
+
+            // WHERE句
             pstmt.setString(9, userId);
 
             int rows = pstmt.executeUpdate();
@@ -131,7 +143,6 @@ public class AttendanceDao {
     // その学生の「遅刻・欠席・早退」の合計回数をカウントする
     public int countBadStatus(String studentId) {
         int count = 0;
-        // ステータスに「遅刻」「早退」「欠席」のいずれかが含まれているものをカウント
         String sql = "SELECT COUNT(*) FROM ATTMANAGEMENT " +
                      "WHERE User_ID = ? AND (Status LIKE '%欠席%' OR Status LIKE '%遅刻%' OR Status LIKE '%早退%')";
 
@@ -151,10 +162,9 @@ public class AttendanceDao {
         return count;
     }
 
-    // ★★★ 追加：通知メッセージ用に、遅刻・欠席・早退の詳細リストを取得する ★★★
+    // 通知メッセージ用に、遅刻・欠席・早退の詳細リストを取得する
     public List<Map<String, String>> getBadAttendanceRecords(String studentId) {
         List<Map<String, String>> list = new ArrayList<>();
-        // 新しい順に取得
         String sql = "SELECT Target_Date, Status, Absence_Reason FROM ATTMANAGEMENT " +
                      "WHERE User_ID = ? AND (Status LIKE '%欠席%' OR Status LIKE '%遅刻%' OR Status LIKE '%早退%') " +
                      "ORDER BY Target_Date DESC";
