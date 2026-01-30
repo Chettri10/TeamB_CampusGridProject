@@ -6,7 +6,23 @@
 <title>新規登録 - Campus Grid</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    body { background-color: #020617; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; margin: 0; padding: 20px; }
+    body { background-color: #020617; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: sans-serif; margin: 0; padding: 20px; position: relative; }
+
+    /* ★左上の戻るボタン */
+    .back-link {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        color: #94a3b8;
+        text-decoration: none;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+        z-index: 100;
+    }
+    .back-link:hover { color: #00ffff; transform: translateX(-3px); }
 
     .signup-box {
         background-color: #151f42; padding: 40px; border-radius: 10px;
@@ -44,7 +60,6 @@
         box-sizing: border-box;
     }
 
-    /* selectタグのスタイル調整 */
     select.normal-input { height: 40px; background-color: white; }
 
     .label-text { text-align: left; font-size: 12px; color: #94a3b8; margin-top: 15px; margin-bottom: -5px; margin-left: 2px;}
@@ -61,58 +76,52 @@
     button:hover { background-color: #00cccc; }
 
     .error { color: #ff453a; font-size: 14px; margin-bottom: 10px; background: rgba(255, 69, 58, 0.1); padding: 10px; border-radius: 5px;}
-
     .hidden { display: none; }
 
-    /* --- 完了画面用のスタイル --- */
+    /* 完了画面用 */
     .success-content { padding: 20px 0; }
     .success-icon { font-size: 60px; color: #00ffff; margin-bottom: 20px; }
     .success-msg { font-size: 18px; margin-bottom: 30px; line-height: 1.6; font-weight: bold; }
 
-    /* 教員ホームへ戻るボタンのスタイル */
     .home-btn {
         display: block; width: 100%; padding: 12px;
-        background-color: transparent; /* 背景透明 */
-        color: #00ffff; /* 文字色をシアンに */
-        border: 2px solid #00ffff; /* 枠線をシアンに */
+        color: #00ffff; border: 2px solid #00ffff;
         border-radius: 5px; text-decoration: none;
         font-weight: bold; font-size: 16px; margin-top: 10px;
         transition: 0.3s; box-sizing: border-box;
     }
     .home-btn:hover { background-color: rgba(0, 255, 255, 0.1); }
-
 </style>
 </head>
 <body>
+
+    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="back-link">
+        <i class="fas fa-arrow-left"></i> ホームへ戻る
+    </a>
+
     <div class="signup-box">
         <%
-            // Servletから渡されたメッセージを取得
             String error = (String)request.getAttribute("errorMsg");
             String success = (String)request.getAttribute("successMsg");
         %>
 
-        <%-- 【登録成功時の画面】 --%>
+        <%-- 【登録成功時】 --%>
         <% if(success != null) { %>
             <div class="success-content">
                 <i class="fas fa-check-circle success-icon"></i>
                 <h2>登録完了</h2>
-                <p class="success-msg">
-                    ユーザーの登録が完了しました。
-                </p>
+                <p class="success-msg">ユーザーの登録が完了しました。</p>
                 <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="home-btn">ホームへ戻る</a>
             </div>
 
-        <%-- 【通常時の登録フォーム】 --%>
+        <%-- 【登録フォーム】 --%>
         <% } else { %>
-
             <h2>新規アカウント登録</h2>
-
             <% if(error != null) { %>
                 <p class="error"><i class="fas fa-exclamation-circle"></i> <%= error %></p>
             <% } %>
 
             <form action="<%= request.getContextPath() %>/SignupServlet" method="post">
-
                 <div class="role-selector">
                     <label class="role-label"><input type="radio" name="roleType" value="S" checked onclick="changeRole('S')"> 学生</label>
                     <label class="role-label"><input type="radio" name="roleType" value="T" onclick="changeRole('T')"> 先生</label>
@@ -129,7 +138,7 @@
                     <div class="label-text">お子様のユーザーID (学生番号)</div>
                     <div class="input-group">
                         <span class="prefix-span">S</span>
-                        <input type="text" id="child-id-input" name="childId" class="input-field" placeholder="お子様の番号 (例: 00001)" maxlength="5" pattern="\d*">
+                        <input type="text" id="child-id-input" name="childId" class="input-field" placeholder="お子様の番号" maxlength="5" pattern="\d*">
                     </div>
                 </div>
 
@@ -138,8 +147,8 @@
 
                 <div class="label-text">メールアドレス</div>
                 <input type="email" name="email" id="emailInput" class="normal-input" placeholder="example@campus-grid.ac.jp" list="email-domains" required oninput="suggestDomains()">
-
                 <datalist id="email-domains"></datalist>
+
                 <div class="label-text">電話番号</div>
                 <input type="tel" name="phone" class="normal-input" placeholder="090-1234-5678" required>
 
@@ -187,11 +196,10 @@
             const input = document.getElementById("emailInput");
             const datalist = document.getElementById("email-domains");
             const val = input.value;
-            const domains = ["campus-grid.ac.jp", "gmail.com", "yahoo.co.jp", "icloud.com", "outlook.jp", "docomo.ne.jp", "softbank.ne.jp", "ezweb.ne.jp"];
+            const domains = ["campus-grid.ac.jp", "gmail.com", "yahoo.co.jp", "icloud.com"];
 
             if (val.includes("@")) {
-                const parts = val.split("@");
-                const prefix = parts[0];
+                const prefix = val.split("@")[0];
                 datalist.innerHTML = "";
                 if (prefix) {
                     domains.forEach(domain => {
@@ -200,8 +208,6 @@
                         datalist.appendChild(option);
                     });
                 }
-            } else {
-                datalist.innerHTML = "";
             }
         }
 
@@ -216,21 +222,14 @@
                 routeContainer.classList.remove('hidden');
                 routeInput.required = true;
                 childIdContainer.classList.add('hidden');
-                childIdInput.required = false;
-                childIdInput.value = "";
             } else if (roleChar === 'P') {
                 routeContainer.classList.add('hidden');
                 routeInput.required = false;
-                routeInput.value = "";
                 childIdContainer.classList.remove('hidden');
-                childIdInput.required = true;
             } else {
                 routeContainer.classList.add('hidden');
                 routeInput.required = false;
-                routeInput.value = "";
                 childIdContainer.classList.add('hidden');
-                childIdInput.required = false;
-                childIdInput.value = "";
             }
         }
 
@@ -238,12 +237,10 @@
             const inputField = document.getElementById(inputId);
             if (inputField.type === "password") {
                 inputField.type = "text";
-                icon.classList.remove("fa-eye");
-                icon.classList.add("fa-eye-slash");
+                icon.classList.replace("fa-eye", "fa-eye-slash");
             } else {
                 inputField.type = "password";
-                icon.classList.remove("fa-eye-slash");
-                icon.classList.add("fa-eye");
+                icon.classList.replace("fa-eye-slash", "fa-eye");
             }
         }
     </script>
