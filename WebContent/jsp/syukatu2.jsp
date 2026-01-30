@@ -9,6 +9,8 @@
     List<String> statusOptions = Arrays.asList("選考", "書類提出済", "内定獲得", "辞退");
 %>
 
+
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -74,19 +76,23 @@
             margin-right: 5px;
         }
         /* 完了ボタンのスタイル */
-        .submit-button {
-            background-color: #00ffff; /* 明るいシアン */
-            color: black;
-            padding: 15px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 5px;
-            margin-top: 30px;
-            cursor: pointer;
-            width: 100%;
-            border: none;
-        }
+         .back-btn {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 30px;
+        background-color: transparent;
+        color: #00ffff;
+        text-decoration: none;
+        border: 2px solid #00ffff;
+        border-radius: 50px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    .back-btn:hover {
+        background-color: #00ffff;
+        color: #020617;
+        transform: translateY(-2px);
+    }
     </style>
 </head>
 <body>
@@ -95,7 +101,9 @@
     <h1>就活状況の入力</h1>
     <h1>登録が完了しました！</h1>
 
-    <a href="<%= request.getContextPath() %>/jsp/syukatu.jsp">戻る</a>
+ <a href="<%= request.getContextPath() %>/LogIn/student_home.jsp" class="back-btn">
+        メニューへ戻る
+    </a>
 
 </div>
 

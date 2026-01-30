@@ -89,9 +89,45 @@
             width: 100%;
             border: none;
         }
+        .back-button {
+    position: fixed;        /* 画面に固定 */
+    top: 20px;              /* 上から少し余白 */
+    left: 20px;             /* 左端 */
+    padding: 10px 18px;
+    background-color: #00ffff; /* 水色 */
+    text-decoration: none;
+    color:black;
+    border: none;
+    border-radius: 12px;    /* 丸角 */
+    font-size: 14px;
+     font-weight: bold;
+    cursor: pointer;
+}
+
+		.back-btn {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 30px;
+        background-color: transparent;
+        color: #00ffff;
+        text-decoration: none;
+        border: 2px solid #00ffff;
+        border-radius: 50px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    .back-btn:hover {
+        background-color: #00ffff;
+        color: #020617;
+        transform: translateY(-2px);
+    }
     </style>
 </head>
 <body>
+
+<a href="<%= request.getContextPath() %>/LogIn/student_home.jsp" class="back-button">
+        ←戻る
+    </a>
 
 <div class="container">
 
@@ -103,6 +139,7 @@ if (error != null) {
 <%
 }
 %>
+
     <h1>就活状況の入力</h1>
      <%-- フォームの開始。アクション先は後続のServletを想定 --%>
     <form action="<%= request.getContextPath() %>/JobSearchServlet" method="POST">
