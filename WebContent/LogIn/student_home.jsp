@@ -283,7 +283,7 @@
     <main class="main-content">
         <div class="welcome-box">
             <div class="welcome-msg">こんにちは、<%= userName %> さん</div>
-            <div class="user-id">Student ID: <%= userId %></div>
+            <div class="user-id">(ID: <%= userId %>)</div>
         </div>
 
         <div class="menu-container">

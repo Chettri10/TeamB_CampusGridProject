@@ -15,6 +15,7 @@
     <meta charset="UTF-8">
     <title>就活状況の入力</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: "Helvetica Neue", Arial, sans-serif;
@@ -30,8 +31,30 @@
             width: 90%;
             max-width: 450px;
             padding: 20px;
-            margin-top: 40px;
+            margin-top: 20px; /* 少し上に詰める */
         }
+
+        /* 戻るボタンエリア */
+        .header-nav {
+            width: 100%;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+        .back-link:hover {
+            color: #00ffff;
+            transform: translateX(-3px);
+        }
+
         h1 {
             font-size: 24px;
             text-align: center;
@@ -114,36 +137,17 @@
             background-color: #00cccc;
             transform: translateY(-2px);
         }
-
-        /* 戻るボタン */
-        .back-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 8px 16px;
-            background-color: transparent;
-            text-decoration: none;
-            color: #00ffff;
-            border: 1px solid #00ffff;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .back-button:hover {
-            background-color: #00ffff;
-            color: #020617;
-        }
     </style>
 </head>
 <body>
 
-    <a href="<%= request.getContextPath() %>/LogIn/student_home.jsp" class="back-button">
-        ← 戻る
-    </a>
-
     <div class="container">
+
+        <div class="header-nav">
+            <a href="<%= request.getContextPath() %>/LogIn/student_home.jsp" class="back-link">
+                <i class="fas fa-arrow-left"></i> ホームへ戻る
+            </a>
+        </div>
 
         <%
         String error = (String) request.getAttribute("error");

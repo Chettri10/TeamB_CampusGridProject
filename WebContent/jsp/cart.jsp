@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>キャンパスグリッド - 購入</title>
+    <title>購入</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -56,7 +56,6 @@
         </nav>
 
         <div class="header">
-            <div>キャンパス <span class="text-cyan">グリッド</span></div>
             <h1 class="page-title">購入</h1>
         </div>
 
