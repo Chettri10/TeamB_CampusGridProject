@@ -18,7 +18,7 @@
     button { width: 100%; padding: 12px; background-color: #ff5252; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; margin-top: 15px; font-size: 16px;}
     button:hover { background-color: #ff3333; }
 
-    .back-link { display: block; margin-top: 20px; color: #aaa; text-decoration: none; font-size: 14px; }
+    .back-link { display: block; margin-top: 20px; color: #aaa; text-decoration: none; font-size: 14px; cursor: pointer; }
     .back-link:hover { color: white; }
 
     .err { color: #ff453a; font-size: 14px; margin-bottom: 10px; background: rgba(255, 69, 58, 0.1); padding: 5px;}
@@ -54,8 +54,8 @@
             <button type="submit">変更を保存する</button>
         </form>
 
-        <a href="login.jsp" class="back-link">キャンセルしてログインへ戻る</a>
-    </div>
+        <a href="#" onclick="window.history.back(); return false;" class="back-link">キャンセルして前の画面へ戻る</a>
+        </div>
 
     <script>
         function togglePassword(id, icon) {
