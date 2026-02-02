@@ -3,10 +3,11 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.sql.Date" %>
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>出席状況一覧</title>
+<title>出席状況一覧 - CAMPUS GRID</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     /* --- クール＆モダンな青テーマ --- */
     :root {
@@ -20,7 +21,7 @@
         --status-red: #ff1744;
         --status-orange: #ff9100;
         --status-purple: #d500f9;
-        --status-blue: #00b0ff; /* 公欠用の青色を追加 */
+        --status-blue: #00b0ff;
     }
 
     body {
@@ -38,6 +39,7 @@
         text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
+    /* 日付操作エリア */
     .date-control { margin-bottom: 30px; display: inline-block; }
     .nav-link { text-decoration: none; color: var(--accent-cyan); font-weight: bold; margin: 0 20px; font-size: 18px; transition: color 0.3s; }
     .nav-link:hover { color: var(--accent-hover); text-shadow: 0 0 8px var(--accent-cyan); }
@@ -63,6 +65,7 @@
         width: 110px;
         text-align: center;
         border-bottom: 4px solid #ccc;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     .card-present { border-bottom-color: var(--status-green); }
     .card-late { border-bottom-color: var(--status-red); }
@@ -77,18 +80,23 @@
     .text-red { color: var(--status-red); }
     .text-orange { color: var(--status-orange); }
     .text-purple { color: var(--status-purple); }
-    .text-blue { color: var(--status-blue); } /* 公欠テキスト用 */
+    .text-blue { color: var(--status-blue); }
     .text-gray { color: #666; }
 
-    table { width: 90%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; }
+    /* テーブルデザイン */
+    table { width: 95%; margin: 0 auto; border-collapse: separate; background-color: var(--panel-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
     thead { background-color: var(--table-header); color: #fff; }
-    th { padding: 15px; border-bottom: 2px solid var(--accent-cyan); }
-    td { border-bottom: 1px solid #eee; padding: 15px; color: #333; text-align: center; vertical-align: middle; }
+    th { padding: 15px; border-bottom: 2px solid var(--accent-cyan); white-space: nowrap; }
+    td { border-bottom: 1px solid #eee; padding: 12px 15px; color: #333; text-align: center; vertical-align: middle; }
 
-    .time-text { font-family: 'Courier New', monospace; font-weight: bold; }
+    .time-text { font-family: 'Courier New', monospace; font-weight: bold; font-size: 1.1em; }
     .link-student { color: #052c48; font-weight: bold; text-decoration: none; }
-    .home-link { text-decoration: none; color: var(--accent-cyan); display: inline-block; margin-top: 40px; }
+    .link-student:hover { text-decoration: underline; color: var(--accent-cyan); }
 
+    .home-link { text-decoration: none; color: var(--accent-cyan); display: inline-block; margin-top: 40px; font-weight: bold; font-size: 1.1em; transition: 0.3s; }
+    .home-link:hover { text-shadow: 0 0 10px var(--accent-cyan); transform: translateY(-2px); }
+
+    /* 編集ボタン */
     .btn-edit {
         background-color: var(--accent-cyan);
         color: var(--bg-main);
@@ -149,13 +157,13 @@
     <table>
         <thead>
             <tr>
-                <th width="12%">学籍番号</th>
-                <th width="18%">氏名</th>
+                <th width="10%">学籍番号</th>
+                <th width="15%">氏名</th>
                 <th width="12%">出席時間</th>
                 <th width="12%">退室時間</th>
-                <th width="15%">状態</th>
-                <th width="17%">備考</th>
-                <th width="14%">未登録編集</th>
+                <th width="12%">状態</th>
+                <th width="25%">備考</th>
+                <th width="10%">未登録編集</th>
             </tr>
         </thead>
         <tbody>
@@ -174,36 +182,42 @@
                     String checkOut = (String) data.get("checkOutTime");
                     String certPath = (String) data.get("certificatePath");
 
-                    // ★ 理由の取得
+                    // 理由の取得
                     String reason = (String) data.get("reason");
                     if (reason == null) reason = "";
 
-                    // 色分け判定の修正
+                    // 色分け判定
                     String statusClass = "text-gray";
                     if ("出席".equals(statusText)) statusClass = "text-green";
-                    else if ("遅刻".equals(statusText) || "早退・遅刻".equals(statusText)) statusClass = "text-red";
+                    else if ("遅刻".equals(statusText) || "遅刻・早退".equals(statusText) || "早退・遅刻".equals(statusText)) statusClass = "text-red";
                     else if ("早退".equals(statusText)) statusClass = "text-orange";
                     else if ("欠席".equals(statusText)) statusClass = "text-purple";
-                    else if ("公欠".equals(statusText)) statusClass = "text-blue"; // 公欠は青色
+                    else if ("公欠".equals(statusText)) statusClass = "text-blue";
 
-                    // ★ 編集可能判定: 「今日」or「未登録」or「公欠」
+                    // 編集可能判定
                     boolean canEdit = isToday || "未登録".equals(statusText) || "公欠".equals(statusText);
         %>
             <tr>
                 <td><a href="StudentHistoryServlet?userId=<%= data.get("userId") %>" class="link-student"><%= data.get("userId") %></a></td>
                 <td><a href="StudentHistoryServlet?userId=<%= data.get("userId") %>" class="link-student"><%= data.get("userName") %></a></td>
+
                 <td class="time-text"><%= (checkIn != null) ? checkIn : "" %></td>
                 <td class="time-text"><%= (checkOut != null) ? checkOut : "" %></td>
                 <td><span class="<%= statusClass %>" style="font-weight: bold;"><%= statusText %></span></td>
 
                 <td style="text-align: left; font-size: 0.9em;">
                     <% if (certPath != null && !certPath.trim().isEmpty()) { %>
-                        <div style="color: var(--accent-cyan); font-weight: bold; font-size: 0.8em; margin-bottom: 2px;">
-                            <i class="fas fa-file-alt"></i> [証明書あり]
+                        <div style="margin-bottom: 4px;">
+                            <a href="<%= request.getContextPath() %>/ViewCertificateServlet?userId=<%= data.get("userId") %>&targetDate=<%= displayDateStr %>"
+                               target="_blank"
+                               style="color: #0288d1; font-weight: bold; text-decoration: none; border:1px solid #0288d1; padding:2px 6px; border-radius:4px; font-size:0.85em; background-color:#e1f5fe;">
+                                <i class="fas fa-external-link-alt"></i> [証明書を確認]
+                            </a>
                         </div>
                     <% } %>
                     <%= reason %>
                 </td>
+
                 <td>
                     <% if (canEdit) { %>
                         <a href="AttManagementEditServlet?userId=<%= data.get("userId") %>&targetDate=<%= displayDateStr %>" class="btn-edit">編集</a>
@@ -225,7 +239,9 @@
         </tbody>
     </table>
 
-    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="home-link">ホームへ戻る</a>
+    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="home-link">
+        <i class="fas fa-home"></i> ホームへ戻る
+    </a>
 
 </body>
 </html>
