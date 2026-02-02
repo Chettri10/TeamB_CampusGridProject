@@ -17,6 +17,9 @@
     // 名前がない場合の初期値
     if(userName == null) userName = "保護者";
 
+    // アイコン用の頭文字
+    String initial = (userName.length() > 0) ? userName.substring(0, 1) : "P";
+
     // 1. 学校全体のお知らせ取得（ハンバーガーメニュー内に表示）
     NoticeDao dao = new NoticeDao();
     List<Map<String, Object>> list = dao.findAll();
@@ -56,10 +59,13 @@
 
     /* --- ヘッダー --- */
     .header-area {
-        padding-top: calc(var(--sat) + 20px);
-        padding-bottom: 20px;
+        padding-top: calc(var(--sat) + 15px);
+        padding-bottom: 10px;
         position: relative;
         z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     h1 {
@@ -74,12 +80,30 @@
     /* ハンバーガーアイコン */
     .hamburger {
         position: absolute;
-        top: calc(var(--sat) + 22px);
+        top: calc(var(--sat) + 20px);
         right: 25px;
         font-size: 28px;
         color: var(--accent-cyan);
         cursor: pointer;
         z-index: 1001;
+    }
+
+    /* ▼▼▼ ロゴ下の挨拶エリア ▼▼▼ */
+    .welcome-header {
+        margin-bottom: 25px;
+        padding: 0 20px;
+    }
+    .welcome-msg {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+        margin: 0;
+    }
+    .user-id {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-top: 4px;
+        font-weight: normal;
     }
 
     /* --- サイドメニュー --- */
@@ -94,7 +118,7 @@
         box-shadow: -10px 0 30px rgba(0,0,0,0.6);
         transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1000;
-        padding: calc(var(--sat) + 70px) 25px var(--sab);
+        padding: calc(var(--sat) + 20px) 25px var(--sab);
         text-align: left;
         display: flex;
         flex-direction: column;
@@ -102,16 +126,59 @@
 
     .side-menu.active { right: 0; }
 
-    .menu-section-title {
-        font-size: 18px;
-        font-weight: bold;
-        color: var(--accent-cyan);
-        margin-bottom: 15px;
+    /* サイドメニュー上部のプロフィール表示 */
+    .side-profile-header {
         display: flex;
         align-items: center;
-        gap: 10px;
-        border-bottom: 1px solid rgba(255,255,255,0.2);
-        padding-bottom: 10px;
+        gap: 15px;
+        padding-bottom: 25px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-top: 30px;
+    }
+
+    .side-avatar {
+        width: 54px;
+        height: 54px;
+        background: linear-gradient(135deg, #00c6fb, #005bea);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        flex-shrink: 0;
+    }
+
+    .side-user-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .side-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .side-id {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .menu-section-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--accent-cyan);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.9;
     }
 
     /* メニュー内のお知らせリスト */
@@ -119,21 +186,22 @@
         flex-grow: 1;
         overflow-y: auto;
         margin-bottom: 20px;
-        padding-right: 5px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.2) transparent;
     }
 
     .mini-notice-item {
         margin-bottom: 15px;
-        background: rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.04);
         padding: 15px;
         border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.08);
     }
 
     .mini-badge {
         font-size: 11px;
         padding: 3px 8px;
-        border-radius: 6px;
+        border-radius: 4px;
         font-weight: bold;
         margin-bottom: 6px;
         display: inline-block;
@@ -159,6 +227,8 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
     }
 
     .sub-link {
@@ -183,10 +253,7 @@
     }
 
     /* --- メインコンテンツ --- */
-    .main-content { padding: 10px 24px; }
-    .welcome-box { margin-bottom: 20px; }
-    .welcome-msg { font-size: 20px; font-weight: bold; }
-    .user-id { font-size: 14px; color: #94a3b8; margin-top: 4px; }
+    .main-content { padding: 0 24px 20px; }
 
     /* メニューグリッド */
     .menu-container {
@@ -201,19 +268,27 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 150px;
+        height: 140px;
         border-radius: 20px;
         text-decoration: none;
         color: white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
         transition: transform 0.1s;
     }
+    .menu-card::after {
+        content: ''; position: absolute;
+        top:0; left:0; width:100%; height:100%;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+    }
     .menu-card:active { transform: scale(0.97); }
-    .icon-large { font-size: 40px; margin-bottom: 12px; }
-    .menu-label { font-size: 16px; font-weight: bold; }
 
-    .btn-attendance { background: linear-gradient(135deg, #059669, #10b981); }
-    .btn-job { background: linear-gradient(135deg, #0284c7, #38bdf8); }
+    .icon-large { font-size: 38px; margin-bottom: 12px; }
+    .menu-label { font-size: 15px; font-weight: bold; }
+
+    .card-green  { background: #10b981; }
+    .card-orange { background: #f97316; }
 
     /* 重要なお知らせ（アラート） */
     .alert-container {
@@ -268,9 +343,23 @@
         </div>
     </header>
 
+    <div class="welcome-header">
+        <p class="welcome-msg">こんにちは、<%= userName %> 様</p>
+        <p class="user-id">（ID: <%= userId %>）</p>
+    </div>
+
     <div class="overlay" id="menu-overlay"></div>
 
     <div class="side-menu" id="side-menu">
+
+        <div class="side-profile-header">
+            <div class="side-avatar"><%= initial %></div>
+            <div class="side-user-info">
+                <span class="side-name"><%= userName %></span>
+                <span class="side-id">ID: <%= userId %></span>
+            </div>
+        </div>
+
         <div class="menu-section-title">
             <i class="fas fa-bullhorn"></i> 教員からのお知らせ
         </div>
@@ -291,7 +380,7 @@
 
                             String badgeCol = "#3b82f6";
                             if ("重要".equals(category)) badgeCol = "#ef4444";
-                            else if ("イベント".equals(category)) badgeCol = "#22c55e";
+                            else if ("イベント".equals(category)) badgeCol = "#10b981";
             %>
                 <div class="mini-notice-item">
                     <span class="mini-badge" style="background:<%= badgeCol %>;"><%= category %></span>
@@ -314,8 +403,12 @@
 
         <div class="bottom-links">
             <div class="menu-section-title" style="font-size:16px; border:none; padding:0; margin-bottom:5px;">
-                <i class="fas fa-cog"></i>アカウント設定
+                <i class="fas fa-cog"></i> アカウント設定
             </div>
+
+            <a href="profile_view.jsp" class="sub-link">
+                <i class="fas fa-id-card"></i> プロフィール詳細
+            </a>
 
             <a href="<%= request.getContextPath() %>/LogIn/password_reset.jsp" class="sub-link">
                 <i class="fas fa-key"></i> パスワードを変更する
@@ -328,18 +421,14 @@
     </div>
 
     <main class="main-content">
-        <div class="welcome-box">
-            <div class="welcome-msg">こんにちは、<%= userName %> 様</div>
-            <div class="user-id">(ID: <%= userId %>)</div>
-        </div>
 
         <div class="menu-container">
-            <a href="<%= request.getContextPath() %>/AttendanceParentServlet" class="menu-card btn-attendance">
+            <a href="<%= request.getContextPath() %>/AttendanceParentServlet" class="menu-card card-green">
                 <i class="fas fa-clipboard-user icon-large"></i>
                 <span class="menu-label">学生の<br>出席状況</span>
             </a>
 
-            <a href="<%= request.getContextPath() %>/H_syukatuServlet" class="menu-card btn-job">
+            <a href="<%= request.getContextPath() %>/H_syukatuServlet" class="menu-card card-orange">
                 <i class="fas fa-briefcase icon-large"></i>
                 <span class="menu-label">学生の<br>就活状況</span>
             </a>

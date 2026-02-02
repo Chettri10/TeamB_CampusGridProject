@@ -9,21 +9,62 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap; // 追加
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class UserDao extends DAO {
 
-    // 接続設定
+    // 接続設定 (DAOクラスで共通化されている場合はgetConnectionをオーバーライドしなくてもOKです)
     private final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
     private final String USER = "sa";
     private final String PASS = "";
 
+    @Override
     protected Connection getConnection() throws Exception {
         Class.forName("org.h2.Driver");
         return DriverManager.getConnection(URL, USER, PASS);
     }
+
+    // ==========================================================
+    //  ★追加メソッド: ログイン中のユーザー情報を取得 (プロフィール表示用)
+    // ==========================================================
+    public Map<String, Object> getUserById(String userId) {
+        Map<String, Object> userData = null;
+
+        // SELECT文: 必要なカラムを全て取得
+        String sql = "SELECT * FROM User WHERE User_ID = ?";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, userId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                userData = new HashMap<>();
+                userData.put("USER_ID", rs.getString("User_ID"));
+                userData.put("USER_NAME", rs.getString("User_Name"));
+                userData.put("EMAIL", rs.getString("Email"));
+                userData.put("PHONE_NUMBER", rs.getString("Phone_Number"));
+                userData.put("DATE_OF_BIRTH", rs.getDate("Date_Of_Birth"));
+                userData.put("ROUTE_CONFIRMATION", rs.getString("Route_Confirmation"));
+                // ROLEは数値(int)で取得して文字列に変換、またはそのままStringで取得
+                userData.put("ROLE", String.valueOf(rs.getInt("Role")));
+
+                // 必要であれば他のカラムもここに追加
+                userData.put("ADDRESS", rs.getString("Address"));
+                userData.put("CLASS_NAME", rs.getString("CLASS_NAME"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return userData;
+    }
+    // ==========================================================
+
 
     // [1] INSERT (新規登録)
     public int insert(String userId, String userName, String password, int role,
@@ -31,8 +72,6 @@ public class UserDao extends DAO {
                       String routeConfirmation, String email, String phoneNumber,
                       String studentNumber, Date dateOfBirth, String address, String relatedId) throws Exception {
 
-        // ★注意: DBの列名を RELATED_ID に統一しています。
-        // もし "Column not found" エラーが出る場合は、DB側が Parent_ID のままです。
         String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Last_LogIn, SubjectIn_Charge, Add_Product, Route_Confirmation, Email, Phone_Number, Student_Number, Date_Of_Birth, Address, RELATED_ID) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -88,7 +127,9 @@ public class UserDao extends DAO {
         }
     }
 
-    // [4] FindById (ID検索)
+    // [4] FindById (ID検索 - 既存のもの)
+    // ※ 新しく追加した getUserById と機能はほぼ同じですが、戻り値の形式(Mapの中身)が少し異なります。
+    //   既存コードへの影響を避けるため、そのまま残しています。
     public Map<String, Object> findById(String userId) throws Exception {
         String sql = "SELECT * FROM User WHERE User_ID=?";
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -126,7 +167,6 @@ public class UserDao extends DAO {
         m.put("Date_Of_Birth", rs.getDate("Date_Of_Birth"));
         m.put("Address", rs.getString("Address"));
 
-        // ★安全策: RELATED_ID を取得しようとしてダメなら Parent_ID を試す
         try {
             m.put("relatedId", rs.getString("RELATED_ID"));
         } catch (SQLException e) {
@@ -160,7 +200,6 @@ public class UserDao extends DAO {
     public boolean registerUserFull(String userId, String userName, String password, int role,
                                     String email, String phone, String dobString, String address,
                                     String routeInfo, String relatedId) {
-        // ここは RELATED_ID を指定しています
         String sql = "INSERT INTO User (User_ID, User_Name, Password, Role, Email, Phone_Number, Date_Of_Birth, Address, Route_Confirmation, RELATED_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
@@ -224,7 +263,7 @@ public class UserDao extends DAO {
         return parentId;
     }
 
-    // [11] 子ID取得 (必要であれば)
+    // [11] 子ID取得
     public String getChildId(String parentId) {
         String childId = null;
         String sql = "SELECT User_ID FROM User WHERE RELATED_ID = ?";
@@ -235,8 +274,6 @@ public class UserDao extends DAO {
         } catch (Exception e) { e.printStackTrace(); }
         return childId;
     }
-
-    // --- ここから下、以前省略してしまっていたメソッド群 ---
 
     // [12] クラスの学生一覧取得
     public List<Map<String, Object>> getStudentsByClass(String className) {
@@ -296,7 +333,7 @@ public class UserDao extends DAO {
         } catch (Exception e) { return false; }
     }
 
-    // [16] パスワード変更 (同機能)
+    // [16] パスワード変更
     public boolean updatePasswordIfMatch(String userId, String email, String newPassword) {
         return resetPassword(userId, email, newPassword);
     }

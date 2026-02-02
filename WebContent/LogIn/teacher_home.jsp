@@ -14,6 +14,9 @@
     }
     if(userName == null) userName = "先生";
 
+    // 名前の頭文字を取得（アイコン用）
+    String initial = (userName.length() > 0) ? userName.substring(0, 1) : "T";
+
     // --- 2. お知らせ取得 ---
     NoticeDao dao = new NoticeDao();
     List<Map<String, Object>> list = dao.findAll();
@@ -46,12 +49,15 @@
         overflow-x: hidden;
     }
 
-    /* --- ヘッダー・ハンバーガー --- */
+    /* --- ヘッダー --- */
     .header-area {
-        padding-top: calc(var(--sat) + 20px);
-        padding-bottom: 20px;
+        padding-top: calc(var(--sat) + 15px);
+        padding-bottom: 10px; /* 下の余白を少し詰める */
         position: relative;
         z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     h1 {
@@ -60,17 +66,37 @@
         margin: 0;
         font-weight: 900;
         text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        letter-spacing: 1px;
     }
 
     .hamburger {
         position: absolute;
-        top: calc(var(--sat) + 22px);
+        top: calc(var(--sat) + 20px);
         right: 25px;
-        font-size: 28px; /* アイコンを少し大きく */
+        font-size: 28px;
         color: var(--accent-cyan);
         cursor: pointer;
         z-index: 1001;
     }
+
+    /* ▼▼▼ ロゴ下の挨拶エリア ▼▼▼ */
+    .welcome-header {
+        margin-bottom: 25px;
+        padding: 0 20px;
+    }
+    .welcome-msg {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+        margin: 0;
+    }
+    .user-id {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-top: 4px;
+        font-weight: normal;
+    }
+    /* ▲▲▲ ここまで ▲▲▲ */
 
     /* --- サイドメニュー --- */
     .side-menu {
@@ -84,7 +110,7 @@
         box-shadow: -10px 0 30px rgba(0,0,0,0.6);
         transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1000;
-        padding: calc(var(--sat) + 70px) 25px var(--sab);
+        padding: calc(var(--sat) + 20px) 25px var(--sab);
         text-align: left;
         display: flex;
         flex-direction: column;
@@ -92,14 +118,59 @@
 
     .side-menu.active { right: 0; }
 
-    .menu-section-title {
-        font-size: 20px; /* セクションタイトルを大きく */
-        font-weight: bold;
-        color: var(--accent-cyan);
-        margin-bottom: 15px;
+    /* サイドメニュー上部のプロフィール表示 */
+    .side-profile-header {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 15px;
+        padding-bottom: 25px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-top: 30px;
+    }
+
+    .side-avatar {
+        width: 54px;
+        height: 54px;
+        background: linear-gradient(135deg, #00c6fb, #005bea);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: #fff;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        flex-shrink: 0;
+    }
+
+    .side-user-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .side-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .side-id {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-top: 4px;
+    }
+
+    .menu-section-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--accent-cyan);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        opacity: 0.9;
     }
 
     /* お知らせリスト (メニュー内) */
@@ -107,44 +178,43 @@
         flex-grow: 1;
         overflow-y: auto;
         margin-bottom: 20px;
-        border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 15px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.2) transparent;
     }
 
     .mini-notice-item {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         background: rgba(255,255,255,0.04);
-        padding: 18px; /* 余白を増やしてゆったりと */
-        border-radius: 16px;
+        padding: 15px;
+        border-radius: 12px;
         border: 1px solid rgba(255,255,255,0.08);
     }
 
     .mini-badge {
-        font-size: 13px; /* バッジの文字を大きく */
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-weight: 900;
-        margin-bottom: 10px;
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        margin-bottom: 8px;
         display: inline-block;
     }
 
     .mini-content {
-        font-size: 16px; /* ★本文を大きく (13px -> 16px) */
-        line-height: 1.6;
+        font-size: 14px;
+        line-height: 1.5;
         color: #f1f5f9;
-        font-weight: 500;
     }
 
     .notice-actions {
-        margin-top: 12px;
+        margin-top: 10px;
         border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 12px;
+        padding-top: 8px;
         display: flex;
-        gap: 20px;
+        gap: 15px;
     }
     .notice-actions a {
         color: var(--accent-cyan);
-        font-size: 14px; /* 編集・削除リンクも大きく */
+        font-size: 12px;
         text-decoration: none;
         font-weight: bold;
     }
@@ -154,7 +224,9 @@
         margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 10px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.1);
     }
 
     .sub-link {
@@ -163,25 +235,24 @@
         gap: 12px;
         color: #e2e8f0;
         text-decoration: none;
-        font-size: 16px; /* ★設定項目の文字も大きく */
-        padding: 16px;
+        font-size: 15px;
+        padding: 14px;
         background: rgba(255,255,255,0.07);
-        border-radius: 15px;
+        border-radius: 12px;
         font-weight: bold;
+        transition: background 0.2s;
     }
+    .sub-link:active { background: rgba(255,255,255,0.15); }
 
     .logout-link { color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.4); }
 
     /* --- メインコンテンツ --- */
-    .main-content { padding: 10px 24px; }
-    .welcome-box { margin-bottom: 30px; }
-    .welcome-msg { font-size: 20px; font-weight: bold; }
-    .user-id { font-size: 14px; color: #94a3b8; margin-top: 4px; }
+    .main-content { padding: 0 24px 20px; }
 
     .menu-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        gap: 15px;
         max-width: 500px;
         margin: 0 auto;
     }
@@ -195,15 +266,23 @@
         border-radius: 20px;
         text-decoration: none;
         color: white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    .menu-card::after {
+        content: ''; position: absolute;
+        top:0; left:0; width:100%; height:100%;
+        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
     }
     .menu-card:active { transform: scale(0.97); }
+
     .icon-large { font-size: 38px; margin-bottom: 10px; }
     .menu-label { font-size: 15px; font-weight: bold; }
 
-    .card-green { background: #22c55e; } .card-blue { background: #3b82f6; }
-    .card-orange { background: #ea580c; } .card-purple { background: #a855f7; }
-    .card-red { background: #dc2626; } .card-teal { background: #0d9488; }
+    .card-green { background: #10b981; } .card-blue { background: #3b82f6; }
+    .card-orange { background: #f97316; } .card-purple { background: #a855f7; }
+    .card-red { background: #ef4444; } .card-teal { background: #14b8a6; }
 
     .overlay {
         position: fixed;
@@ -223,16 +302,29 @@
         </div>
     </header>
 
+    <div class="welcome-header">
+        <p class="welcome-msg">こんにちは、<%= userName %> 先生</p>
+        <p class="user-id">（ID: <%= userId %>）</p>
+    </div>
     <div class="overlay" id="menu-overlay"></div>
 
     <div class="side-menu" id="side-menu">
+
+        <div class="side-profile-header">
+            <div class="side-avatar"><%= initial %></div>
+            <div class="side-user-info">
+                <span class="side-name"><%= userName %></span>
+                <span class="side-id">ID: <%= userId %></span>
+            </div>
+        </div>
+
         <div class="menu-section-title">
             <i class="fas fa-bullhorn"></i> お知らせ管理
         </div>
 
         <div class="mini-notice-list">
-            <a href="notice_write.jsp" style="color:var(--accent-cyan); text-decoration:none; font-size:16px; display:inline-block; margin-bottom:20px; font-weight:900; background: rgba(0, 255, 255, 0.1); padding: 8px 15px; border-radius: 8px;">
-                <i class="fas fa-plus-circle"></i> 新規投稿する
+            <a href="notice_write.jsp" style="color:var(--accent-cyan); text-decoration:none; font-size:14px; display:inline-block; margin-bottom:15px; font-weight:900; background: rgba(0, 255, 255, 0.1); padding: 8px 15px; border-radius: 8px; width:100%; text-align:center;">
+                <i class="fas fa-plus-circle"></i> お知らせを投稿
             </a>
 
             <% if (list != null && !list.isEmpty()) {
@@ -240,7 +332,7 @@
                     String category = (String)item.get("CATEGORY");
                     String content = (String)item.get("Content");
                     int id = (item.get("Notification_ID") != null) ? (int)item.get("Notification_ID") : 0;
-                    String badgeCol = "重要".equals(category) ? "#ef4444" : ("イベント".equals(category) ? "#22c55e" : "#3b82f6");
+                    String badgeCol = "重要".equals(category) ? "#ef4444" : ("イベント".equals(category) ? "#10b981" : "#3b82f6");
             %>
                 <div class="mini-notice-item">
                     <span class="mini-badge" style="background:<%= badgeCol %>;"><%= category %></span>
@@ -251,14 +343,20 @@
                     </div>
                 </div>
             <% } } else { %>
-                <p style="font-size:16px; color:#94a3b8; text-align:center; margin-top:30px;">現在お知らせはありません</p>
+                <p style="font-size:14px; color:#94a3b8; text-align:center; margin-top:30px;">お知らせはありません</p>
             <% } %>
         </div>
 
         <div class="bottom-links">
-            <div class="menu-section-title" style="margin-bottom:5px;"><i class="fas fa-cog"></i> アカウント設定</div>
+            <div class="menu-section-title" style="margin-bottom:5px; font-size:16px;">
+                <i class="fas fa-cog"></i> アカウント設定
+            </div>
+
+            <a href="profile_view.jsp" class="sub-link">
+                <i class="fas fa-id-card"></i> プロフィール詳細
+            </a>
             <a href="<%= request.getContextPath() %>/LogIn/password_reset.jsp" class="sub-link">
-                <i class="fas fa-key"></i> パスワードを変更する
+                <i class="fas fa-key"></i> パスワード変更
             </a>
             <a href="<%= request.getContextPath() %>/LogoutServlet" class="sub-link logout-link">
                 <i class="fas fa-sign-out-alt"></i> ログアウト
@@ -267,11 +365,6 @@
     </div>
 
     <main class="main-content">
-        <div class="welcome-box">
-            <div class="welcome-msg">こんにちは、<%= userName %> 先生</div>
-            <div class="user-id">（ID: <%= userId %>）</div>
-        </div>
-
         <div class="menu-container">
             <a href="<%= request.getContextPath() %>/AttManagementListServlet" class="menu-card card-green">
                 <i class="fas fa-clipboard-user icon-large"></i>
