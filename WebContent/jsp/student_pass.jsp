@@ -11,37 +11,58 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>デジタル学生証</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-    /* 全体をチャット画面と同じネイビーブラックに設定 */
+    :root {
+        --sat: env(safe-area-inset-top, 50px);
+    }
+
+    /* PC等で見た時にスマホサイズを維持するための設定 */
+    html {
+        background-color: #000;
+        height: 100%;
+    }
+
     body {
         background-color: #020617;
         color: white;
         font-family: "Helvetica Neue", Arial, sans-serif;
         text-align: center;
-        padding: 20px;
+        padding: 0;
         user-select: none;
         min-height: 100vh;
-        margin: 0;
+        margin: 0 auto;
+
+        /* iPhone 14 Pro Max 幅固定 */
+        max-width: 430px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        /* Dynamic Island分の余白 + 上部マージン */
+        padding-top: calc(var(--sat) + 20px);
     }
 
     .card {
-        background-color: #151f42; /* カード背景を少し明るい紺に */
-        padding: 20px;
-        border-radius: 15px;
+        background-color: #151f42;
+        padding: 25px; /* カード内の余白を少し拡大 */
+        border-radius: 20px; /* 角丸を少し大きく */
         display: inline-block;
-        box-shadow: 0 0 20px rgba(0,255,255,0.2);
+        box-shadow: 0 0 30px rgba(0,255,255,0.15);
         position: relative;
         overflow: hidden;
-        width: 300px;
-        margin-top: 50px;
+
+        /* 430px画面に合わせてサイズアップ */
+        width: 370px;
+        max-width: 90%;
+        margin-top: 10px;
     }
 
     .animated-border {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        border: 4px solid transparent; border-radius: 15px;
+        border: 4px solid transparent; border-radius: 20px;
         /* サイバー感のあるグラデーション */
         background: linear-gradient(45deg, #00ffff, #002bff, #7a00ff, #00ffff);
         background-size: 400%; z-index: -1; animation: glowing 10s linear infinite;
@@ -50,28 +71,40 @@
     @keyframes glowing { 0% { background-position: 0 0; } 50% { background-position: 400% 0; } 100% { background-position: 0 0; } }
 
     .card-inner {
-        background: #020617; /* 内側をメイン背景色と同じに */
-        border-radius: 12px;
-        padding: 20px;
+        background: #020617;
+        border-radius: 16px;
+        padding: 25px 20px;
         height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
-    h1 { color: #00ffff; margin: 0; font-size: 22px; font-weight: bold; }
+    h1 { color: #00ffff; margin: 0; font-size: 26px; font-weight: bold; letter-spacing: 1px; }
 
-    .student-id { font-size: 20px; font-weight: bold; margin: 15px 0 5px 0; color: white; }
-    .id-number { font-size: 14px; color: #8892b0; margin-bottom: 20px; }
+    .student-id { font-size: 22px; font-weight: bold; margin: 20px 0 5px 0; color: white; }
+    .id-number { font-size: 15px; color: #8892b0; margin-bottom: 25px; }
 
     #qrcode {
         margin: 10px auto;
         display: flex;
         justify-content: center;
-        padding: 10px;
-        background: white; /* QRコード読み取りのため白背景を維持 */
-        border-radius: 10px;
-        width: 180px;
+        align-items: center;
+        padding: 15px;
+        background: white;
+        border-radius: 12px;
+
+        /* QRコードエリアのサイズアップ */
+        width: 240px;
+        height: 240px;
     }
 
-    .progress-bar { width: 100%; height: 6px; background-color: #1e293b; margin-top: 20px; overflow: hidden; border-radius: 3px; }
+    /* QRコード画像自体のスタイル補正 */
+    #qrcode img {
+        display: block;
+    }
+
+    .progress-bar { width: 100%; height: 6px; background-color: #1e293b; margin-top: 25px; overflow: hidden; border-radius: 3px; }
     .progress-fill { height: 100%; background-color: #00ffff; width: 100%; animation: countdown 5s linear infinite; }
 
     @keyframes countdown {
@@ -81,14 +114,15 @@
 
     .home-link {
         display: inline-block;
-        margin-top: 40px;
+        margin-top: 50px;
         color: #00ffff;
         text-decoration: none;
         font-weight: bold;
         border: 1px solid #00ffff;
-        padding: 10px 20px;
-        border-radius: 8px;
+        padding: 14px 40px; /* タップしやすいよう大きく */
+        border-radius: 12px;
         transition: 0.3s;
+        font-size: 16px;
     }
     .home-link:hover { background: rgba(0, 255, 255, 0.1); }
 
@@ -103,10 +137,10 @@
 </head>
 <body>
     <div id="mask">
-        <div style="font-size: 50px; color: #ff5252; margin-bottom: 20px;">⚠️</div>
+        <div style="font-size: 60px; color: #ff5252; margin-bottom: 20px;">⚠️</div>
         <h2>表示が中断されました</h2>
         <p>セキュリティ保護のため<br>画面を切り替えると無効化されます。</p>
-        <button onclick="location.reload()" style="padding:12px 24px; font-size:16px; background:#00ffff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">再表示する</button>
+        <button onclick="location.reload()" style="padding:15px 30px; font-size:18px; background:#00ffff; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">再表示する</button>
     </div>
 
     <div class="card">
@@ -117,7 +151,7 @@
             <div class="id-number">ID: <%= myId %></div>
             <div id="qrcode"></div>
             <div class="progress-bar"><div class="progress-fill" id="p-bar"></div></div>
-            <p style="font-size:11px; color:#8892b0; margin-top:15px;">5秒ごとに自動更新されます<br><span style="color:#ff5252; font-weight:bold;">スクリーンショット無効</span></p>
+            <p style="font-size:12px; color:#8892b0; margin-top:20px;">5秒ごとに自動更新されます<br><span style="color:#ff5252; font-weight:bold;">スクリーンショット無効</span></p>
         </div>
     </div>
 
@@ -132,8 +166,15 @@
             qrContainer.innerHTML = "";
             const now = new Date().getTime();
             const qrData = userId + "," + now;
-            // ダークモードに合わせて少しQRを小さめに調整
-            new QRCode(qrContainer, { text: qrData, width: 180, height: 180, correctLevel : QRCode.CorrectLevel.H });
+
+            // 画面サイズに合わせてQRコード生成サイズを 180 -> 210 に拡大
+            // (外枠のpadding含めて240pxのボックスに収まるサイズ)
+            new QRCode(qrContainer, {
+                text: qrData,
+                width: 210,
+                height: 210,
+                correctLevel : QRCode.CorrectLevel.H
+            });
 
             const bar = document.getElementById("p-bar");
             bar.style.animation = 'none'; bar.offsetHeight; bar.style.animation = 'countdown 5s linear infinite';

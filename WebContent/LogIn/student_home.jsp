@@ -8,16 +8,12 @@
     String userName = (String) session.getAttribute("userName");
     String role = (String) session.getAttribute("role");
 
-    // IDがない、または"S"で始まらない（学生でない）場合はログイン画面へ
     if (userId == null || (!userId.startsWith("S") && !"student".equals(role))) {
         response.sendRedirect(request.getContextPath() + "/LogIn/login.jsp");
         return;
     }
 
-    // null対策
     if(userName == null) userName = "学生";
-
-    // 名前の頭文字を取得（アイコン用）
     String initial = (userName.length() > 0) ? userName.substring(0, 1) : "S";
 
     // --- 2. DB からお知らせ一覧を取得 ---
@@ -34,9 +30,9 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-    /* --- 教員画面と共通のデザイン定義 --- */
+    /* --- iPhone 14 Pro Max (430px) サイズ固定用設定 --- */
     :root {
-        --sat: env(safe-area-inset-top, 50px);
+        --sat: env(safe-area-inset-top, 59px);
         --sab: env(safe-area-inset-bottom, 34px);
         --bg-color: #020617;
         --accent-cyan: #00ffff;
@@ -44,19 +40,28 @@
 
     * { box-sizing: border-box; }
 
+    html {
+        background-color: #000;
+    }
+
     body {
         background-color: var(--bg-color);
         color: white;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro JP", sans-serif;
-        margin: 0; padding: 0;
+        margin: 0 auto;
+        padding: 0;
         text-align: center;
         overflow-x: hidden;
+        max-width: 430px;
+        min-height: 100vh;
+        position: relative;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
 
     /* --- ヘッダー --- */
     .header-area {
-        padding-top: calc(var(--sat) + 15px);
-        padding-bottom: 10px;
+        padding-top: calc(var(--sat) + 10px);
+        padding-bottom: 15px;
         position: relative;
         z-index: 100;
         display: flex;
@@ -73,53 +78,104 @@
         letter-spacing: 1px;
     }
 
+    /* ▼▼▼ ハンバーガーメニューのデザイン変更 ▼▼▼ */
     .hamburger {
         position: absolute;
-        top: calc(var(--sat) + 20px);
-        right: 25px;
-        font-size: 28px;
-        color: var(--accent-cyan);
+        top: calc(var(--sat) + 8px); /* 位置調整 */
+        right: 20px;
+        /* グラスモーフィズム風ボタンデザイン */
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
         z-index: 1001;
+        transition: transform 0.2s, background 0.2s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .hamburger i {
+        font-size: 20px;
+        color: var(--accent-cyan);
+    }
+    .hamburger:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.2);
     }
 
     /* ▼▼▼ ロゴ下の挨拶エリア ▼▼▼ */
     .welcome-header {
-        margin-bottom: 25px;
+        margin-bottom: 30px;
         padding: 0 20px;
     }
     .welcome-msg {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: bold;
         color: #fff;
         margin: 0;
     }
     .user-id {
-        font-size: 13px;
+        font-size: 14px;
         color: #94a3b8;
-        margin-top: 4px;
+        margin-top: 5px;
         font-weight: normal;
     }
 
     /* --- サイドメニュー --- */
     .side-menu {
         position: fixed;
-        top: 0; right: -100%;
-        width: 85%;
-        max-width: 380px;
+        top: 0;
+        right: auto; left: 50%;
+        transform: translateX(100%);
+        width: 100%;
+        max-width: 430px;
         height: 100%;
         background: rgba(15, 23, 42, 0.98);
-        backdrop-filter: blur(15px);
-        box-shadow: -10px 0 30px rgba(0,0,0,0.6);
-        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1000;
+        backdrop-filter: blur(20px); /* ぼかしを強く */
+        transition: 0.35s cubic-bezier(0.32, 1.25, 0.32, 1); /* バウンスするようなアニメーション */
+        z-index: 2000; /* ヘッダーより上に */
         padding: calc(var(--sat) + 20px) 25px var(--sab);
         text-align: left;
         display: flex;
         flex-direction: column;
     }
 
-    .side-menu.active { right: 0; }
+    .side-menu.active {
+        transform: translateX(-50%);
+    }
+
+    /* ▼▼▼ メニュー内 閉じる(戻る)ボタンエリア ▼▼▼ */
+    .menu-header-actions {
+        display: flex;
+        justify-content: flex-end; /* 右寄せ */
+        margin-bottom: 10px;
+    }
+
+    .menu-close-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 30px;
+        padding: 8px 16px;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .menu-close-btn i {
+        font-size: 16px;
+        color: var(--accent-cyan);
+    }
+    .menu-close-btn:active {
+        background: rgba(255, 255, 255, 0.2);
+    }
 
     /* サイドメニュー上部のプロフィール表示 */
     .side-profile-header {
@@ -129,18 +185,18 @@
         padding-bottom: 25px;
         margin-bottom: 20px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
-        margin-top: 30px;
+        margin-top: 10px;
     }
 
     .side-avatar {
-        width: 54px;
-        height: 54px;
+        width: 60px;
+        height: 60px;
         background: linear-gradient(135deg, #00c6fb, #005bea);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 24px;
         font-weight: bold;
         color: #fff;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -154,7 +210,7 @@
     }
 
     .side-name {
-        font-size: 18px;
+        font-size: 19px;
         font-weight: bold;
         color: #fff;
     }
@@ -176,13 +232,12 @@
         opacity: 0.9;
     }
 
-    /* お知らせリスト (メニュー内・閲覧専用) */
+    /* お知らせリスト (メニュー内) */
     .mini-notice-list {
         flex-grow: 1;
         overflow-y: auto;
         margin-bottom: 20px;
         scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.2) transparent;
     }
 
     .mini-notice-item {
@@ -222,7 +277,7 @@
         margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
         padding-top: 20px;
         border-top: 1px solid rgba(255,255,255,0.1);
     }
@@ -233,8 +288,8 @@
         gap: 12px;
         color: #e2e8f0;
         text-decoration: none;
-        font-size: 15px;
-        padding: 14px;
+        font-size: 16px;
+        padding: 15px;
         background: rgba(255,255,255,0.07);
         border-radius: 12px;
         font-weight: bold;
@@ -245,13 +300,15 @@
     .logout-link { color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.4); }
 
     /* --- メインコンテンツ --- */
-    .main-content { padding: 0 24px 20px; }
+    .main-content {
+        padding: 0 24px 20px;
+    }
 
     .menu-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        max-width: 500px;
+        gap: 16px;
+        width: 100%;
         margin: 0 auto;
     }
 
@@ -260,23 +317,23 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 140px;
-        border-radius: 20px;
+        height: 160px;
+        border-radius: 24px;
         text-decoration: none;
         color: white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         position: relative;
         overflow: hidden;
     }
     .menu-card::after {
         content: ''; position: absolute;
         top:0; left:0; width:100%; height:100%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+        background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
     }
     .menu-card:active { transform: scale(0.97); }
 
-    .icon-large { font-size: 38px; margin-bottom: 10px; }
-    .menu-label { font-size: 15px; font-weight: bold; }
+    .icon-large { font-size: 42px; margin-bottom: 12px; }
+    .menu-label { font-size: 16px; font-weight: bold; letter-spacing: 0.5px; }
 
     .card-green  { background: #10b981; }
     .card-blue   { background: #3b82f6; }
@@ -285,7 +342,9 @@
 
     .overlay {
         position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
+        top: 0; left: 50%; transform: translateX(-50%);
+        width: 100%; max-width: 430px;
+        height: 100%;
         background: rgba(0,0,0,0.6);
         display: none; z-index: 999;
     }
@@ -310,6 +369,12 @@
 
     <div class="side-menu" id="side-menu">
 
+        <div class="menu-header-actions">
+            <button class="menu-close-btn" onclick="toggleMenu()">
+                <i class="fas fa-times"></i> 閉じる
+            </button>
+        </div>
+
         <div class="side-profile-header">
             <div class="side-avatar"><%= initial %></div>
             <div class="side-user-info">
@@ -328,16 +393,15 @@
                     boolean hasTeacherNotice = false;
                     for (Map<String, Object> item : list) {
                         String noticeRole = (String)item.get("Role");
-                        // 教員からの投稿のみ表示
                         if ("teacher".equalsIgnoreCase(noticeRole)) {
                             hasTeacherNotice = true;
                             String category = (String)item.get("CATEGORY");
                             String content = (String)item.get("Content");
                             String date = String.valueOf(item.get("Posted_On"));
 
-                            String badgeCol = "#3b82f6"; // Default Blue
-                            if ("重要".equals(category)) badgeCol = "#ef4444"; // Red
-                            else if ("イベント".equals(category)) badgeCol = "#10b981"; // Green
+                            String badgeCol = "#3b82f6";
+                            if ("重要".equals(category)) badgeCol = "#ef4444";
+                            else if ("イベント".equals(category)) badgeCol = "#10b981";
             %>
                 <div class="mini-notice-item">
                     <span class="mini-badge" style="background:<%= badgeCol %>;"><%= category %></span>
@@ -407,12 +471,9 @@
         function toggleMenu() {
             menu.classList.toggle('active');
             overlay.classList.toggle('active');
-            const icon = btn.querySelector('i');
-            if (menu.classList.contains('active')) {
-                icon.classList.replace('fa-bars', 'fa-times');
-            } else {
-                icon.classList.replace('fa-times', 'fa-bars');
-            }
+            // メニューが開いたときは、メインのハンバーガーボタン自体は変化させない（中に戻るボタンがあるため）
+            // 必要であればここでハンバーガーボタンを隠す処理を入れても良いですが、
+            // サイドメニューが上にかぶさるためそのままでOKです。
         }
 
         btn.addEventListener('click', toggleMenu);

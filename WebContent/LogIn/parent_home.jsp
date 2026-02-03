@@ -38,9 +38,9 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
-    /* --- 共通デザイン設定 --- */
+    /* --- iPhone 14 Pro Max (430px) サイズ固定用設定 --- */
     :root {
-        --sat: env(safe-area-inset-top, 50px);
+        --sat: env(safe-area-inset-top, 59px);
         --sab: env(safe-area-inset-bottom, 34px);
         --bg-color: #020617;
         --accent-cyan: #00ffff;
@@ -48,19 +48,30 @@
 
     * { box-sizing: border-box; }
 
+    html {
+        background-color: #000; /* 枠外は黒 */
+    }
+
     body {
         background-color: var(--bg-color);
         color: white;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro JP", sans-serif;
-        margin: 0; padding: 0;
+        margin: 0 auto; /* 中央寄せ */
+        padding: 0;
         text-align: center;
         overflow-x: hidden;
+
+        /* iPhone 14 Pro Max の論理幅に合わせて固定 */
+        max-width: 430px;
+        min-height: 100vh;
+        position: relative;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
     }
 
     /* --- ヘッダー --- */
     .header-area {
-        padding-top: calc(var(--sat) + 15px);
-        padding-bottom: 10px;
+        padding-top: calc(var(--sat) + 10px);
+        padding-bottom: 15px;
         position: relative;
         z-index: 100;
         display: flex;
@@ -77,54 +88,98 @@
         text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
     }
 
-    /* ハンバーガーアイコン */
+    /* ハンバーガーアイコン（ボタンデザイン化） */
     .hamburger {
         position: absolute;
-        top: calc(var(--sat) + 20px);
-        right: 25px;
-        font-size: 28px;
-        color: var(--accent-cyan);
+        top: calc(var(--sat) + 8px);
+        right: 20px;
+        /* グラスモーフィズム風ボタンデザイン */
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(5px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
         z-index: 1001;
+        transition: transform 0.2s, background 0.2s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .hamburger i {
+        font-size: 20px;
+        color: var(--accent-cyan);
+    }
+    .hamburger:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.2);
     }
 
     /* ▼▼▼ ロゴ下の挨拶エリア ▼▼▼ */
     .welcome-header {
-        margin-bottom: 25px;
+        margin-bottom: 30px;
         padding: 0 20px;
     }
     .welcome-msg {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: bold;
         color: #fff;
         margin: 0;
     }
     .user-id {
-        font-size: 13px;
+        font-size: 14px;
         color: #94a3b8;
-        margin-top: 4px;
+        margin-top: 5px;
         font-weight: normal;
     }
 
     /* --- サイドメニュー --- */
     .side-menu {
         position: fixed;
-        top: 0; right: -100%;
-        width: 85%;
-        max-width: 380px;
+        top: 0;
+        right: auto; left: 50%;
+        transform: translateX(100%);
+        width: 100%;
+        max-width: 430px;
         height: 100%;
         background: rgba(15, 23, 42, 0.98);
-        backdrop-filter: blur(15px);
-        box-shadow: -10px 0 30px rgba(0,0,0,0.6);
-        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        z-index: 1000;
+        backdrop-filter: blur(20px);
+        transition: 0.35s cubic-bezier(0.32, 1.25, 0.32, 1);
+        z-index: 2000;
         padding: calc(var(--sat) + 20px) 25px var(--sab);
         text-align: left;
         display: flex;
         flex-direction: column;
     }
 
-    .side-menu.active { right: 0; }
+    .side-menu.active {
+        transform: translateX(-50%);
+    }
+
+    /* ▼▼▼ メニュー内 閉じる(戻る)ボタンエリア ▼▼▼ */
+    .menu-header-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 10px;
+    }
+    .menu-close-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        border-radius: 30px;
+        padding: 8px 16px;
+        color: white;
+        font-size: 14px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .menu-close-btn i { font-size: 16px; color: var(--accent-cyan); }
+    .menu-close-btn:active { background: rgba(255, 255, 255, 0.2); }
 
     /* サイドメニュー上部のプロフィール表示 */
     .side-profile-header {
@@ -134,18 +189,18 @@
         padding-bottom: 25px;
         margin-bottom: 20px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
-        margin-top: 30px;
+        margin-top: 10px;
     }
 
     .side-avatar {
-        width: 54px;
-        height: 54px;
+        width: 60px;
+        height: 60px;
         background: linear-gradient(135deg, #00c6fb, #005bea);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 24px;
         font-weight: bold;
         color: #fff;
         box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -159,7 +214,7 @@
     }
 
     .side-name {
-        font-size: 18px;
+        font-size: 19px;
         font-weight: bold;
         color: #fff;
     }
@@ -226,7 +281,7 @@
         margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
         padding-top: 20px;
         border-top: 1px solid rgba(255,255,255,0.1);
     }
@@ -237,8 +292,8 @@
         gap: 12px;
         color: #e2e8f0;
         text-decoration: none;
-        font-size: 15px;
-        padding: 14px;
+        font-size: 16px;
+        padding: 15px;
         background: rgba(255,255,255,0.07);
         border-radius: 12px;
         font-weight: bold;
@@ -260,19 +315,19 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 16px;
-        max-width: 500px;
-        margin: 0 auto 30px; /* 下に余白を追加 */
+        width: 100%;
+        margin: 0 auto 30px;
     }
     .menu-card {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 140px;
-        border-radius: 20px;
+        height: 160px; /* カード高さを調整 */
+        border-radius: 24px;
         text-decoration: none;
         color: white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         position: relative;
         overflow: hidden;
         transition: transform 0.1s;
@@ -280,12 +335,12 @@
     .menu-card::after {
         content: ''; position: absolute;
         top:0; left:0; width:100%; height:100%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+        background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
     }
     .menu-card:active { transform: scale(0.97); }
 
-    .icon-large { font-size: 38px; margin-bottom: 12px; }
-    .menu-label { font-size: 15px; font-weight: bold; }
+    .icon-large { font-size: 42px; margin-bottom: 12px; }
+    .menu-label { font-size: 16px; font-weight: bold; letter-spacing: 0.5px; }
 
     .card-green  { background: #10b981; }
     .card-orange { background: #f97316; }
@@ -293,41 +348,43 @@
     /* 重要なお知らせ（アラート） */
     .alert-container {
         width: 100%;
-        max-width: 500px;
         margin: 0 auto;
     }
     .alert-board {
         background: rgba(69, 10, 10, 0.6);
         border: 1px solid #ff5252;
-        border-radius: 16px;
+        border-radius: 20px;
         overflow: hidden;
         text-align: left;
         backdrop-filter: blur(5px);
+        box-shadow: 0 4px 15px rgba(255, 82, 82, 0.1);
     }
     .alert-header {
         background-color: rgba(255, 82, 82, 0.9);
         color: white;
-        padding: 10px 20px;
+        padding: 12px 20px;
         font-weight: bold;
-        font-size: 15px;
+        font-size: 16px;
         display: flex; align-items: center; gap: 10px;
     }
     .alert-content {
         padding: 15px 20px;
-        max-height: 150px;
+        max-height: 180px;
         overflow-y: auto;
     }
     .alert-item {
-        padding: 8px 0;
+        padding: 10px 0;
         border-bottom: 1px solid rgba(255, 82, 82, 0.3);
     }
     .alert-item:last-child { border-bottom: none; }
-    .alert-time { font-size: 11px; color: #ffadad; display: block; }
-    .alert-msg { font-size: 14px; color: #ffe5e5; }
+    .alert-time { font-size: 12px; color: #ffadad; display: block; margin-bottom: 2px; }
+    .alert-msg { font-size: 15px; color: #ffe5e5; line-height: 1.5; }
 
     .overlay {
         position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
+        top: 0; left: 50%; transform: translateX(-50%);
+        width: 100%; max-width: 430px;
+        height: 100%;
         background: rgba(0,0,0,0.6);
         display: none; z-index: 999;
     }
@@ -351,6 +408,12 @@
     <div class="overlay" id="menu-overlay"></div>
 
     <div class="side-menu" id="side-menu">
+
+        <div class="menu-header-actions">
+            <button class="menu-close-btn" onclick="toggleMenu()">
+                <i class="fas fa-times"></i> 閉じる
+            </button>
+        </div>
 
         <div class="side-profile-header">
             <div class="side-avatar"><%= initial %></div>
@@ -463,12 +526,6 @@
         function toggleMenu() {
             menu.classList.toggle('active');
             overlay.classList.toggle('active');
-            const icon = btn.querySelector('i');
-            if (menu.classList.contains('active')) {
-                icon.classList.replace('fa-bars', 'fa-times');
-            } else {
-                icon.classList.replace('fa-times', 'fa-bars');
-            }
         }
 
         btn.addEventListener('click', toggleMenu);

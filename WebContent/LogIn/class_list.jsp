@@ -13,48 +13,228 @@
 <head>
 <meta charset="UTF-8">
 <title>クラス名簿 - CAMPUS GRID</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-    body { background-color: #020617; color: white; font-family: sans-serif; margin: 0; padding: 20px; text-align: center; }
-    h1 { color: #00ffff; font-size: 28px; margin-bottom: 20px; }
+    /* --- iPad (834px~) 最適化設定 --- */
+    :root {
+        --sat: env(safe-area-inset-top, 20px);
+        --sab: env(safe-area-inset-bottom, 20px);
+    }
 
-    /* タブのデザイン */
-    .class-tabs { margin-bottom: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-    .class-btn { padding: 10px 25px; background-color: #1e293b; color: #aaa; text-decoration: none; border-radius: 20px; border: 1px solid #334155; font-weight: bold; transition: 0.3s; }
+    * { box-sizing: border-box; }
+
+    body {
+        background-color: #020617;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro JP", sans-serif;
+        margin: 0 auto;
+        padding: 20px;
+        text-align: center;
+
+        /* iPad幅に合わせる */
+        max-width: 834px;
+        min-height: 100vh;
+    }
+
+    h1 {
+        color: #00ffff;
+        font-size: 32px;
+        margin-bottom: 25px;
+        font-weight: 900;
+        letter-spacing: 1px;
+    }
+
+    /* タブのデザイン（大きく押しやすく） */
+    .class-tabs {
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .class-btn {
+        padding: 12px 30px;
+        background-color: #1e293b;
+        color: #94a3b8;
+        text-decoration: none;
+        border-radius: 25px;
+        border: 1px solid #334155;
+        font-weight: bold;
+        font-size: 16px;
+        transition: 0.2s;
+    }
     .class-btn:hover { background-color: #334155; color: white; }
-    .class-btn.active { background-color: #ef4444; color: white; border-color: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
+    .class-btn.active {
+        background-color: #ef4444;
+        color: white;
+        border-color: #ef4444;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
 
-    /* 管理パネルを上部に配置 */
-    .top-admin-container { max-width: 800px; margin: 0 auto 20px auto; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
-    .panel-box { background-color: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; flex: 1; min-width: 300px; text-align: left; }
-    .panel-title { margin: 0 0 10px 0; color: #00ffff; font-size: 14px; font-weight: bold; }
-    .panel-form { display: flex; gap: 8px; }
-    .input-field { flex: 1; padding: 8px; border-radius: 5px; border: none; background: #0f172a; color: white; font-size: 13px; }
-    .action-btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; font-size: 13px; white-space: nowrap; }
+    /* 管理パネルを上部に配置（横並び強化） */
+    .top-admin-container {
+        width: 100%;
+        margin: 0 auto 30px auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2カラム構成 */
+        gap: 20px;
+    }
+    .panel-box {
+        background-color: #1e293b;
+        padding: 20px;
+        border-radius: 16px;
+        border: 1px solid #334155;
+        text-align: left;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .panel-title {
+        margin: 0 0 15px 0;
+        color: #00ffff;
+        font-size: 16px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .panel-form { display: flex; gap: 10px; }
+    .input-field {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #475569;
+        background: #0f172a;
+        color: white;
+        font-size: 15px;
+    }
+    .input-field:focus { border-color: #00ffff; outline: none; }
+
+    .action-btn {
+        padding: 0 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: white;
+        font-weight: bold;
+        font-size: 15px;
+        white-space: nowrap;
+        transition: 0.2s;
+    }
     .add-btn { background-color: #00c853; }
-    .create-btn { background-color: #1e90ff; }
+    .add-btn:hover { background-color: #00e676; }
+    .create-btn { background-color: #3b82f6; }
+    .create-btn:hover { background-color: #60a5fa; }
 
     /* 検索エリア */
-    .search-area { margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-    .search-box { padding: 10px; width: 250px; border-radius: 5px; border: 1px solid #334155; background: #1e293b; color: white; }
-    .search-btn { padding: 10px 20px; background-color: #1e90ff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    .search-area {
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: flex-end; /* 右寄せで見やすく */
+        align-items: center;
+        gap: 10px;
+    }
+    .search-box {
+        padding: 12px;
+        width: 300px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: white;
+        font-size: 15px;
+    }
+    .search-btn {
+        padding: 12px 24px;
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 15px;
+    }
 
     /* 名簿テーブルエリア */
-    .container { max-width: 800px; margin: 0 auto; background-color: #ffffff; color: #333; border-radius: 12px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    h2 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; color: #020617; text-align: left; display: flex; justify-content: space-between; align-items: center; font-size: 20px;}
+    .container {
+        width: 100%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        color: #333;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    h2 {
+        margin-top: 0;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+        color: #0f172a;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 22px;
+    }
 
     table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; }
-    th { background-color: #f8f9fa; color: #666; font-weight: bold; }
+    th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+    th { background-color: #f8fafc; color: #64748b; font-weight: bold; font-size: 15px; }
+    td { font-size: 16px; color: #334155; }
 
-    .edit-btn { color: #1e90ff; font-weight: bold; text-decoration: none; border: 1px solid #1e90ff; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
-    .delete-btn { color: #ff4444; font-weight: bold; text-decoration: none; border: 1px solid #ff4444; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 5px;}
-    .delete-class-btn { font-size: 13px; color: #ff4444; text-decoration: none; border: 1px solid #ff4444; padding: 5px 12px; border-radius: 5px; transition: 0.3s; }
-    .delete-class-btn:hover { background-color: #ff4444; color: white; }
+    /* 操作ボタン */
+    .action-cell { display: flex; gap: 8px; }
+    .btn-sm {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: 0.2s;
+    }
+    .edit-btn { color: #3b82f6; border: 1px solid #3b82f6; background: rgba(59,130,246,0.05); }
+    .edit-btn:hover { background: #3b82f6; color: white; }
 
-    .back-link { display: inline-block; margin-top: 30px; color: #aaa; text-decoration: none; border: 1px solid #aaa; padding: 10px 30px; border-radius: 30px; font-weight: bold; }
-    .back-link:hover { background-color: white; color: #020617; }
+    .delete-btn { color: #ef4444; border: 1px solid #ef4444; background: rgba(239,68,68,0.05); }
+    .delete-btn:hover { background: #ef4444; color: white; }
+
+    .delete-class-btn {
+        font-size: 14px;
+        color: #ef4444;
+        text-decoration: none;
+        border: 1px solid #ef4444;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: 0.3s;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .delete-class-btn:hover { background-color: #ef4444; color: white; }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        color: #94a3b8;
+        text-decoration: none;
+        border: 1px solid #475569;
+        padding: 12px 40px;
+        border-radius: 30px;
+        font-weight: bold;
+        font-size: 16px;
+        transition: 0.3s;
+    }
+    .back-link:hover { background-color: #475569; color: white; }
+
+    /* メディアクエリ：狭い場合 */
+    @media (max-width: 768px) {
+        .top-admin-container { grid-template-columns: 1fr; }
+        .search-area { justify-content: center; }
+    }
 </style>
 </head>
 <body>
@@ -70,7 +250,7 @@
                 </a>
         <%  }
            } else { %>
-               <div style="color: #aaa;">クラスが登録されていません</div>
+               <div style="color: #64748b; padding:10px;">クラスが登録されていません</div>
         <% } %>
     </div>
 
@@ -94,12 +274,12 @@
     </div>
 
     <div class="search-area">
-        <form action="ClassListServlet" method="get">
+        <form action="ClassListServlet" method="get" style="display:flex; align-items:center; gap:10px;">
             <input type="hidden" name="className" value="<%= selectedClass %>">
             <input type="text" name="keyword" class="search-box" placeholder="名前で検索..." value="<%= searchKeyword %>">
             <button type="submit" class="search-btn"><i class="fas fa-search"></i> 検索</button>
             <% if(!searchKeyword.isEmpty()){ %>
-                <a href="ClassListServlet?className=<%= selectedClass %>" style="color:#aaa; margin-left:10px; font-size:14px;">解除</a>
+                <a href="ClassListServlet?className=<%= selectedClass %>" style="color:#94a3b8; font-size:14px; text-decoration:underline;">解除</a>
             <% } %>
         </form>
     </div>
@@ -121,9 +301,9 @@
             <table>
                 <thead>
                     <tr>
-                        <th>学籍番号</th>
-                        <th>氏名</th>
-                        <th>操作</th>
+                        <th style="width: 25%;">学籍番号</th>
+                        <th style="width: 45%;">氏名</th>
+                        <th style="width: 30%;">操作</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -131,30 +311,35 @@
                         String sId = (String) student.get("id");
                     %>
                     <tr>
-                        <td><%= sId %></td>
-                        <td><%= student.get("name") %></td>
+                        <td style="font-family:monospace; font-weight:bold;"><%= sId %></td>
+                        <td style="font-weight:bold;"><%= student.get("name") %></td>
                         <td>
-                            <a href="<%= request.getContextPath() %>/StudentUpdateServlet?userId=<%= sId %>" class="edit-btn">
-                                <i class="fas fa-pen"></i> 編集
-                            </a>
-                            <a href="<%= request.getContextPath() %>/UserDeleteServlet?userId=<%= sId %>&className=<%= selectedClass %>"
-                               class="delete-btn"
-                               onclick="return confirm('学生 <%= student.get("name") %> を削除しますか？');">
-                                <i class="fas fa-trash-alt"></i> 削除
-                            </a>
+                            <div class="action-cell">
+                                <a href="<%= request.getContextPath() %>/StudentUpdateServlet?userId=<%= sId %>" class="btn-sm edit-btn">
+                                    <i class="fas fa-pen"></i> 編集
+                                </a>
+                                <a href="<%= request.getContextPath() %>/UserDeleteServlet?userId=<%= sId %>&className=<%= selectedClass %>"
+                                   class="btn-sm delete-btn"
+                                   onclick="return confirm('学生 <%= student.get("name") %> を削除しますか？');">
+                                    <i class="fas fa-trash-alt"></i> 削除
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     <% } %>
                 </tbody>
             </table>
         <% } else { %>
-            <div style="padding: 40px; text-align: center; color: #888;">
-                <i class="fas fa-info-circle"></i> <%= selectedClass.isEmpty() ? "上のタブからクラスを選択してください。" : "登録されている学生はいません。" %>
+            <div style="padding: 60px; text-align: center; color: #94a3b8;">
+                <i class="fas fa-info-circle" style="font-size: 30px; margin-bottom: 10px; display:block;"></i>
+                <%= selectedClass.isEmpty() ? "上のタブからクラスを選択してください。" : "登録されている学生はいません。" %>
             </div>
         <% } %>
     </div>
 
-    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="back-link">ホームへ戻る</a>
+    <a href="<%= request.getContextPath() %>/LogIn/teacher_home.jsp" class="back-link">
+        <i class="fas fa-arrow-left"></i> ホームへ戻る
+    </a>
 
 </body>
 </html>

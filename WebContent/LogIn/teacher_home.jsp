@@ -14,7 +14,6 @@
     }
     if(userName == null) userName = "先生";
 
-    // 名前の頭文字を取得（アイコン用）
     String initial = (userName.length() > 0) ? userName.substring(0, 1) : "T";
 
     // --- 2. お知らせ取得 ---
@@ -31,9 +30,10 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
+    /* --- iPad (834px~) 最適化設定 --- */
     :root {
-        --sat: env(safe-area-inset-top, 50px);
-        --sab: env(safe-area-inset-bottom, 34px);
+        --sat: env(safe-area-inset-top, 20px);
+        --sab: env(safe-area-inset-bottom, 20px);
         --bg-color: #020617;
         --accent-cyan: #00ffff;
     }
@@ -44,15 +44,21 @@
         background-color: var(--bg-color);
         color: white;
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro JP", sans-serif;
-        margin: 0; padding: 0;
+        margin: 0 auto;
+        padding: 0;
         text-align: center;
         overflow-x: hidden;
+
+        /* iPad幅に合わせる (iPad Air/Pro 11inch等) */
+        max-width: 834px;
+        min-height: 100vh;
+        box-shadow: 0 0 50px rgba(0,0,0,0.3);
     }
 
     /* --- ヘッダー --- */
     .header-area {
-        padding-top: calc(var(--sat) + 15px);
-        padding-bottom: 10px; /* 下の余白を少し詰める */
+        padding-top: calc(var(--sat) + 20px);
+        padding-bottom: 20px;
         position: relative;
         z-index: 100;
         display: flex;
@@ -62,55 +68,56 @@
 
     h1 {
         color: var(--accent-cyan);
-        font-size: 28px;
+        font-size: 32px; /* 少し大きく */
         margin: 0;
         font-weight: 900;
         text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-        letter-spacing: 1px;
+        letter-spacing: 2px;
     }
 
     .hamburger {
         position: absolute;
-        top: calc(var(--sat) + 20px);
-        right: 25px;
-        font-size: 28px;
+        top: calc(var(--sat) + 25px);
+        right: 30px; /* 余白広め */
+        font-size: 32px; /* アイコン大きく */
         color: var(--accent-cyan);
         cursor: pointer;
         z-index: 1001;
+        transition: transform 0.2s;
     }
+    .hamburger:hover { transform: scale(1.1); }
 
-    /* ▼▼▼ ロゴ下の挨拶エリア ▼▼▼ */
+    /* ▼▼▼ 挨拶エリア ▼▼▼ */
     .welcome-header {
-        margin-bottom: 25px;
-        padding: 0 20px;
+        margin-bottom: 40px;
+        padding: 0 40px;
     }
     .welcome-msg {
-        font-size: 18px;
+        font-size: 24px; /* 大きく */
         font-weight: bold;
         color: #fff;
         margin: 0;
     }
     .user-id {
-        font-size: 13px;
+        font-size: 16px;
         color: #94a3b8;
-        margin-top: 4px;
+        margin-top: 8px;
         font-weight: normal;
     }
-    /* ▲▲▲ ここまで ▲▲▲ */
 
     /* --- サイドメニュー --- */
     .side-menu {
         position: fixed;
         top: 0; right: -100%;
-        width: 85%;
-        max-width: 380px;
+        width: 400px; /* タブレット用に幅広 */
+        max-width: 100%;
         height: 100%;
         background: rgba(15, 23, 42, 0.98);
-        backdrop-filter: blur(15px);
-        box-shadow: -10px 0 30px rgba(0,0,0,0.6);
-        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(20px);
+        box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+        transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         z-index: 1000;
-        padding: calc(var(--sat) + 20px) 25px var(--sab);
+        padding: calc(var(--sat) + 30px) 35px var(--sab);
         text-align: left;
         display: flex;
         flex-direction: column;
@@ -122,25 +129,25 @@
     .side-profile-header {
         display: flex;
         align-items: center;
-        gap: 15px;
-        padding-bottom: 25px;
-        margin-bottom: 20px;
+        gap: 20px;
+        padding-bottom: 30px;
+        margin-bottom: 25px;
         border-bottom: 1px solid rgba(255,255,255,0.1);
-        margin-top: 30px;
+        margin-top: 20px;
     }
 
     .side-avatar {
-        width: 54px;
-        height: 54px;
+        width: 70px;
+        height: 70px;
         background: linear-gradient(135deg, #00c6fb, #005bea);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 22px;
+        font-size: 30px;
         font-weight: bold;
         color: #fff;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         flex-shrink: 0;
     }
 
@@ -151,25 +158,25 @@
     }
 
     .side-name {
-        font-size: 18px;
+        font-size: 22px;
         font-weight: bold;
         color: #fff;
     }
 
     .side-id {
-        font-size: 13px;
+        font-size: 15px;
         color: #94a3b8;
-        margin-top: 4px;
+        margin-top: 5px;
     }
 
     .menu-section-title {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: bold;
         color: var(--accent-cyan);
-        margin-bottom: 12px;
+        margin-bottom: 15px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         opacity: 0.9;
     }
 
@@ -177,68 +184,71 @@
     .mini-notice-list {
         flex-grow: 1;
         overflow-y: auto;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
         scrollbar-width: thin;
         scrollbar-color: rgba(255,255,255,0.2) transparent;
     }
 
     .mini-notice-item {
-        margin-bottom: 15px;
+        margin-bottom: 18px;
         background: rgba(255,255,255,0.04);
-        padding: 15px;
-        border-radius: 12px;
+        padding: 18px;
+        border-radius: 14px;
         border: 1px solid rgba(255,255,255,0.08);
     }
 
     .mini-badge {
-        font-size: 11px;
-        padding: 3px 8px;
-        border-radius: 4px;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-weight: 700;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         display: inline-block;
     }
 
     .mini-content {
-        font-size: 14px;
-        line-height: 1.5;
+        font-size: 16px;
+        line-height: 1.6;
         color: #f1f5f9;
+        margin-bottom: 8px;
     }
 
     .notice-actions {
-        margin-top: 10px;
+        margin-top: 12px;
         border-top: 1px solid rgba(255,255,255,0.1);
-        padding-top: 8px;
+        padding-top: 10px;
         display: flex;
-        gap: 15px;
+        gap: 20px;
     }
     .notice-actions a {
         color: var(--accent-cyan);
-        font-size: 12px;
+        font-size: 14px;
         text-decoration: none;
         font-weight: bold;
+        transition: opacity 0.2s;
     }
+    .notice-actions a:hover { opacity: 0.8; }
 
     /* 下部リンクエリア */
     .bottom-links {
         margin-top: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding-top: 20px;
+        gap: 15px;
+        padding-top: 25px;
         border-top: 1px solid rgba(255,255,255,0.1);
     }
 
     .sub-link {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 15px;
         color: #e2e8f0;
         text-decoration: none;
-        font-size: 15px;
-        padding: 14px;
+        font-size: 18px;
+        padding: 18px;
         background: rgba(255,255,255,0.07);
-        border-radius: 12px;
+        border-radius: 14px;
         font-weight: bold;
         transition: background 0.2s;
     }
@@ -247,14 +257,24 @@
     .logout-link { color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.4); }
 
     /* --- メインコンテンツ --- */
-    .main-content { padding: 0 24px 20px; }
+    .main-content {
+        padding: 0 40px 40px;
+    }
 
     .menu-container {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        max-width: 500px;
+        /* iPad横向きなら3列、縦向きなら2列なども可能だが、ここでは3列ベースに */
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        width: 100%;
         margin: 0 auto;
+    }
+
+    /* 画面幅が狭い場合のメディアクエリ（iPad縦など） */
+    @media (max-width: 768px) {
+        .menu-container {
+            grid-template-columns: 1fr 1fr;
+        }
     }
 
     .menu-card {
@@ -262,23 +282,28 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 140px;
-        border-radius: 20px;
+        height: 180px; /* カード高さ拡大 */
+        border-radius: 28px;
         text-decoration: none;
         color: white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         position: relative;
         overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     .menu-card::after {
         content: ''; position: absolute;
         top:0; left:0; width:100%; height:100%;
-        background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+        background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
     }
-    .menu-card:active { transform: scale(0.97); }
+    .menu-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .menu-card:active { transform: scale(0.98); }
 
-    .icon-large { font-size: 38px; margin-bottom: 10px; }
-    .menu-label { font-size: 15px; font-weight: bold; }
+    .icon-large { font-size: 50px; margin-bottom: 15px; } /* アイコン拡大 */
+    .menu-label { font-size: 18px; font-weight: bold; letter-spacing: 0.5px; }
 
     .card-green { background: #10b981; } .card-blue { background: #3b82f6; }
     .card-orange { background: #f97316; } .card-purple { background: #a855f7; }
@@ -323,7 +348,7 @@
         </div>
 
         <div class="mini-notice-list">
-            <a href="notice_write.jsp" style="color:var(--accent-cyan); text-decoration:none; font-size:14px; display:inline-block; margin-bottom:15px; font-weight:900; background: rgba(0, 255, 255, 0.1); padding: 8px 15px; border-radius: 8px; width:100%; text-align:center;">
+            <a href="notice_write.jsp" style="color:var(--accent-cyan); text-decoration:none; font-size:16px; display:inline-block; margin-bottom:20px; font-weight:bold; background: rgba(0, 255, 255, 0.1); padding: 12px 20px; border-radius: 12px; width:100%; text-align:center; transition:0.3s;">
                 <i class="fas fa-plus-circle"></i> お知らせを投稿
             </a>
 
@@ -343,12 +368,12 @@
                     </div>
                 </div>
             <% } } else { %>
-                <p style="font-size:14px; color:#94a3b8; text-align:center; margin-top:30px;">お知らせはありません</p>
+                <p style="font-size:16px; color:#94a3b8; text-align:center; margin-top:40px;">お知らせはありません</p>
             <% } %>
         </div>
 
         <div class="bottom-links">
-            <div class="menu-section-title" style="margin-bottom:5px; font-size:16px;">
+            <div class="menu-section-title" style="margin-bottom:5px; font-size:18px;">
                 <i class="fas fa-cog"></i> アカウント設定
             </div>
 
