@@ -19,20 +19,16 @@ import javax.servlet.http.HttpServletResponse;
 public class ViewCertificateServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // ★★★ ここを超重要設定！ ★★★
-    // 「uploads」フォルダが置かれている場所（親フォルダ）のパスを指定してください。
-    // DBには "uploads/画像.png" と入っているので、これと結合してファイルを探します。
-
-    // 【例1】 Cドライブ直下の CampusGrid プロジェクトの中に uploads がある場合
-    // private static final String BASE_DIR = "C:/CampusGrid/";
-
-    // 【例2】 Cドライブ直下の uploads フォルダに保存している場合
-    // private static final String BASE_DIR = "C:/";
-
-    // 【例3】 Eclipseのプロジェクト内（WebContentなど）に保存している場合
-    // ※この場合、下記の「doGet」メソッド内で getServletContext().getRealPath("/") を使う処理が有効になります。
-    // とりあえず、まずは「C:/」など分かりやすい場所を指定してみてください。
-    private static final String BASE_DIR = "C:/CampusGridUploads/";
+    // ★★★ 1. 読み込み元フォルダをOSによって自動切替 ★★★
+    // AttendanceServletと同じ設定にする必要があります
+    private String getBaseDir() {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            return "C:/CampusGridUploads/"; // ローカル(Windows)用
+        } else {
+            return "/var/campus_uploads/";  // EC2(Linux)用
+        }
+    }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -47,7 +43,7 @@ public class ViewCertificateServlet extends HttpServlet {
 
         String dbFilePath = null;
 
-        // 1. DBからファイルパス文字列を取得 ("uploads/xxxxx.png")
+        // DBからファイルパス文字列を取得
         final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
         final String USER = "sa";
         final String PASS = "";
@@ -72,40 +68,32 @@ public class ViewCertificateServlet extends HttpServlet {
             return;
         }
 
-        // 2. ファイルが見つからない場合
         if (dbFilePath == null || dbFilePath.trim().isEmpty()) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "画像データが未登録です");
             return;
         }
 
-        // 3. 実際のファイルの場所を探す
-        File file = new File(dbFilePath);
+        // ★★★ 2. パス結合処理の修正 ★★★
+        // DBには "uploads/ファイル名" と入っている場合があるので、
+        // ファイル名だけを取り出し、正しい保存先(getBaseDir)と結合する
+        String fileName = new File(dbFilePath).getName();
+        File file = new File(getBaseDir(), fileName);
 
-        // もし絶対パスでなければ、BASE_DIR と結合して探す
-        if (!file.isAbsolute()) {
-            // パターンA: 指定した BASE_DIR + uploads/xxx.png
-            file = new File(BASE_DIR, dbFilePath);
-
-            // パターンB: もしパターンAになければ、Webアプリ内の uploads フォルダを探してみる
-            if (!file.exists()) {
-                String webAppPath = getServletContext().getRealPath("/");
-                file = new File(webAppPath, dbFilePath);
-            }
-        }
-
-        // ★デバッグ用：コンソールにパスを表示（エラー時に確認してください）
+        // デバッグログ
         System.out.println("--- 画像表示デバッグ ---");
         System.out.println("DBの値: " + dbFilePath);
+        System.out.println("ファイル名抽出: " + fileName);
         System.out.println("探しに行ったパス: " + file.getAbsolutePath());
         System.out.println("存在確認: " + file.exists());
         System.out.println("----------------------");
 
         if (!file.exists()) {
+            // 日本語ファイル名などで見つからない場合の対策メッセージ
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "サーバー上に画像ファイルが見つかりません: " + file.getAbsolutePath());
             return;
         }
 
-        // 4. 画像を表示（レスポンスとして返す）
+        // 画像を表示（レスポンスとして返す）
         String mimeType = getServletContext().getMimeType(file.getName());
         if (mimeType == null) {
             mimeType = "application/octet-stream";

@@ -7,66 +7,31 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; background-color: #151f42; color: #fff; margin: 0; }
-        h1 { margin-top: 20px; font-size: 24px; }
-        #canvas { width: 100%; max-width: 640px; margin: 20px auto; display: block; background-color: #000; border: 4px solid #00ffff; border-radius: 8px; }
-        #status { font-size: 18px; font-weight: bold; margin: 20px; padding: 15px;  border-radius: 5px; min-height: 30px; white-space: pre-wrap; }
-        .success { background-color: #28a745; color: white; }
-        .error { background-color: #dc3545; color: white; }
-        .waiting { background-color: #444; color: #ccc; }
+        h1 { margin-top: 20px; font-size: 24px; color: #00ffff; }
 
-        /* ポップアップのスタイル */
-        #reasonModal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); z-index: 1000;
+        /* カメラエリア */
+        #canvas {
+            width: 100%; max-width: 640px; margin: 20px auto; display: block;
+            background-color: #000; border: 4px solid #00ffff; border-radius: 8px;
         }
-        .modal-content {
-            background-color: #333; color: white;
-            width: 85%; max-width: 400px;
-            margin: 100px auto; padding: 25px;
-            border-radius: 12px; text-align: center; border: 1px solid #555;
-        }
-        input[type="text"] {
-            width: 90%; padding: 12px; font-size: 16px; margin: 15px 0;
-            border-radius: 4px; border: 1px solid #ccc;
-        }
-        /* 画像アップロード部分 */
-        #fileInputContainer {
-            display: none; /* 最初は隠しておく */
-            margin: 10px 0 20px 0; text-align: left; background: #444; padding: 10px; border-radius: 5px;
-        }
-        .file-label { font-size: 14px; color: #aaa; margin-bottom: 5px; display: block; }
-        input[type="file"] { color: #fff; font-size: 14px; }
 
-        button {
-            padding: 12px 24px; font-size: 16px; cursor: pointer;
-            background-color: #007bff; color: white; border: none; border-radius: 5px; margin: 5px;
+        /* 結果表示エリア */
+        #status {
+            font-size: 22px; font-weight: bold; margin: 20px; padding: 20px;
+            border-radius: 10px; min-height: 50px; white-space: pre-wrap;
         }
-        button.cancel { background-color: #6c757d; }
+        .success { background-color: #28a745; color: white; box-shadow: 0 0 15px #28a745; }
+        .warning { background-color: #ffc107; color: #000; box-shadow: 0 0 15px #ffc107; }
+        .error { background-color: #dc3545; color: white; box-shadow: 0 0 15px #dc3545; }
+        .waiting { background-color: #1e293b; color: #ccc; border: 1px solid #334155; }
+
     </style>
 </head>
 <body>
 
     <h1>QRコードをかざしてください</h1>
     <canvas id="canvas"></canvas>
-    <div id="status" class="waiting" background="#1e293b">カメラ起動中...</div>
-
-    <div id="reasonModal">
-        <div class="modal-content">
-            <h2 id="modalTitle">理由を入力してください</h2>
-            <p style="font-size:12px; color:#aaa;">時間は自動記録されます</p>
-
-            <input type="text" id="reasonInput" placeholder="例: 電車遅延、体調不良" oninput="checkReasonInput()">
-
-            <div id="fileInputContainer">
-                <span class="file-label">📸 遅延証明書などの写真 (任意)</span>
-                <input type="file" id="certificateInput" accept="image/*">
-            </div>
-
-            <br>
-            <button onclick="submitReason()">送信する</button>
-            <button class="cancel" onclick="closeModal()">キャンセル</button>
-        </div>
-    </div>
+    <div id="status" class="waiting">カメラ起動中...</div>
 
     <script>
         const video = document.createElement("video");
@@ -75,7 +40,6 @@
         const statusDiv = document.getElementById("status");
 
         let isScanning = true;
-        let currentQRData = "";
 
         // カメラ起動
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
@@ -97,97 +61,82 @@
                 var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
                 if (code) {
+                    // スキャン成功時
                     isScanning = false;
-                    sendAttendance(code.data, "", null);
+
+                    // 枠線を描画
+                    drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#00ffff");
+                    drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#00ffff");
+                    drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#00ffff");
+                    drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#00ffff");
+
+                    // サーバーへ送信
+                    sendAttendance(code.data);
                 }
             }
             requestAnimationFrame(tick);
         }
 
-        // 入力内容をチェックして、画像ボタンを出すか決める関数
-        function checkReasonInput() {
-            const text = document.getElementById("reasonInput").value;
-            const container = document.getElementById("fileInputContainer");
-
-            // 「遅延」「電車」「事故」「バス」という言葉が含まれていたらアップロード欄を表示
-            if (text.includes("遅延") || text.includes("電車") || text.includes("事故") || text.includes("バス")) {
-                container.style.display = "block";
-            } else {
-                container.style.display = "none";
-            }
+        function drawLine(begin, end, color) {
+            canvas.beginPath();
+            canvas.moveTo(begin.x, begin.y);
+            canvas.lineTo(end.x, end.y);
+            canvas.lineWidth = 4;
+            canvas.strokeStyle = color;
+            canvas.stroke();
         }
 
-        // サーバー送信関数 (画像対応版)
-        function sendAttendance(qrData, reasonText, fileObj) {
-            statusDiv.textContent = "送信中...";
+        // サーバー送信処理
+        function sendAttendance(qrData) {
+            statusDiv.textContent = "確認中...";
             statusDiv.className = "waiting";
 
-            // 画像も送れるように FormData を使う
             const formData = new FormData();
             formData.append("qrData", qrData);
-            formData.append("reason", reasonText);
-            if (fileObj) {
-                formData.append("certificateImage", fileObj);
-            }
+            // 理由や画像は送らない（学生がスマホでやるから）
 
-            fetch('/CampusGridAppProject/AttendanceServlet', {
+            fetch('AttendanceServlet', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.text())
             .then(text => {
-                if (text.includes("REQUIRE_REASON")) {
-                    // 理由が必要な場合
-                    currentQRData = qrData;
-                    document.getElementById("modalTitle").innerText = text.includes("LATE") ? "遅刻の理由" : "早退の理由";
-                    document.getElementById("reasonModal").style.display = "block";
-                    document.getElementById("reasonInput").focus();
-                    statusDiv.textContent = "理由を入力してください";
+                console.log("Response:", text);
 
-                } else if (text.includes("SUCCESS")) {
-                    // 成功
+                if (text.includes("SUCCESS")) {
+                    // --- 成功 (出席・下校完了) ---
                     statusDiv.textContent = text.replace("SUCCESS:", "");
                     statusDiv.className = "success";
-                    closeModal();
-                    setTimeout(() => {
-                        statusDiv.textContent = "次の人をスキャンしてください";
-                        statusDiv.className = "waiting";
-                        isScanning = true;
-                    }, 3000);
+
+                } else if (text.includes("REQUIRE_REASON")) {
+                    // --- 遅刻/早退だが理由がない場合 ---
+                    // スキャナーでは入力させず、スマホ入力を促すメッセージを出す
+                    if (text.includes("LATE")) {
+                        statusDiv.textContent = "【遅刻】記録されました。\n理由申請はスマホから行ってください。";
+                    } else {
+                        statusDiv.textContent = "【早退】記録されました。\n理由申請はスマホから行ってください。";
+                    }
+                    statusDiv.className = "warning";
 
                 } else {
-                    // エラー
+                    // --- エラー ---
                     statusDiv.textContent = text;
                     statusDiv.className = "error";
-                    setTimeout(() => { isScanning = true; }, 3000);
                 }
+
+                // 3秒後に次のスキャン待機に戻る
+                setTimeout(() => {
+                    statusDiv.textContent = "次の人をスキャンしてください";
+                    statusDiv.className = "waiting";
+                    isScanning = true;
+                }, 3000);
             })
             .catch(err => {
+                console.error(err);
                 statusDiv.textContent = "通信エラー";
+                statusDiv.className = "error";
                 setTimeout(() => { isScanning = true; }, 3000);
             });
-        }
-
-        function submitReason() {
-            const reason = document.getElementById("reasonInput").value;
-            if (reason === "") {
-                alert("理由を入力してください");
-                return;
-            }
-            // 画像ファイルを取得
-            const fileInput = document.getElementById("certificateInput");
-            const file = fileInput.files.length > 0 ? fileInput.files[0] : null;
-
-            sendAttendance(currentQRData, reason, file);
-        }
-
-        function closeModal() {
-            document.getElementById("reasonModal").style.display = "none";
-            document.getElementById("reasonInput").value = "";
-            document.getElementById("certificateInput").value = ""; // ファイル選択もリセット
-            document.getElementById("fileInputContainer").style.display = "none";
-
-            if(statusDiv.className !== "success") isScanning = true;
         }
     </script>
 </body>
