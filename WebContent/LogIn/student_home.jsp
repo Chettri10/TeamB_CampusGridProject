@@ -471,13 +471,105 @@
         function toggleMenu() {
             menu.classList.toggle('active');
             overlay.classList.toggle('active');
-            // メニューが開いたときは、メインのハンバーガーボタン自体は変化させない（中に戻るボタンがあるため）
-            // 必要であればここでハンバーガーボタンを隠す処理を入れても良いですが、
-            // サイドメニューが上にかぶさるためそのままでOKです。
         }
 
         btn.addEventListener('click', toggleMenu);
         overlay.addEventListener('click', toggleMenu);
     </script>
-</body>
+
+    <script>
+        // ★学校のグローバルIPアドレス（ここを設定する）
+        const SCHOOL_IP_PREFIX = "131.213.231.";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. 通知の許可を求める
+            if (Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+
+            // 2. IPアドレスを確認して通知（外部APIを使用）
+            checkIpAndNotify();
+        });
+
+        function checkIpAndNotify() {
+            // 無料のIP確認APIを使用して自分のグローバルIPを取得
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(data => {
+                    const myIp = data.ip;
+                    console.log("Current IP: " + myIp);
+
+                    // IPが学校のものと一致するか判定
+                    if (myIp.startsWith(SCHOOL_IP_PREFIX)) {
+                        notifyAttendance();
+                    }
+                })
+                .catch(error => {
+                    console.error("IP check failed:", error);
+                });
+        }
+
+        function notifyAttendance() {
+            // 時間帯によって挨拶を変える
+            const hour = new Date().getHours();
+            let greeting = "こんにちは";
+            if (hour >= 4 && hour < 11) {
+                greeting = "おはようございます";
+            } else if (hour >= 18) {
+                greeting = "こんばんは";
+            }
+
+            const msg = greeting + "、" + "<%= userName %>" + "さん！\n出席登録を忘れないでくださいね。";
+
+            // A. ブラウザのプッシュ通知（アプリを閉じていても通知センターに出る可能性がある）
+            if (Notification.permission === "granted") {
+                // スマホの場合、バイブレーションも作動
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
+                }
+                new Notification("出席確認", {
+                    body: msg,
+                    // icon: "../images/icon.png" // アイコンがあれば指定
+                });
+            }
+
+            // B. 画面内のポップアップ（トースト通知）
+            showToast(msg);
+        }
+
+        // 画面内におしゃれな通知を出す関数
+        function showToast(message) {
+            // 既存の通知があれば消す
+            const old = document.getElementById("wifi-toast");
+            if(old) old.remove();
+
+            const toast = document.createElement("div");
+            toast.id = "wifi-toast";
+            toast.style.cssText = `
+                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+                background: rgba(0, 255, 157, 0.9); color: #000;
+                padding: 15px 25px; border-radius: 30px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                font-weight: bold; font-size: 14px; z-index: 9999;
+                text-align: center; min-width: 250px;
+                animation: slideDown 0.5s ease-out;
+            `;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+
+            // 5秒後に消える
+            setTimeout(() => {
+                toast.style.transition = "0.5s";
+                toast.style.opacity = "0";
+                toast.style.transform = "translate(-50%, -20px)";
+                setTimeout(() => toast.remove(), 500);
+            }, 5000);
+        }
+
+        // CSSアニメーション定義
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }`;
+        document.head.appendChild(style);
+    </script>
+    </body>
 </html>

@@ -1,13 +1,16 @@
 package Servlet;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -16,9 +19,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import javax.servlet.http.HttpSession;
 
 import dao.AttendanceDao;
-import dao.ChatDao;
 import dao.UserDao;
 
 @WebServlet("/AttendanceServlet")
@@ -29,52 +32,115 @@ import dao.UserDao;
 )
 public class AttendanceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private static List<String> recentLogs = Collections.synchronizedList(new ArrayList<>());
 
-    // 保存先フォルダをOSによって自動切替
-    private String getBaseDir() {
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("win")) {
-            return "C:/CampusGridUploads/"; // ローカル(Windows)用
-        } else {
-            return "/var/campus_uploads/";  // EC2(Linux)用
-        }
+    static {
+        recentLogs.clear();
+        System.out.println("★AttendanceServlet: メモリ初期化完了");
     }
 
-    // ★追加: 学生のスマホからの状態確認 (ポーリング) 用
+    @Override
+    public void init() throws ServletException {
+        super.init();
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
+        System.out.println("★AttendanceServlet: タイムゾーンを日本時間(Asia/Tokyo)に設定しました");
+    }
+
+    private String getBaseDir() {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) return "C:/CampusGridUploads/";
+        else return "/var/campus_uploads/";
+    }
+
+    private Calendar getJstCalendar() {
+        return Calendar.getInstance(TimeZone.getTimeZone("Asia/Tokyo"));
+    }
+
+    // --- GET: データ取得 ---
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setDateHeader("Expires", 0);
         res.setContentType("text/plain; charset=UTF-8");
-        PrintWriter out = res.getWriter();
 
+        PrintWriter out = res.getWriter();
         String action = req.getParameter("action");
         String userId = req.getParameter("userId");
 
         if ("check_status".equals(action) && userId != null) {
             AttendanceDao dao = new AttendanceDao();
-            // 今日すでにスキャン済み（登録済み）かどうかを確認
             boolean hasCheckedIn = dao.hasCheckedInToday(userId);
 
             if (hasCheckedIn) {
-                out.write("SCANNED"); // 登録済みならスマホ側に通知
+                boolean needsReason = false;
+                String statusStr = "出席";
+
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                    sdf.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
+                    String todayStr = sdf.format(new Date());
+
+                    List<Map<String, String>> bads = dao.getBadAttendanceRecords(userId);
+                    if (bads != null) {
+                        for (Map<String, String> rec : bads) {
+                            String rDate = rec.get("date");
+                            if (rDate != null && rDate.contains(todayStr)) {
+                                String currentReason = rec.get("reason");
+                                // ★重要: 「未入力」が含まれていれば画面を出す
+                                if (currentReason != null && currentReason.contains("未入力")) {
+                                    needsReason = true;
+                                }
+                                if (rec.get("status") != null) {
+                                    statusStr = rec.get("status");
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception e) { e.printStackTrace(); }
+
+                if (needsReason) {
+                    out.write("SCANNED");
+                } else {
+                    out.write(statusStr + "_DONE");
+                }
             } else {
                 out.write("WAITING");
             }
         }
+        else if ("get_live_data".equals(action)) {
+            // ダッシュボード用
+            StringBuilder json = new StringBuilder();
+            json.append("{");
+            json.append("\"logs\": [");
+            synchronized (recentLogs) {
+                for (int i = 0; i < recentLogs.size(); i++) {
+                    String fullLog = recentLogs.get(i);
+                    String displayLog = fullLog;
+                    if(fullLog.length() > 11) displayLog = fullLog.substring(11);
+                    displayLog = displayLog.replace("\"", "").replace("\\", "");
+                    json.append("\"").append(displayLog).append("\"");
+                    if (i < recentLogs.size() - 1) json.append(",");
+                }
+            }
+            json.append("]");
+            json.append("}");
+            out.write(json.toString());
+        }
     }
 
-    protected void doPost(HttpServletRequest req, HttpServletResponse res)
-            throws ServletException, IOException {
-
+    // --- POST: データ登録 ---
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         res.setContentType("text/plain; charset=UTF-8");
         PrintWriter out = res.getWriter();
 
         try {
-            System.out.println("=== AttendanceServlet 開始 ===");
-
+            System.out.println("=== AttendanceServlet (POST) ===");
             String mode = req.getParameter("mode");
 
-            // ★追加: 学生のスマホからの「理由・画像」の後出し登録 (更新処理)
+            // ■ スマホからの理由更新処理
             if ("update_reason".equals(mode)) {
                 String userId = req.getParameter("userId");
                 String reason = req.getParameter("reason");
@@ -82,161 +148,123 @@ public class AttendanceServlet extends HttpServlet {
                 try { filePart = req.getPart("certificateImage"); } catch (Exception e) {}
 
                 String imagePath = "";
-                // 画像保存処理
                 if (filePart != null && filePart.getSize() > 0) {
                     try {
                         String uploadPath = getBaseDir();
                         File uploadDir = new File(uploadPath);
                         if (!uploadDir.exists()) uploadDir.mkdirs();
-
-                        String originalName = getFileName(filePart);
-                        String ext = ".jpg";
-                        int dotIndex = originalName.lastIndexOf('.');
-                        if (dotIndex > 0) ext = originalName.substring(dotIndex);
-                        String fileName = userId + "_" + System.currentTimeMillis() + ext;
-                        File saveFile = new File(uploadDir, fileName);
-
-                        try (InputStream input = filePart.getInputStream();
-                             FileOutputStream output = new FileOutputStream(saveFile)) {
-                            byte[] buffer = new byte[4096];
-                            int length;
-                            while ((length = input.read(buffer)) > 0) {
-                                output.write(buffer, 0, length);
-                            }
-                        }
+                        String fileName = userId + "_" + System.currentTimeMillis() + ".jpg";
+                        filePart.write(uploadPath + File.separator + fileName);
                         imagePath = "uploads/" + fileName;
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    } catch (Exception e) { e.printStackTrace(); }
                 }
 
                 AttendanceDao dao = new AttendanceDao();
-                // 既存のデータを上書き登録 (DAOの仕様によりますが、通常は同じ日付・IDならUPDATEになります)
-                // ステータスは「遅刻」として上書き
-                boolean result = dao.registerCheckIn(userId, "遅刻", reason, imagePath);
 
-                if(result) out.write("SUCCESS");
-                else out.write("ERROR:UPDATE_FAILED");
-                return; // ここで処理終了
-            }
+                // ★★★ 修正箇所: 時間帯ではなく、実際のステータスを見てタグを決める ★★★
+                // 「今日すでに下校（早退）処理が済んでいるか？」を確認
+                boolean isCheckedOut = dao.hasCheckedOutToday(userId);
 
+                // 下校済みなら午前中でも「早退理由」、まだなら「遅刻理由」とする
+                String prefix = isCheckedOut ? "【早退】" : "【遅刻】";
+                String labeledReason = prefix + reason;
 
-            // --- 以下、スキャナーからのQRコード読み取り処理 ---
+                // Daoの置換ロジックへ渡す
+                boolean result = dao.updateReason(userId, labeledReason, imagePath);
 
-            String qrData = req.getParameter("qrData");
-            String reason = req.getParameter("reason"); // スキャナーから送られる理由は通常空です
-
-            if (qrData == null || !qrData.contains(",")) {
-                out.write("ERROR:QRデータなし");
+                if(result) {
+                    HttpSession session = req.getSession();
+                    session.removeAttribute("qr_scanned");
+                    session.removeAttribute("scanned_user_id");
+                    out.write("SUCCESS");
+                } else {
+                    out.write("ERROR");
+                }
+                out.flush(); out.close();
                 return;
             }
+
+            // ■ スキャナーからの登録処理
+            String qrData = req.getParameter("qrData");
+            if (qrData == null) { out.write("ERROR:NO_DATA"); return; }
 
             String[] parts = qrData.split(",");
             String userId = parts[0];
-
-            // スキャナーからは画像は来ない前提ですが、念のため残しておきます
             String imagePath = "";
-
-            // 時間判定など
-            long qrTime = 0;
-            try { qrTime = Long.parseLong(parts[1]); } catch(Exception e){}
-            long timeLimit = (reason != null && !reason.isEmpty()) ? 300000 : 10000;
-            if (System.currentTimeMillis() - qrTime > timeLimit) {
-                out.write("ERROR:有効期限切れ(再スキャンしてください)");
-                return;
-            }
 
             AttendanceDao dao = new AttendanceDao();
             boolean hasCheckedIn = dao.hasCheckedInToday(userId);
-            Calendar cal = Calendar.getInstance();
+            Calendar cal = getJstCalendar();
             int hour = cal.get(Calendar.HOUR_OF_DAY);
             int minute = cal.get(Calendar.MINUTE);
 
+            System.out.println("Scan User: " + userId + " (JST " + hour + ":" + minute + ") HasCheckedIn: " + hasCheckedIn);
+
             boolean result = false;
             String status = "";
-            String finalReason = (reason != null) ? reason : "未入力"; // 初期値は未入力
 
+            String userName = "学生";
+            try {
+                UserDao userDao = new UserDao();
+                Map<String, Object> userMap = userDao.findById(userId);
+                if(userMap != null && userMap.get("User_Name") != null) {
+                    userName = (String) userMap.get("User_Name");
+                }
+            } catch(Exception e) { e.printStackTrace(); }
+
+            // ★ ロジック判定 ★
             if (!hasCheckedIn) {
-                // --- 出席 (Check In) ---
+                // 1回目 (遅刻判定)
                 boolean isLate = (hour > 9) || (hour == 9 && minute >= 20);
-
-                // ★変更点: 遅刻でもエラーを返さず、一旦登録してしまう
-                // これにより、学生のスマホが「登録された」と検知できるようになります
                 status = isLate ? "遅刻" : "出席";
+                String reasonParam = isLate ? "未入力" : ""; // 未入力と明記
 
-                result = dao.registerCheckIn(userId, status, finalReason, imagePath);
-                if(result) out.write("SUCCESS:" + userId + " さんの出席(" + status + ")完了");
+                result = dao.registerCheckIn(userId, status, reasonParam, imagePath);
 
+                if(result) {
+                    out.write("SUCCESS:" + userId + " さんの出席(" + status + ")完了");
+                    HttpSession session = req.getSession();
+                    session.removeAttribute("qr_scanned");
+                    session.removeAttribute("scanned_user_id");
+                    addLogToMemoryStatic(userId, userName, status);
+                }
             } else {
-                // --- 下校 (Check Out) ---
-                boolean isEarly = (hour < 15) || (hour == 15 && minute < 10);
+                // 2回目 (早退判定)
+                boolean isEarly = (hour < 16) || (hour == 16 && minute < 50);
                 status = isEarly ? "早退" : "下校";
+                String reasonParam = isEarly ? "未入力" : ""; // 未入力と明記
 
-                result = dao.registerCheckOut(userId, status, finalReason, imagePath);
-                if(result) out.write("SUCCESS:" + userId + " さんの下校完了");
-            }
+                result = dao.registerCheckOut(userId, status, reasonParam, imagePath);
 
-            // --- 通知機能 ---
-            if (result) {
-                if (status.contains("遅刻") || status.contains("早退") || status.contains("欠席")) {
-                    try {
-                        int count = dao.countBadStatus(userId);
-                        if (count > 0 && count % 3 == 0) {
-                            UserDao userDao = new UserDao();
-                            String parentId = userDao.getParentIdByStudentId(userId);
-                            if (parentId == null) parentId = userDao.getRelatedId(userId);
-
-                            if (parentId != null && !parentId.isEmpty()) {
-                                String studentName = "学生";
-                                Map<String, Object> userMap = userDao.findById(userId);
-                                if (userMap != null && userMap.get("User_Name") != null) {
-                                    studentName = (String) userMap.get("User_Name");
-                                }
-                                List<Map<String, String>> details = dao.getBadAttendanceRecords(userId);
-                                StringBuilder sb = new StringBuilder();
-                                sb.append("【自動通知】\n").append(studentName).append(" さん (ID:").append(userId).append(")\n");
-                                sb.append("遅刻・早退・欠席が累計 ").append(count).append(" 回になりました。\n\n");
-                                sb.append("＜内訳＞\n");
-                                for (Map<String, String> rec : details) {
-                                    sb.append("・").append(rec.get("date")).append(" : ").append(rec.get("status"));
-                                    if (!rec.get("reason").equals("理由なし") && !rec.get("reason").equals("未入力")) {
-                                        sb.append(" (").append(rec.get("reason")).append(")");
-                                    }
-                                    sb.append("\n");
-                                }
-                                sb.append("\nご確認をお願いいたします。");
-
-                                ChatDao chatDao = new ChatDao();
-                                chatDao.sendMessage(userId, parentId, sb.toString());
-                            }
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                if(result) {
+                    out.write("SUCCESS:" + userId + " さんの下校完了");
+                    HttpSession session = req.getSession();
+                    session.removeAttribute("qr_scanned");
+                    session.removeAttribute("scanned_user_id");
+                    addLogToMemoryStatic(userId, userName, status);
                 }
             }
 
-            if (!result) out.write("ERROR:データベース保存失敗");
-            else dao.printAllData();
+            if (!result) {
+                System.out.println("DB Save Failed for User: " + userId);
+                out.write("ERROR:DB保存失敗");
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
-            out.write("ERROR:システムエラー (" + e.getMessage() + ")");
-        } finally {
-            out.flush();
-            out.close();
+            out.write("ERROR");
         }
+        finally { out.flush(); out.close(); }
     }
 
-    private String getFileName(Part part) {
-        String contentDisp = part.getHeader("content-disposition");
-        String[] tokens = contentDisp.split(";");
-        for (String token : tokens) {
-            if (token.trim().startsWith("filename")) {
-                return token.substring(token.indexOf("=") + 2, token.length() - 1);
-            }
+    private static void addLogToMemoryStatic(String userId, String userName, String status) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
+        String timeFull = sdf.format(new Date());
+        String logEntry = timeFull + "|" + userId + "|" + userName + "|" + status;
+        synchronized (recentLogs) {
+            recentLogs.add(0, logEntry);
+            if (recentLogs.size() > 50) recentLogs.remove(recentLogs.size() - 1);
         }
-        return "unknown.jpg";
     }
 }

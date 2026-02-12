@@ -19,8 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 public class ViewCertificateServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    // ★★★ 1. 読み込み元フォルダをOSによって自動切替 ★★★
-    // AttendanceServletと同じ設定にする必要があります
+    // ★★★ 1. 保存先をOSによって自動切替 ★★★
+    // これでWindowsでもEC2(Linux)でも動くようになります
     private String getBaseDir() {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
@@ -43,7 +43,7 @@ public class ViewCertificateServlet extends HttpServlet {
 
         String dbFilePath = null;
 
-        // DBからファイルパス文字列を取得
+        // DB接続設定
         final String URL = "jdbc:h2:tcp://localhost/~/CampusGridProject";
         final String USER = "sa";
         final String PASS = "";
@@ -51,7 +51,14 @@ public class ViewCertificateServlet extends HttpServlet {
         try {
             Class.forName("org.h2.Driver");
             try (Connection conn = DriverManager.getConnection(URL, USER, PASS)) {
-                String sql = "SELECT CERTIFICATE_PATH FROM ATTMANAGEMENT WHERE User_ID = ? AND Target_Date = ?";
+
+                // ★修正2: 画像パスが「空ではない」データだけを選んで持ってくるSQL
+                String sql = "SELECT CERTIFICATE_PATH FROM ATTMANAGEMENT " +
+                             "WHERE User_ID = ? AND Target_Date = ? " +
+                             "AND CERTIFICATE_PATH IS NOT NULL " +
+                             "AND CERTIFICATE_PATH <> '' " +
+                             "ORDER BY Check_In_Time DESC LIMIT 1"; // 最新の1件を取得
+
                 try (PreparedStatement ps = conn.prepareStatement(sql)) {
                     ps.setString(1, userId);
                     ps.setString(2, targetDate);
@@ -64,36 +71,43 @@ public class ViewCertificateServlet extends HttpServlet {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "DBエラー");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "DBエラー: " + e.getMessage());
             return;
         }
 
+        // DBにデータがない場合
         if (dbFilePath == null || dbFilePath.trim().isEmpty()) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "画像データが未登録です");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "画像データが未登録です(DB検索結果0件)");
             return;
         }
 
-        // ★★★ 2. パス結合処理の修正 ★★★
-        // DBには "uploads/ファイル名" と入っている場合があるので、
-        // ファイル名だけを取り出し、正しい保存先(getBaseDir)と結合する
-        String fileName = new File(dbFilePath).getName();
+        // ★修正3: ファイルの場所を2箇所探す（迷子防止）
+        String fileName = new File(dbFilePath).getName(); // ファイル名だけ抽出
+
+        // 1. OSごとのメイン保存先フォルダを探す (C:/... または /var/...)
         File file = new File(getBaseDir(), fileName);
 
-        // デバッグログ
-        System.out.println("--- 画像表示デバッグ ---");
-        System.out.println("DBの値: " + dbFilePath);
-        System.out.println("ファイル名抽出: " + fileName);
-        System.out.println("探しに行ったパス: " + file.getAbsolutePath());
-        System.out.println("存在確認: " + file.exists());
-        System.out.println("----------------------");
+        // 2. なければ、プロジェクト内の uploads フォルダも探す (念のため)
+        if (!file.exists()) {
+            String webPath = getServletContext().getRealPath("/uploads");
+            if (webPath != null) {
+                file = new File(webPath, fileName);
+            }
+        }
+
+        // デバッグ用ログ（EC2のログで確認用）
+        System.out.println("--- 画像表示処理 ---");
+        System.out.println("OS: " + System.getProperty("os.name"));
+        System.out.println("検索ファイル名: " + fileName);
+        System.out.println("最終的な参照パス: " + file.getAbsolutePath());
+        System.out.println("ファイル存在: " + file.exists());
 
         if (!file.exists()) {
-            // 日本語ファイル名などで見つからない場合の対策メッセージ
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "サーバー上に画像ファイルが見つかりません: " + file.getAbsolutePath());
             return;
         }
 
-        // 画像を表示（レスポンスとして返す）
+        // 画像を表示
         String mimeType = getServletContext().getMimeType(file.getName());
         if (mimeType == null) {
             mimeType = "application/octet-stream";

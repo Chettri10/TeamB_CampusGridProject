@@ -114,6 +114,38 @@
         transform: scale(1.05);
     }
     .text-disabled { color: #ccc; font-size: 0.85em; }
+
+    /* ▼▼▼ 追加: モーダルウィンドウ用CSS ▼▼▼ */
+    .modal-overlay {
+        display: none; /* 初期状態は非表示 */
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        justify-content: center; align-items: center;
+        backdrop-filter: blur(5px);
+    }
+    .modal-content {
+        background: #fff; padding: 20px; border-radius: 8px;
+        max-width: 90%; max-height: 90%;
+        text-align: center; position: relative;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+    #certImage {
+        max-width: 100%; max-height: 80vh;
+        border: 1px solid #ccc; margin-top: 10px;
+        border-radius: 4px;
+    }
+    .close-btn {
+        position: absolute; top: 10px; right: 15px;
+        font-size: 30px; font-weight: bold; color: #333;
+        cursor: pointer; line-height: 1;
+        transition: color 0.2s;
+    }
+    .close-btn:hover { color: var(--status-red); }
+    /* ▲▲▲ 追加ここまで ▲▲▲ */
 </style>
 </head>
 <body>
@@ -208,12 +240,12 @@
                 <td style="text-align: left; font-size: 0.9em;">
                     <% if (certPath != null && !certPath.trim().isEmpty()) { %>
                         <div style="margin-bottom: 4px;">
-                            <a href="<%= request.getContextPath() %>/ViewCertificateServlet?userId=<%= data.get("userId") %>&targetDate=<%= displayDateStr %>"
-                               target="_blank"
+                            <a href="javascript:void(0);"
+                               onclick="showCertificate('<%= data.get("userId") %>', '<%= displayDateStr %>')"
                                style="color: #0288d1; font-weight: bold; text-decoration: none; border:1px solid #0288d1; padding:2px 6px; border-radius:4px; font-size:0.85em; background-color:#e1f5fe;">
                                 <i class="fas fa-external-link-alt"></i> [証明書を確認]
                             </a>
-                        </div>
+                            </div>
                     <% } %>
                     <%= reason %>
                 </td>
@@ -243,5 +275,36 @@
         <i class="fas fa-home"></i> ホームへ戻る
     </a>
 
-</body>
+    <div id="certModal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 style="color:#333; margin-top:0;">証明書確認</h3>
+            <div id="imgContainer">
+                <img id="certImage" src="" alt="画像を読み込んでいます..." />
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showCertificate(userId, targetDate) {
+            var modal = document.getElementById('certModal');
+            var img = document.getElementById('certImage');
+
+            // サーブレットのURLをimgタグのsrcにセット
+            // キャッシュ対策で時刻をパラメータに追加
+            var url = "<%= request.getContextPath() %>/ViewCertificateServlet?userId=" + userId + "&targetDate=" + targetDate + "&t=" + new Date().getTime();
+
+            img.src = url;
+            modal.style.display = 'flex'; // 表示
+        }
+
+        function closeModal() {
+            var modal = document.getElementById('certModal');
+            var img = document.getElementById('certImage');
+
+            modal.style.display = 'none'; // 非表示
+            img.src = ""; // 次回のためにリセット
+        }
+    </script>
+    </body>
 </html>

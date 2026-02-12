@@ -2,6 +2,7 @@
 <<<<<<<=HEAD
 >>>>>>>=branch 'master' of https\://github.com/Chettri10/CampusGridProject.git
 eclipse.preferences.version=1
+encoding//WebContent/jsp/scanner.jsp=UTF-8
 encoding//src/Servlet/H_syukatuServlet.java=UTF-8
 encoding//src/Servlet/H_syussekiServlet.java=UTF-8
 encoding//src/Servlet/JobSearchServlet.java=UTF-8

@@ -1,5 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.util.List" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.util.Date" %>
+<%@ page import="java.util.TimeZone" %>
 <%
     // --- 1. ユーザーIDによる画面モード判定ロジック ---
     String myId = (String)request.getAttribute("myId");
@@ -331,13 +334,35 @@
             String myName = (String)request.getAttribute("myName");
             String targetName = (String)request.getAttribute("targetName");
 
+            // ★日付フォーマットの準備（日本時間表示用）
+            SimpleDateFormat sdfInput = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            // 入力はUTC（世界標準時）とみなす（サーバーの設定がずれている場合に対応）
+            sdfInput.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            SimpleDateFormat sdfOutput = new SimpleDateFormat("MM/dd HH:mm");
+            // 出力は強制的に日本時間にする
+            sdfOutput.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
+
             if (history != null) {
                 for (String[] msgData : history) {
                     String senderId = msgData[0];
                     String message = msgData[1];
-                    String time = (msgData.length > 2) ? msgData[2] : "";
+                    String rawTime = (msgData.length > 2) ? msgData[2] : "";
                     String isRead = (msgData.length > 3) ? msgData[3] : "0";
                     String chatId = (msgData.length > 4) ? msgData[4] : "";
+
+                    // ★時間変換処理
+                    String displayTime = rawTime;
+                    try {
+                        if(rawTime != null && rawTime.length() >= 19) {
+                            // ミリ秒などがついている場合に備えて先頭19文字(yyyy-MM-dd HH:mm:ss)だけ取る
+                            String cleanTime = rawTime.substring(0, 19);
+                            Date date = sdfInput.parse(cleanTime);
+                            displayTime = sdfOutput.format(date);
+                        }
+                    } catch(Exception e) {
+                        // 変換失敗時はそのまま表示
+                    }
 
                     boolean isMe = senderId.equals(myId);
                     String rowClass = isMe ? "me" : "other";
@@ -361,7 +386,7 @@
                         <% if(isMe && "1".equals(isRead)) { %>
                             <span class="read-label">既読</span>
                         <% } %>
-                        <span><%= time %></span>
+                        <span><%= displayTime %></span>
                     </div>
                 </div>
             </div>
@@ -418,7 +443,7 @@
 
                 if (isAtBottom) {
                     chatContainer.scrollTop = chatContainer.scrollHeight;
-                }
+             "src/Servlet/AttendanceServlet.java"   }
             })
             .catch(err => console.error("自動更新エラー:", err));
         }, 2000);
