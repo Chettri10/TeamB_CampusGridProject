@@ -22,6 +22,7 @@ import javax.servlet.http.Part;
 import javax.servlet.http.HttpSession;
 
 import dao.AttendanceDao;
+import dao.ChatDao; // ★追加：通知用にChatDaoをインポート
 import dao.UserDao;
 
 @WebServlet("/AttendanceServlet")
@@ -43,7 +44,6 @@ public class AttendanceServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"));
-        System.out.println("★AttendanceServlet: タイムゾーンを日本時間(Asia/Tokyo)に設定しました");
     }
 
     private String getBaseDir() {
@@ -56,7 +56,7 @@ public class AttendanceServlet extends HttpServlet {
         return Calendar.getInstance(TimeZone.getTimeZone("Asia/Tokyo"));
     }
 
-    // --- GET: データ取得 ---
+    // --- GET: データ取得 (変更なし) ---
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         res.setHeader("Pragma", "no-cache");
@@ -75,7 +75,6 @@ public class AttendanceServlet extends HttpServlet {
             if (hasCheckedIn) {
                 boolean needsReason = false;
                 String statusStr = "出席";
-
                 try {
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                     sdf.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
@@ -87,7 +86,6 @@ public class AttendanceServlet extends HttpServlet {
                             String rDate = rec.get("date");
                             if (rDate != null && rDate.contains(todayStr)) {
                                 String currentReason = rec.get("reason");
-                                // ★重要: 「未入力」が含まれていれば画面を出す
                                 if (currentReason != null && currentReason.contains("未入力")) {
                                     needsReason = true;
                                 }
@@ -100,17 +98,13 @@ public class AttendanceServlet extends HttpServlet {
                     }
                 } catch (Exception e) { e.printStackTrace(); }
 
-                if (needsReason) {
-                    out.write("SCANNED");
-                } else {
-                    out.write(statusStr + "_DONE");
-                }
+                if (needsReason) out.write("SCANNED");
+                else out.write(statusStr + "_DONE");
             } else {
                 out.write("WAITING");
             }
         }
         else if ("get_live_data".equals(action)) {
-            // ダッシュボード用
             StringBuilder json = new StringBuilder();
             json.append("{");
             json.append("\"logs\": [");
@@ -130,7 +124,7 @@ public class AttendanceServlet extends HttpServlet {
         }
     }
 
-    // --- POST: データ登録 ---
+    // --- POST: データ登録 (★修正箇所あり) ---
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
         res.setContentType("text/plain; charset=UTF-8");
@@ -160,16 +154,10 @@ public class AttendanceServlet extends HttpServlet {
                 }
 
                 AttendanceDao dao = new AttendanceDao();
-
-                // ★★★ 修正箇所: 時間帯ではなく、実際のステータスを見てタグを決める ★★★
-                // 「今日すでに下校（早退）処理が済んでいるか？」を確認
                 boolean isCheckedOut = dao.hasCheckedOutToday(userId);
-
-                // 下校済みなら午前中でも「早退理由」、まだなら「遅刻理由」とする
                 String prefix = isCheckedOut ? "【早退】" : "【遅刻】";
                 String labeledReason = prefix + reason;
 
-                // Daoの置換ロジックへ渡す
                 boolean result = dao.updateReason(userId, labeledReason, imagePath);
 
                 if(result) {
@@ -198,8 +186,6 @@ public class AttendanceServlet extends HttpServlet {
             int hour = cal.get(Calendar.HOUR_OF_DAY);
             int minute = cal.get(Calendar.MINUTE);
 
-            System.out.println("Scan User: " + userId + " (JST " + hour + ":" + minute + ") HasCheckedIn: " + hasCheckedIn);
-
             boolean result = false;
             String status = "";
 
@@ -217,7 +203,7 @@ public class AttendanceServlet extends HttpServlet {
                 // 1回目 (遅刻判定)
                 boolean isLate = (hour > 9) || (hour == 9 && minute >= 20);
                 status = isLate ? "遅刻" : "出席";
-                String reasonParam = isLate ? "未入力" : ""; // 未入力と明記
+                String reasonParam = isLate ? "未入力" : "";
 
                 result = dao.registerCheckIn(userId, status, reasonParam, imagePath);
 
@@ -227,12 +213,17 @@ public class AttendanceServlet extends HttpServlet {
                     session.removeAttribute("qr_scanned");
                     session.removeAttribute("scanned_user_id");
                     addLogToMemoryStatic(userId, userName, status);
+
+                    // ★★★ 追加: 遅刻なら累積回数をチェックして通知を送る ★★★
+                    if (isLate) {
+                        checkLatePenaltyAndNotify(userId, userName, dao);
+                    }
                 }
             } else {
                 // 2回目 (早退判定)
                 boolean isEarly = (hour < 16) || (hour == 16 && minute < 50);
                 status = isEarly ? "早退" : "下校";
-                String reasonParam = isEarly ? "未入力" : ""; // 未入力と明記
+                String reasonParam = isEarly ? "未入力" : "";
 
                 result = dao.registerCheckOut(userId, status, reasonParam, imagePath);
 
@@ -242,11 +233,15 @@ public class AttendanceServlet extends HttpServlet {
                     session.removeAttribute("qr_scanned");
                     session.removeAttribute("scanned_user_id");
                     addLogToMemoryStatic(userId, userName, status);
+
+                    // ★★★ 追加: 早退なら累積回数をチェックして通知を送る ★★★
+                    if (isEarly) {
+                        checkLatePenaltyAndNotify(userId, userName, dao);
+                    }
                 }
             }
 
             if (!result) {
-                System.out.println("DB Save Failed for User: " + userId);
                 out.write("ERROR:DB保存失敗");
             }
 
@@ -255,6 +250,33 @@ public class AttendanceServlet extends HttpServlet {
             out.write("ERROR");
         }
         finally { out.flush(); out.close(); }
+    }
+
+    // ★★★ 追加メソッド: 累積3回チェックと通知送信 ★★★
+    private void checkLatePenaltyAndNotify(String userId, String userName, AttendanceDao dao) {
+        try {
+            // 注意: dao.countLateAndEarly(userId) はAttendanceDaoに追加する必要があります
+            // SQLイメージ: SELECT COUNT(*) FROM Attendance WHERE User_ID=? AND (Status='遅刻' OR Status='早退')
+            int count = dao.countLateAndEarly(userId);
+
+            // 3回ごと、あるいはちょうど3回の時に通知
+            if (count > 0 && count % 3 == 0) {
+                ChatDao chatDao = new ChatDao();
+                String adminId = "ADMIN"; // 送信者ID（システム管理者など）
+
+                String message = "【自動通知】" + userName + "さんの遅刻・早退が合計" + count + "回に達しました。" +
+                                 "規定により欠席数が増加します。確認してください。";
+
+                // 本人に通知
+                chatDao.sendMessage(adminId, userId, message);
+
+                // ログにも出す
+                System.out.println("★PENALTY NOTIFICATION SENT to " + userId + " (Count: " + count + ")");
+            }
+        } catch (Exception e) {
+            System.out.println("通知送信エラー: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private static void addLogToMemoryStatic(String userId, String userName, String status) {

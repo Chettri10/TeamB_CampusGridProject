@@ -300,4 +300,23 @@ public class AttendanceDao {
             }
         } catch (Exception e) { e.printStackTrace(); }
     }
+ // AttendanceDao.java Ç…í«â¡
+    public int countLateAndEarly(String userId) {
+        int count = 0;
+        // ä˙ä‘Åiç°åéÇ»Ç«ÅjÇçiÇÈèÍçáÇÕ WHERE Date >= '...' Ç»Ç«Çí«â¡ÇµÇƒÇ≠ÇæÇ≥Ç¢
+        String sql = "SELECT COUNT(*) FROM Attendance " +
+                     "WHERE User_ID = ? AND (Status = 'íxçè' OR Status = 'ëÅëﬁ')";
+
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
 }
